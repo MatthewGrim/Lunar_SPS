@@ -1,0 +1,12 @@
+This study tries to replicate the results from Figure 3 of the Brandhorst paper. This is effectively a repeat of the
+analysis from study 003-Brandhorst-Fig-2-Validation, but varying the perigee angle.
+
+NOTES:
+- access_time_analysis.py is an initial attempt.
+- replicate_brandhorst_fig_3.py is a version using generic_functions.py and seems to give better results, though they
+  conflict with those in the original paper.
+
+DATA FILES:
+{degree}-sat-illumination-times.csv gives the times when the satellite is illuminated by the sun.
+{degree}-degrees.csv gives the access times to the target.
+illumination-times.csv gives the times when the target is illuminated by the sun.

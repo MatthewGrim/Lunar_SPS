@@ -1,0 +1,5 @@
+This study was a preliminary script to read the durations of access times from a satellite to target station on the
+Moon.
+
+NOTES:
+- For this initial study, the dates could not be read, as I didn't have a conversion method from STK to a python script.

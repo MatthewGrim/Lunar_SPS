@@ -1,0 +1,12 @@
+This more advanced study attempts to validate the Brandhorst paper Figure 2 results. The solar illumination needs to be
+taken into account as well. To replicate these results, the overlap between events needs to be determined, filtering out
+access times when the target is illuminated by the sun.
+
+NOTES:
+- access_parsing_script.py is a first attempt to replicate the results.
+- compute_access_to_target.py is an improved version, making use of generic_functions.py to simplify code
+
+DATA FILES:
+Brandhorst_Sim_1_High_Res.csv - contains access times between satellite and target.
+Target IlluminationTimes.csv - contains times when target is illuminated by the sun.
+Satellite IlluminationTimes.csv - contains times when satellite is illuminated by the sun.

@@ -1,0 +1,5 @@
+This initial study carries out simple analysis of the access and eclipse times for a target station on the moon.
+
+NOTES:
+- Dates are convertable in python if YYYY:MM:DD format is used in STK. This is a pretty simple transform, so I don't see
+ much point in changing it.
