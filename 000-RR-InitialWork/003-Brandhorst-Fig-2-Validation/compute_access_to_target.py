@@ -149,7 +149,7 @@ def process_results(access_durations, eclipse_durations):
 
 
 if __name__ == '__main__':
-    access_fname = "Brandhorst_Sim_1_High_Res.csv"
+    access_fname = "Brandhorst_Sim_1_Low_Res.csv"
     target_illumination_fname = "Target IlluminationTimes.csv"
     satellite_illumination_fname = "Satellite IlluminationTimes.csv"
     sim_start_time = convert_string_to_datetime(['2008', '07', '01', '11', '0', '0.0'])

@@ -96,8 +96,7 @@ def parse_csv_to_array(file_name, sim_start):
 
 
 if __name__ == '__main__':
-    # file_name = "Target-Target1-Sensor-Sensor1-To-Satellite-Satellite1 Access.csv"
-    file_name = "high_res.csv"
+    file_name = "Target-Target1-Sensor-Sensor1-To-Satellite-Satellite1 Access.csv"
     start = ['2017', '03', '01', '11', '0', '0.0']
     parse_csv_to_array(file_name, start)
 
