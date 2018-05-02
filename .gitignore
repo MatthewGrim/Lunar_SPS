@@ -1,4 +1,2 @@
-*.csv
-*.txt
-*.idea
-__pycache__
+# ignore the ds_store thingy
+/**/.DS_Store
