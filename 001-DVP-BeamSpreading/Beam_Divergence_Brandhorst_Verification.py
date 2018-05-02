@@ -6,6 +6,7 @@ for verification of the laser beaming results in the Brandhorst paper
 """
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 # Altitudes
 perigee = 5e5
@@ -28,7 +29,11 @@ print(surf_beam_area)
 # the beam covers only 60% of the receiver area
 rec_area = (1 / 0.6) * surf_beam_area
 
-print(rec_area.item(1))
+print('The size of the detector/reciever according to Brandhorst is (in m^2):')
+print(rec_area.item(-1))
+rec_diameter = 2*np.sqrt(rec_area.item(-1)/np.pi)
+print('Which implies a diameter of (in m):')
+print(rec_diameter)
 
 # The flux at the surface of the moon
 surf_flux = trans_power / surf_beam_area
@@ -39,7 +44,15 @@ sun = 1377  # W/m2
 # Comparing laser beam flux to solar irradiance to verify "laser beaming results" in Brandhorst
 relative_flux = surf_flux / sun
 
-print(relative_flux)
+plt.plot(altitude/1000.0, relative_flux)
+plt.xlabel('Altitude [km]')
+plt.ylabel('Surface Beam Flux [Suns]')
+plt.title('Flux of Diverging SPS Beam at Surface, Relative to Sun')
+plt.xlim(500, 30000)
+plt.ylim(0, 8)
+plt.show()
+
+# print(relative_flux)
 
 
 
