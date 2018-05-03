@@ -17,25 +17,31 @@ import matplotlib.pyplot as plt
 # based on a requirement of 10 W/m2 surface flux
 
 # Altitudes
-altitude = np.arange(500000.0, 30000000.0, 50000.0)  # 500 to 30000 km altitude
+altitude = np.arange(5e5, 3e7, 5e4)  # 500 to 30000 km altitude
 
 # Transmitter parameters
-trans_power = np.arange(1000.0, 100000.0, 100.0)  # 10 to 40 kW transmitter power
+trans_power = np.arange(1e3, 1e5, 1e2)  # 10 to 100 kW transmitter power
 laser_wavelength = 850e-9  # For GaAs cells
 microwave_wavelength = 122e-6  # For 2.45 GHz microwave
-trans_radius = np.arange(0.001, 0.1, 0.0001)
+trans_radius = np.arange(1e-3, 1e-1, 1e-4)
 trans_area = np.pi * trans_radius ** 2
 
 # Surface beam parameters
 surf_power = 10.0
 # surface beam radius relative to transmitter beam radius, according to conservation of flux
 relative_beam_radius = np.sqrt(trans_power / surf_power)
+relative_beam_area = trans_power / surf_power
 
 plt.figure(1)
+plt.subplot(211)
 plt.plot(trans_power / 1000.0, relative_beam_radius)
-plt.ylabel('Surface Beam Radius (Normalized by Transmitter Radius)')
-plt.xlabel('Transmitter Power [kW]')
+plt.ylabel('Rs / Rt')
 plt.title('Beam Divergence for 10 W/m2 Surface Flux')
+plt.subplot(212)
+plt.plot(trans_power / 1000.0, relative_beam_area)
+plt.ylabel('As / At')
+plt.xlabel('Transmitter Power [kW]')
+plt.show()
 plt.show()
 
 # PART 2
