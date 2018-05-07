@@ -156,6 +156,17 @@ def determine_SPS_active_time(sunlight_SPS, sunlight_target, LOS_access):
     print("Total active time for SPS [hrs]: ")
     print(total_SPS_time)
 
+
+def find_long_eclipse(eclipse_data):
+
+    long_eclipse_flag = eclipse_data[2] > 84 * 3600
+
+    num_long_eclipse = np.sum(long_eclipse_flag)
+
+    longest_eclipse = max(eclipse_data[2]) /3600.0
+    print("Longest eclipse: ", longest_eclipse)
+    print("Number of eclipses greater than 84 hours: ", num_long_eclipse)
+
 def main():
     # Import data and set the start and end times of the simulation
     sunlight_data_SPS = "SPS2-Lighting-Times-Edited.csv"
@@ -197,6 +208,6 @@ def main():
     print(total_availability / 3600.0)
 
     determine_SPS_active_time(sunlight_SPS, sunlight_target, LOS_access)
-
+    find_long_eclipse(eclipse_SPS)
 
 main()
