@@ -19,18 +19,11 @@ def file_len(fname):
 
 
 def parse_csv_to_array(file_name, sim_start):
-    """[summary]
-
-    Arguments:
-        file_name {string} -- name of the .csv file to be parsed
-
-    This function takes in the .csv file from STK, and converts it into a 3 X N array, where N is the number of events
-    in the file. The three data types are beginning of event, end of event (both measured in seconds from the
-    beginning of the simulation), and duration of event. The .csv files are edited in Excel to remove an additional
-    information which cause errors when running them through this script.
-    """
+    # This function takes in the .csv file from STK, and converts it into a 3 X N array, where N is the number of events
+    # in the file. The three data types are beginning of event, end of event (both measured in seconds from the
+    # beginning of the simulation), and duration of event. The .csv files are edited in Excel to remove an additional
+    # information which cause errors when running them through this script.
     print("Starting to parse script...")
-
     file = open(file_name, "r")
     size = file_len(file_name)
     duration_array = np.zeros(size)
@@ -69,15 +62,13 @@ def parse_csv_to_array(file_name, sim_start):
 
 
 def get_event_overlaps(access_times, event_times):
-
     # This function finds overlap between events and access times between the SPS and the target.
     # "Events" should be times when the SPS would be active.
     # Therefore take satellite illumination and target eclipses as event_times.
     # Output is an array containing start, end and duration of overlap events.
-
     event_end_flag = np.zeros(len(event_times[0]))
     event_start_flag = np.zeros(len(event_times[0]))
-    overlap_events = np.zeros((3, len(event_times[0]) + 1))
+    overlap_events = np.zeros((3, len(event_times[0])))
 
     # Iterate through all of the access period events
     for i in range(len(access_times[0])):
@@ -113,25 +104,22 @@ def get_event_overlaps(access_times, event_times):
     # plt.bar(overlap_events[0] / 86400.0, overlap_events[2] / 3600.0)
     # plt.ylabel('Overlap of Events and Access')
     # plt.show()
-
     return overlap_events
 
 
 def determine_SPS_active_time(sunlight_SPS, eclipse_target, access_times):
-
     # The total active time for solar power satellite is assumed to be the total available access time, minus
     # the times when the satellite is in eclipse, and minus the times that the target is illuminated by the sun.
-
     total_availability = np.sum(access_times[2])
     print("Total possible access time based on SPS orbit and target location: {} hrs".format(round(total_availability / 3600.0, 2)))
     SPS_sunlit_during_access = get_event_overlaps(access_times, sunlight_SPS)
     target_eclipse_SPS_sunlit_during_access = get_event_overlaps(SPS_sunlit_during_access, eclipse_target)
     total_SPS_time = np.sum(target_eclipse_SPS_sunlit_during_access[2])
     print("Excluding times when SPS is eclipsed and/or when target is sunlit, total access time for SPS: {} hrs".format(round(total_SPS_time / 3600.0, 2)))
+    return total_SPS_time
 
 
 def find_long_eclipse(eclipse_SPS, eclipse_target):
-
     # This function determines the maximum total dark time (ie. the overlap of eclipse of the
     # target and eclipse of the SPS. It also finds how many of these "dark times" last for more than
     # 84 hours in total.
@@ -143,17 +131,46 @@ def find_long_eclipse(eclipse_SPS, eclipse_target):
     print("Number of eclipses exceeding 84 hrs: {}".format(num_long_eclipse))
 
 
-def main():
+def check_sum(lighting, eclipse, duration):
+    # A quick check to ensure that every time stamp from the STK simulation is accounted for
+    # and belongs to an event.
+    check_sum = (np.sum(lighting[2]) + np.sum(eclipse[2])) / (365.0 * 24.0 * 3600.0)
+    if abs(check_sum - duration) > 0.0000001:
+        print('Sunlit and eclipse times do not add to total duration!')
 
+
+def scan_perigee_angles(start, total_duration, eclipse_target):
+    relative_perigees = np.asarray([15, 45, 75, 105, 135, 165, 195, 225, 255, 285, 315, 345])
+    total_active_time = np.zeros(len(relative_perigees))
+    for i in range(len(relative_perigees)):
+        print("Relative periapsis {}".format(relative_perigees[i]))
+        raw_sunlight = "SPS2-Lighting({}).csv".format(relative_perigees[i])
+        raw_eclipse = "SPS2-Eclipse({}).csv".format(relative_perigees[i])
+        raw_access = "SPS2-Access({}).csv".format(relative_perigees[i])
+
+        access_times = parse_csv_to_array(raw_access, start)
+        sunlight_times = parse_csv_to_array(raw_sunlight, start)
+        eclipse_times = parse_csv_to_array(raw_eclipse, start)
+        check_sum(sunlight_times, eclipse_times, total_duration)
+
+        print('\n')
+        print('Relative perigee {}'.format(relative_perigees[i]))
+        total_active_time[i] = determine_SPS_active_time(sunlight_times, eclipse_target, access_times)
+        find_long_eclipse(eclipse_times, eclipse_target)
+
+    return total_active_time, relative_perigees
+
+
+def main():
     # Import data and set the start and end times of the simulation
-    raw_sunlight_SPS2 = "SPS2-Lighting-Times-Edited.csv"
-    raw_eclipse_SPS2 = "SPS2-Eclipse-Times-Edited.csv"
-    raw_access_SPS2 = "SPS2-Access-135-Edited.csv"
-    raw_sunlight_SPS1 = "SPS1-Lighting-Times-Edited.csv"
-    raw_eclipse_SPS1 = "SPS1-Eclipse-Times-Edited.csv"
-    raw_access_SPS1 = "SPS1-Access-0-Edited.csv"
-    raw_sunlight_target = 'Target1-Lighting-Times-Edited.csv'
-    raw_eclipse_target = 'Target1-Eclipse-Times-Edited.csv'
+    raw_sunlight_SPS2 = "SPS2-Lighting(135).csv"
+    raw_eclipse_SPS2 = "SPS2-Eclipse(135).csv"
+    raw_access_SPS2 = "SPS2-Access(135).csv"
+    raw_sunlight_SPS1 = "SPS1-Lighting(0)-Edited.csv"
+    raw_eclipse_SPS1 = "SPS1-Eclipse(0)-Edited.csv"
+    raw_access_SPS1 = "SPS1-Access(0).csv"
+    raw_sunlight_target = 'Target1-Lighting-Edited.csv'
+    raw_eclipse_target = 'Target1-Eclipse-Edited.csv'
     start = convert_string_to_datetime(['2008', '07', '01', '10', '0', '0.0'])
     end = convert_string_to_datetime(['2010', '06', '30', '10', '0', '0.0'])
     total_duration = (end - start).total_seconds() / (365 * 86400.0)
@@ -163,31 +180,33 @@ def main():
     # Parse data into start and end time of events, in seconds with respect to the start of the simulation
     # and total duration of the event. Events refer to illumination of the SPS or target by the Sun,
     # and line-of-sight access between the target and the SPS
-    LOS_access2 = parse_csv_to_array(raw_access_SPS2, start)
-    sunlight_SPS2 = parse_csv_to_array(raw_sunlight_SPS2, start)
-    eclipse_SPS2 = parse_csv_to_array(raw_eclipse_SPS2, start)
-    # A quick check to ensure that every time stamp from the STK simulation is accounted for
-    # and belongs to an event.
-    check_sum = (np.sum(sunlight_SPS2[2]) + np.sum(eclipse_SPS2[2])) / (365.0*24.0*3600.0)
-    if abs(check_sum - total_duration) > 0.00001:
-        print('Sunlit and eclipse times do not add to total duration!')
+
 
     LOS_access1 = parse_csv_to_array(raw_access_SPS1, start)
     sunlight_SPS1 = parse_csv_to_array(raw_sunlight_SPS1, start)
     eclipse_SPS1 = parse_csv_to_array(raw_eclipse_SPS1, start)
-    # A quick check to ensure that every time stamp from the STK simulation is accounted for
-    # and belongs to an event.
-    check_sum = (np.sum(sunlight_SPS1[2]) + np.sum(eclipse_SPS1[2])) / (365.0*24.0*3600.0)
-    if abs(check_sum - total_duration) > 0.00001:
-        print('Sunlit and eclipse times do not add to total duration!')
+    check_sum(sunlight_SPS1, eclipse_SPS1, total_duration)
+
+    LOS_access2 = parse_csv_to_array(raw_access_SPS2, start)
+    sunlight_SPS2 = parse_csv_to_array(raw_sunlight_SPS2, start)
+    eclipse_SPS2 = parse_csv_to_array(raw_eclipse_SPS2, start)
+    check_sum(sunlight_SPS2, eclipse_SPS2, total_duration)
 
     sunlight_target = parse_csv_to_array(raw_sunlight_target, start)
     eclipse_target = parse_csv_to_array(raw_eclipse_target, start)
-    # A quick check to ensure that every time stamp from the STK simulation is accounted for
-    # and belongs to an event.
-    check_sum = (np.sum(sunlight_target[2]) + np.sum(eclipse_target[2])) / (365.0*24.0*3600.0)
-    if abs(check_sum - total_duration) > 0.00001:
-        print('Sunlit and eclipse times do not add to total duration!')
+    check_sum(sunlight_target, eclipse_target, total_duration)
+
+    SPS2_access_time, perigees = scan_perigee_angles(start, total_duration, eclipse_target)
+
+    print("\n")
+    print("Access availability for SPS1")
+    determine_SPS_active_time(sunlight_SPS1, eclipse_target, LOS_access1)
+    find_long_eclipse(eclipse_SPS1, eclipse_target)
+
+    print("\n")
+    print("Access availability for SPS2")
+    determine_SPS_active_time(sunlight_SPS2, eclipse_target, LOS_access2)
+    find_long_eclipse(eclipse_SPS2, eclipse_target)
 
     # Plot which shows all access period, SPS eclipses, and target illumination periods.
     plt.figure(1)
@@ -204,15 +223,12 @@ def main():
     plt.xlabel('Time Since Start of Simulation (July 1, 2008) [days]')
     plt.show()
 
-    print("\n")
-    print("Access availability for SPS1")
-    determine_SPS_active_time(sunlight_SPS1, eclipse_target, LOS_access1)
-    find_long_eclipse(eclipse_SPS1, eclipse_target)
-
-    print("\n")
-    print("Access availability for SPS2")
-    determine_SPS_active_time(sunlight_SPS2, eclipse_target, LOS_access2)
-    find_long_eclipse(eclipse_SPS2, eclipse_target)
+    plt.figure(2)
+    plt.plot(perigees, SPS2_access_time / 3600.0)
+    plt.xlabel('Relative Argument of Perigee [deg]')
+    plt.ylabel('Total Access Time of SPS2 [hrs]')
+    plt.title("Brandhorst Figure 3 Remake")
+    plt.show()
 
 
 main()
