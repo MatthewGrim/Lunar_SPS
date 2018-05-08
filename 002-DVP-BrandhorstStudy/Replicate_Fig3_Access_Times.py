@@ -37,7 +37,7 @@ def parse_csv_to_array(file_name, sim_start):
     start_time_sec_from_simstart = np.zeros(size)
     end_time_sec_from_simstart = np.zeros(size)
     parsed_data = np.array((3, size))
-    print("Number of events = ", size)
+    print("Number of events = {}".format(size))
 
     # For loop parses data into three categories: start, end and duration of event
     # This function can be used for target to satellite access times, or target/satellite illumination events
@@ -68,146 +68,145 @@ def parse_csv_to_array(file_name, sim_start):
     return parsed_data
 
 
-def get_eclipse_data(parsed_data):
+def get_event_overlaps(access_times, event_times):
 
-    # This function takes in illumination event data (start, end, duration) and determines the same information
-    # for eclipse events, assuming that penumbra eclipse is still eclipse, and that the simulation ends
-    # with the satellite sunlit (not in eclipse)
-    size = len(parsed_data[0])
+    # This function finds overlap between events and access times between the SPS and the target.
+    # "Events" should be times when the SPS would be active.
+    # Therefore take satellite illumination and target eclipses.
+    # Output is an array containing start, end and duration of overlap events.
 
-    eclipse_duration = np.zeros(size)
-    eclipse_start = np.zeros(size)
-    eclipse_end = np.zeros(size)
+    event_end_flag = np.zeros(len(event_times[0]))
+    event_start_flag = np.zeros(len(event_times[0]))
+    overlap_events = np.zeros((3, len(event_times[0]) + 1))
 
-    for i in range(0, size-1):
-        eclipse_duration[i] = parsed_data[0][i+1] - parsed_data[1][i]
-        eclipse_start[i] = parsed_data[1][i]
-        eclipse_end[i] = parsed_data[0][i+1]
+    # Iterate through all of the access period events
+    for i in range(len(access_times[0])):
+        # Flag all events which overlap with access periods
+        for j in range(len(event_times[0])):
+            event_start_flag[j] = access_times[0][i] <= event_times[0][j] <= access_times[1][i]
+            event_end_flag[j] = access_times[0][i] <= event_times[1][j] <= access_times[1][i]
+            # Find start, end and duration of overlap event
+            # Case where entire event occurs during access period
+            if event_start_flag[j] == 1 and event_end_flag[j] == 1:
+                overlap_events[0][j] = event_times[0][j]
+                overlap_events[1][j] = event_times[1][j]
+                overlap_events[2][j] = event_times[2][j]
+            # Case where event begins during access, but access period ends first
+            elif event_start_flag[j] == 1 and event_end_flag[j] == 0:
+                overlap_events[0][j] = event_times[0][j]
+                overlap_events[1][j] = access_times[1][i]
+                overlap_events[2][j] = access_times[1][i] - event_times[0][j]
+            # Case where access period begins during event, but event ends before access period
+            elif event_start_flag[j] == 0 and event_end_flag[j] == 1:
+                overlap_events[0][j] = access_times[0][i]
+                overlap_events[1][j] = event_times[1][j]
+                overlap_events[2][j] = event_times[1][j] - access_times[0][i]
 
-    eclipse_duration[size-2] = parsed_data[0][size-2] - parsed_data[1][size-3]
-    eclipse_start[size-2] = parsed_data[1][size-3]
-    eclipse_end[size-2] = parsed_data[0][size-2]
+    # plt.subplot(311)
+    # plt.bar(access_times[0] / 86400.0, access_times[2] / 3600.0)
+    # plt.title('Overlapping Events Which Define SPS Active Time')
+    # plt.ylabel('Access Times')
+    # plt.subplot(312)
+    # plt.bar(event_times[0] / 86400.0, event_times[2] / 3600.0)
+    # plt.ylabel('Event Times, Condition For Active SPS)')
+    # plt.subplot(313)
+    # plt.bar(overlap_events[0] / 86400.0, overlap_events[2] / 3600.0)
+    # plt.ylabel('Overlap of Events and Access')
+    # plt.show()
 
-    eclipse_data = [eclipse_start, eclipse_end, eclipse_duration]
-
-    # return an 3 x N array for N eclipse events
-    return eclipse_data
+    return overlap_events
 
 
-def determine_SPS_active_time(sunlight_SPS, sunlight_target, LOS_access):
+def determine_SPS_active_time(sunlight_SPS, eclipse_target, access_times):
 
     # The total active time for solar power satellite is assumed to be the total available access time, minus
     # the times when the satellite is in eclipse, and minus the times that the target is illuminated by the sun.
 
-    eclipse_SPS = get_eclipse_data(sunlight_SPS)
+    total_availability = np.sum(access_times[2])
 
-    SPS_eclipse_end_flag = np.zeros(len(eclipse_SPS[0]))
-    SPS_eclipse_start_flag = np.zeros(len(eclipse_SPS[0]))
-    eclipse_time_during_access = np.zeros(len(eclipse_SPS[0]))
+    print("Total possible access time based on SPS orbit and target location: {} hrs".format(total_availability / 3600.0))
 
-    target_sunlight_end_flag = np.zeros(len(sunlight_target[0]))
-    target_sunlight_start_flag = np.zeros(len(sunlight_target[0]))
-    target_illumination_during_access = np.zeros(len(sunlight_target[0]))
+    SPS_sunlit_during_access = get_event_overlaps(access_times, sunlight_SPS)
 
-    # Check all access periods to see if the SPS would be required
-    for i in range(0, len(LOS_access[0])):
+    target_eclipse_SPS_sunlit_during_access = get_event_overlaps(SPS_sunlit_during_access, eclipse_target)
 
-        # Check to see if the target is illuminated by the sun
-        for j in range(0, len(sunlight_target[0])):
-            target_sunlight_start_flag[j] = LOS_access[0][i] <= sunlight_target[0][j] <= LOS_access[1][i]
-            target_sunlight_end_flag[j] = LOS_access[0][i] <= sunlight_target[1][j] <= LOS_access[1][i]
-            # Check to see when the target is illuminated by the sun during access periods
-            # Case where entire sunlit period occurs during access period
-            if target_sunlight_start_flag[j] == 1 and target_sunlight_end_flag[j] == 1:
-                target_illumination_during_access[j] = sunlight_target[2][j]
-            # Case where eclipse begins during access, but access period ends before eclipse
-            elif target_sunlight_start_flag[j] == 1 and target_sunlight_end_flag[j] == 0:
-                target_illumination_during_access[j] = LOS_access[1][i] - sunlight_target[0][j]
-            # Case where access period begins during eclipse, and eclipse ends before access period
-            elif target_sunlight_start_flag[j] == 0 and target_sunlight_end_flag[j] == 1:
-                target_illumination_during_access[j] = sunlight_target[1][j] - LOS_access[0][i]
+    total_SPS_time = np.sum(target_eclipse_SPS_sunlit_during_access[2])
 
-        total_target_illumination_during_access = np.sum(target_illumination_during_access) / 3600.0
-
-        # Check to see if the SPS would be in eclipse
-        for j in range(0, len(eclipse_SPS[0])):
-            SPS_eclipse_start_flag[j] = LOS_access[0][i] <= eclipse_SPS[0][j] <= LOS_access[1][i]
-            SPS_eclipse_end_flag[j] = LOS_access[0][i] <= eclipse_SPS[1][j] <= LOS_access[1][i]
-            # Check to see when satellite is in eclipse during access periods
-            # Case where entire eclipse occurs during access period
-            if SPS_eclipse_start_flag[j] == 1 and SPS_eclipse_end_flag[j] == 1:
-                eclipse_time_during_access[j] = eclipse_SPS[2][j]
-            # Case where eclipse begins during access, but access period ends before eclipse
-            elif SPS_eclipse_start_flag[j] == 1 and SPS_eclipse_end_flag[j] == 0:
-                eclipse_time_during_access[j] = LOS_access[1][i] - eclipse_SPS[0][j]
-            # Case where access period begins during eclipse, and eclipse ends before access period
-            elif SPS_eclipse_start_flag[j] == 0 and SPS_eclipse_end_flag[j] == 1:
-                eclipse_time_during_access[j] = eclipse_SPS[1][j] - LOS_access[0][i]
-
-        total_SPS_eclipse_during_access = np.sum(eclipse_time_during_access) / 3600.0
-
-    print("Total time SPS is eclipsed during access period [hrs]: ")
-    print(total_SPS_eclipse_during_access)
-    print("Total time target is illuminated during access periods [hrs]: ")
-    print(total_target_illumination_during_access)
-
-    total_SPS_time = (sum(LOS_access[2]) / 3600.0) - total_target_illumination_during_access - total_SPS_eclipse_during_access
-
-    print("Total active time for SPS [hrs]: ")
-    print(total_SPS_time)
+    print("Excluding times when SPS is eclipsed and/or when target is sunlit, total access time for SPS: {} hrs".format(total_SPS_time / 3600.0))
 
 
-def find_long_eclipse(eclipse_data):
+def find_long_eclipse(eclipse_SPS, eclipse_target):
 
-    long_eclipse_flag = eclipse_data[2] > 84 * 3600
+    double_eclipse = get_event_overlaps(eclipse_target, eclipse_SPS)
 
-    num_long_eclipse = np.sum(long_eclipse_flag)
+    long_eclipse_flag = (double_eclipse[2] / 3600.0) > 84.0
 
-    longest_eclipse = max(eclipse_data[2]) /3600.0
-    print("Longest eclipse: ", longest_eclipse)
-    print("Number of eclipses greater than 84 hours: ", num_long_eclipse)
+    num_long_eclipse = sum(long_eclipse_flag)
+
+    max_eclipse_duration = max(double_eclipse[2]) / 3600.0
+
+    print('Maximum dark time: {} hrs'.format(max_eclipse_duration))
+
+    print("Number of eclipses exceeding 84 hrs: {}".format(num_long_eclipse))
 
 def main():
     # Import data and set the start and end times of the simulation
-    sunlight_data_SPS = "SPS2-Lighting-Times-Edited.csv"
-    access_data_SPS = "SPS2-Access-135-Edited.csv"
-    sunlight_data_target = 'Target1-Lighting-Times-Edited.csv'
+    raw_sunlight_SPS2 = "SPS2-Lighting-Times-Edited.csv"
+    raw_eclipse_SPS2 = "SPS2-Eclipse-Times-Edited.csv"
+    raw_access_SPS2 = "SPS2-Access-135-Edited.csv"
+    raw_sunlight_SPS1 = "SPS1-Lighting-Times-Edited.csv"
+    raw_eclipse_SPS1 = "SPS1-Lighting-Times-Edited.csv"
+    raw_access_SPS1 = "SPS1-Access-0-Edited.csv"
+    raw_sunlight_target = 'Target1-Lighting-Times-Edited.csv'
+    raw_eclipse_target = 'Target1-Eclipse-Times-Edited.csv'
     start = convert_string_to_datetime(['2008', '07', '01', '10', '0', '0.0'])
     end = convert_string_to_datetime(['2010', '06', '30', '10', '0', '0.0'])
     total_duration = (end - start).total_seconds()
 
     print("Simulation duration, in days:")
-    print(total_duration / 86400)
+    print(total_duration / 86400.0)
 
     # Parse data into start and end time of events, in seconds with respect to the start of the simulation
     # and total duration of the event. Events refer to illumination of the SPS or target by the Sun,
     # and line-of-sight access between the target and the SPS
-    sunlight_SPS = parse_csv_to_array(sunlight_data_SPS, start)
-    LOS_access = parse_csv_to_array(access_data_SPS, start)
-    sunlight_target = parse_csv_to_array(sunlight_data_target, start)
+    sunlight_SPS2 = parse_csv_to_array(raw_sunlight_SPS2, start)
+    eclipse_SPS2 = parse_csv_to_array(raw_eclipse_SPS2, start)
 
-    eclipse_SPS = get_eclipse_data(sunlight_SPS)
+    check_sum = (np.sum(sunlight_SPS2[2]) + np.sum(eclipse_SPS2[2])) / (365.0*24.0*3600.0)
+    if check_sum != 2:
+        print('Missing time between sunlight and eclipse')
 
+    LOS_access2 = parse_csv_to_array(raw_access_SPS2, start)
+    sunlight_SPS1 = parse_csv_to_array(raw_sunlight_SPS1, start)
+    eclipse_SPS1 = parse_csv_to_array(raw_eclipse_SPS1, start)
+    LOS_access1 = parse_csv_to_array(raw_access_SPS1, start)
+    sunlight_target = parse_csv_to_array(raw_sunlight_target, start)
+    eclipse_target = parse_csv_to_array(raw_eclipse_target, start)
+
+    # Plot which shows all access period, SPS eclipses, and target illumination periods.
     plt.figure(1)
     plt.subplot(311)
-    plt.bar(LOS_access[0] / 86400, LOS_access[2] / 3600)
+    plt.bar(LOS_access2[0] / 86400.0, LOS_access2[2] / 3600.0)
     plt.ylabel('Line-Of-Sight Access Duration [h]')
     plt.title('Illumination and Access Times for SPS and Lunar Target at 45N')
     plt.subplot(312)
-    plt.bar(eclipse_SPS[0] / 86400, sunlight_SPS[2] / 3600)
-    plt.ylabel('SPS Eclipse Event Duration [h]')
+    plt.bar(eclipse_SPS2[0] / 86400.0, eclipse_SPS2[2] / 3600.0)
+    plt.ylabel('SPS2 Eclipse Event Duration [h]')
     plt.subplot(313)
-    plt.bar(sunlight_target[0] / 86400, sunlight_target[2] / 3600)
+    plt.bar(sunlight_target[0] / 86400.0, sunlight_target[2] / 3600.0)
     plt.ylabel('Target Sunlit Event Duration [h]')
     plt.xlabel('Time Since Start of Simulation (July 1, 2008) [days]')
     plt.show()
 
-    total_availability = np.sum(LOS_access[2])
+    print("\n")
+    print("Access availability for SPS1")
+    determine_SPS_active_time(sunlight_SPS1, eclipse_target, LOS_access1)
+    find_long_eclipse(eclipse_SPS1, eclipse_target)
 
-    print("Total possible access time [hrs]: ")
-    print(total_availability / 3600.0)
+    print("\n")
+    print("Access availability for SPS2")
+    determine_SPS_active_time(sunlight_SPS2, eclipse_target, LOS_access2)
+    find_long_eclipse(eclipse_SPS2, eclipse_target)
 
-    determine_SPS_active_time(sunlight_SPS, sunlight_target, LOS_access)
-    find_long_eclipse(eclipse_SPS)
 
 main()
