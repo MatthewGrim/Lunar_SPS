@@ -147,8 +147,8 @@ def take_closest(array, number):
 def main():
 
     trans_wavelength = 850e-9
-    surf_flux = 400
-    rec_diameter = 0.75
+    surf_flux = 30
+    rec_diameter = 30
 
     print('This first function will determine compatible altitudes for a SPS which delivers a specified surface '
           'power flux with a specified wavelength transmitter, as a function of transmitter size and power.')
