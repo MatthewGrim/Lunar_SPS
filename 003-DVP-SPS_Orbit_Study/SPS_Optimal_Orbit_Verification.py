@@ -37,7 +37,7 @@ def scan_apogee_altitudes(apogees, start):
 def main():
 
     start = convert_string_to_datetime(['2008', '07', '01', '10', '0', '0.0'])
-    apogees = (1, 2, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55)
+    apogees = (1, 2, 5, 10, 15, 20, 25, 30, 32.5, 35, 37.5, 40, 42.5, 45, 47.5, 50, 52.5, 55)
     active_times = scan_apogee_altitudes(apogees, start)
     apogees_scaled = [i * 1000 for i in apogees]
     active_times_scaled = [i / 3600.0 for i in active_times]
