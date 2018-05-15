@@ -22,6 +22,16 @@ def file_len(fname):
     return i + 1
 
 
+def check_sum(lighting, eclipse, duration):
+    # A quick check to ensure that every time stamp from the STK simulation is accounted for
+    # and belongs to an event. Threshold for "no error" is set to 30 seconds.
+    # Used to check for errors when inverting an event set (ie. find eclipses from sunlit events)
+    check_sum = (np.sum(lighting[2]) + np.sum(eclipse[2]))
+    if abs(check_sum - duration) > 30:
+        print('Inverted and original event times do not add to total duration!')
+        print('{} hours of total time unaccounted for'.format(round((duration - check_sum) / 3600.0, 2)))
+
+
 def parse_csv_to_array(file_name, sim_start):
     # This function takes in the .csv file from STK, and converts it into a 3 X N array, where N is the number of events
     # in the file. The three data types are beginning of event, end of event (both measured in seconds from the
@@ -76,6 +86,7 @@ def get_event_overlaps(access_times, event_times):
 
     # Index for access periods
     i = 0
+    j = 0
     # Test all of the access periods for overlap with conditional events
     while i < len(access_times[0]):
         # Get start and end of access periods
@@ -84,8 +95,12 @@ def get_event_overlaps(access_times, event_times):
 
         # Check each conditional event for overlap
         for j in range(events_size):
+        # if j >= len(event_times[0]):
+        #     break
+        # else:
             event_start = event_times[0][j]
             event_end = event_times[1][j]
+
 
             # Determine overlapping events
             # Partial overlap, event period triggers overlap, access period ends it
@@ -93,33 +108,33 @@ def get_event_overlaps(access_times, event_times):
                 overlap_start.append(event_start)
                 overlap_end.append(access_end)
                 overlap_duration.append(access_end - event_start)
-
+                # i += 1
             # Partial overlap, access period triggers overlap, event period ends it
             elif event_start <= access_start and event_end <= access_end and access_start <= event_end:
                 overlap_start.append(access_start)
                 overlap_end.append(event_end)
                 overlap_duration.append(event_end - access_start)
-
+                # j += 1
             # Full overlap, access period occurs within event period
             elif event_start <= access_start and access_end <= event_end:
                 overlap_start.append(access_start)
                 overlap_end.append(access_end)
                 overlap_duration.append(access_end - access_start)
-
+                # i += 1
             # Full overlap, event period occurs within access period
             elif access_start <= event_start and event_end <= access_end:
                 overlap_start.append(event_start)
                 overlap_end.append(event_end)
                 overlap_duration.append(event_end - event_start)
-
+                # j += 1
             # No overlap, access period ends before event
             elif access_end < event_start:
+                # i += 1
                 pass
-
             # No overlap, access period begins after event
             elif event_end < access_start:
+                # j += 1
                 pass
-
             else:
                 raise RuntimeError("Should not be possible to get here!")
         i += 1
@@ -137,6 +152,9 @@ def determine_SPS_active_time(sunlight_SPS, eclipse_target, access_times):
     target_eclipse_during_access = get_event_overlaps(access_times, eclipse_target)
 
     target_eclipse_SPS_sunlit_during_access = get_event_overlaps(target_eclipse_during_access, sunlight_SPS)
+
     total_SPS_time = np.sum(target_eclipse_SPS_sunlit_during_access[2])
     print("Filtering out eclipses, total active time: {} hrs".format(round(total_SPS_time / 3600.0, 2)))
     return total_SPS_time
+
+

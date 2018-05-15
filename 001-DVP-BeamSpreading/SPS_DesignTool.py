@@ -37,7 +37,7 @@ def get_altitude_from_wavelength_surfaceflux(wave, surf):
 
     # Calculate altitude and surface radius
     R, P = np.meshgrid(trans_radius, trans_power, indexing="ij")
-    altitude = (np.pi * R ** 2) * np.sqrt(P / (np.pi * surf_flux * R ** 2) - 1) / wavelength
+    altitude = (np.pi * R ** 2) * np.sqrt((P / (surf_flux * np.pi * R ** 2)) - 1) / wavelength
 
     # Remove non-physical values, by setting altitude to zero
     L1point = 5.82e7
@@ -51,7 +51,7 @@ def get_altitude_from_wavelength_surfaceflux(wave, surf):
 
     # This plot shows compatible altitudes for orbits about the Moon within the L1 point.
     # All non-compatible altitudes (greater than L1 distance) are set to nan.
-    # plt.figure(1)
+    plt.figure(1)
     plt.subplot(211)
     plt.contourf(np.log10(trans_radius), np.log10(trans_power), altitude/1000, 100)
     cbar = plt.colorbar()
@@ -72,7 +72,7 @@ def get_altitude_from_wavelength_surfaceflux(wave, surf):
     return altitude
 
 
-def get_transpower_from_recieverarea_surfaceflux(flux, diameter):
+def get_transpower_from_recieverarea_surfaceflux(flux, diameter, trans_wavelength):
     #############################################################################
     # This function determines the required transmitter power and possible aperture
     # sizes based on the specified receiver area and surface.
@@ -88,12 +88,12 @@ def get_transpower_from_recieverarea_surfaceflux(flux, diameter):
     L1point = 5.82e7
 
     wavelength = np.logspace(-8, -6, 1000)
-    altitude = np.linspace(100e3, L1point, 1000)
+    altitude = np.linspace(1e5, L1point, 1000)
 
     # Calculate the necessary transmitter power based on desired surface flux and surface beam diameter
     trans_power = surf_flux * np.pi * surf_radius ** 2
 
-    print('The minimum required transmitter power (assuming no loss) is: %f W', trans_power)
+    print('The minimum required transmitter power (assuming no loss) is {} kW.'.format(round(trans_power / 1000.0, 2)))
 
     W, A = np.meshgrid(wavelength, altitude, indexing="ij")
 
@@ -102,6 +102,15 @@ def get_transpower_from_recieverarea_surfaceflux(flux, diameter):
     # Solution to quadratic equation results in "folded" solution
     trans_diameter_p = 2 * np.sqrt(0.5 * surf_radius ** 2 + np.sqrt(0.25 * surf_radius ** 4 - (W * A / np.pi) ** 2))
     trans_diameter_m = 2 * np.sqrt(0.5 * surf_radius ** 2 - np.sqrt(0.25 * surf_radius ** 4 - (W * A / np.pi) ** 2))
+
+    i = take_closest(wavelength, trans_wavelength)
+    trans_diameter_close_m = trans_diameter_m[i][:]
+    trans_diameter_close_p = trans_diameter_p[i][:]
+
+    plt.plot(altitude / 1000.0, trans_diameter_close_m)
+    # plt.plot(altitude / 1000.0, trans_diameter_close_p)
+    plt.show()
+
 
     # This plot shows compatible transmitter sizes for the specified
     # surface beam area and flux, as a function of wavelength and altitude
@@ -121,7 +130,8 @@ def get_transpower_from_recieverarea_surfaceflux(flux, diameter):
     plt.title('Compatible Transmitter Diameter (Minus Solution) [m]')
     plt.show()
 
-    return trans_power
+    return trans_power, trans_diameter_close_m, altitude
+
 
 def get_apogee_from_altitude_constraints(altitude, desired_trans_power, desired_trans_radius):
 
@@ -132,9 +142,10 @@ def get_apogee_from_altitude_constraints(altitude, desired_trans_power, desired_
 
     i = take_closest(trans_power, desired_trans_power)
     j = take_closest(trans_radius, desired_trans_radius)
-    apogee = altitude[i, j]
-    print("The largest possible altitude for this transceiver is (in km):", apogee / 1000.0)
+    apogee = altitude[i][j]
+    print("The altitude for this transmitter is {} km.".format(round(apogee / 1000.0, 2)))
 
+    return apogee
 
 def take_closest(array, number):
     closest = 0
@@ -146,9 +157,9 @@ def take_closest(array, number):
 
 def main():
 
-    trans_wavelength = 850e-9
-    surf_flux = 30
-    rec_diameter = 30
+    trans_wavelength = 1064e-9
+    surf_flux = 400
+    rec_diameter = 200
 
     print('This first function will determine compatible altitudes for a SPS which delivers a specified surface '
           'power flux with a specified wavelength transmitter, as a function of transmitter size and power.')
@@ -160,13 +171,16 @@ def main():
          'desired receiver area and the specified flux at the target, as a function of wavelength and altitude.')
     # rec_area = input('Enter the desired surface beam diameter (in m): ')
     # surf_flux = input('Enter the desired flux at the surface (in W/m2): ')
-    req_trans_power = get_transpower_from_recieverarea_surfaceflux(surf_flux, rec_diameter)
+    req_trans_power, trans_dia_m, altitude_fortransdia = get_transpower_from_recieverarea_surfaceflux(surf_flux, rec_diameter, trans_wavelength)
 
     print('This function takes in the altitudes compatible with the desired radiation wavelength and surface flux, '
           'then finds the upper altitude limits for a given transmitter power and size.')
     # trans_power = input('Enter maximum transmitter power (in W): ')
     # trans_diameter = input('Enter diameter of transmitter (in m): ')
-    get_apogee_from_altitude_constraints(altitude, req_trans_power, 0.1)
+    apogee = get_apogee_from_altitude_constraints(altitude, req_trans_power, 0.1)
+
+    i = take_closest(altitude_fortransdia, apogee)
+    print('The compatible transmitter diameter is {} m'.format(round(trans_dia_m[i], 2)))
 
 
 main()
