@@ -71,29 +71,80 @@ def determine_surface_beam_data(range_data):
     return (surf_flux / solar_flux), percent_rec_covered, power_delivered
 
 
+def eliminate_event_periods(range_data, event_data):
+
+    j = 0
+    i = 0
+    # while i < len(range_data[0]):
+    #
+    #     if j >= len(event_data[0]) and range_data[0][i] < event_data[1][j]:
+    #         if event_data[0][j] <= range_data[0][i] <= event_data[1][j]:
+    #             range_data[1][i] = 0
+    #             i += 1
+    #             print('i = {}'.format(i))
+    #
+    #         elif range_data[0][i] < event_data[0][j]:
+    #             i += 1
+    #
+    #         print('i = {}'.format(i))
+    #         print(i)
+    #
+    #     elif j >= len(event_data[0]) and range_data[0][i] > event_data[1][j]:
+    #         break
+    #
+    #     elif j < len(event_data[0]):
+    #
+    #         if event_data[0][j] <= range_data[0][i] <= event_data[1][j]:
+    #             range_data[1][i] = 0
+    #             i += 1
+    #             print('i = {}'.format(i))
+    #
+    #         elif range_data[0][i] > event_data[1][j]:
+    #             j += 1
+    #             print('j = {}'.format(j))
+    #         elif range_data[0][i] < event_data[0][j]:
+    #             i += 1
+    #
+    # return range_data
+
+    for i in range(0, len(range_data[0])):
+        for j in range(0, len(event_data[0])):
+            if event_data[0][j] <= range_data[0][i] <= event_data[1][j]:
+                range_data[1][i] = 'nan'
+
+    return range_data
+
+
 def main():
 
     start = convert_string_to_datetime(['2008', '07', '01', '10', '0', '0.0'])
     raw_range_data = 'SPS-to-Target-Range.csv'
     range_data = import_range_data(raw_range_data, start)
-    surf_flux, percent_rec_covered, power_delivered = determine_surface_beam_data(range_data)
+
+    raw_sps_eclipse = 'SPS1-Eclipse(0)-Edited.csv'
+    raw_target_sunlit = 'Target1-Lighting-Edited.csv'
+    sps_eclipse = parse_csv_to_array(raw_sps_eclipse, start)
+    target_sunlit = parse_csv_to_array(raw_target_sunlit, start)
+
+    range_data_wo_eclipses = eliminate_event_periods(range_data, sps_eclipse)
+    range_data_wo_eclipse_and_target_sunlight = eliminate_event_periods(range_data_wo_eclipses, target_sunlit)
+
+    surf_flux, percent_rec_covered, power_delivered = determine_surface_beam_data(range_data_wo_eclipse_and_target_sunlight)
 
     range_days = range_data[0] / 86400.0
 
     # Brandhorst figures begin on the 414th (7:55 am) day of the simulation, and end on the 416th day (7:55 am)
     brandhorst_range = range_days[(range_days >= 414.0) & (range_days <= 416.0)]
 
-    print(range_days)
-    print(brandhorst_range)
     plt.figure(1)
     plt.subplot(221)
     plt.scatter(range_days, range_data[1], s=0.1)
     plt.ylabel('Distance to Target [km]')
     plt.subplot(222)
-    plt.scatter(range_days, surf_flux,s=0.1)
+    plt.scatter(range_days, surf_flux, s=0.1)
     plt.ylabel('Surface Beam Flux [AM0]')
     plt.subplot(223)
-    plt.scatter(range_days, percent_rec_covered,s=0.1)
+    plt.scatter(range_days, percent_rec_covered, s=0.1)
     plt.xlabel('Days Since Simulation Start')
     plt.ylabel('Percentage of Receiver Covered')
     plt.subplot(224)
