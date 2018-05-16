@@ -75,8 +75,8 @@ def take_closest(array, number):
 
 def get_solar_array_size(trans_power):
 
-    solar_cell_efficiency = 0.3
-    power_management_efficiency = 0.99
+    solar_cell_efficiency = 0.4
+    power_management_efficiency = 0.95
     transmitter_efficiency = 0.7
     solar_flux = 1367
 
@@ -87,8 +87,8 @@ def get_solar_array_size(trans_power):
 def main():
 
     trans_wavelength = 850e-9
-    surf_flux = 400
-    rec_diameter = 1
+    surf_flux = 30
+    rec_diameter = 1000
 
     # wavelength = input('Enter the chosen transmitter wavelength (in m): ')
     # surf_flux = input('Enter the desired flux at the surface (in W/m2): ')
