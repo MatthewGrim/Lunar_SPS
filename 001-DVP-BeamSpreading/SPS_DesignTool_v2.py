@@ -32,15 +32,15 @@ def get_altitude_from_wavelength_surfbeamsize(wave, diameter):
     wavelength = wave
     rec_radius = 0.5 * diameter
 
-    trans_radius = np.linspace(1.0e-3, diameter, 1000)
+    trans_radius = np.linspace(1.0e-3, diameter, 1e6)
 
     # Calculate altitude and surface radius
     altitude = (np.pi * trans_radius ** 2) * np.sqrt((rec_radius / trans_radius) ** 2 - 1) / wavelength
 
     # Remove non-physical values, by setting altitude to zero
     L1point = 5.82e7
-    flag_alt_too_high = altitude > L1point # Where altitude is beyond L1
-    flag_alt_too_low = altitude < 50e3 # Where altitude is below 100 km
+    flag_alt_too_high = altitude > L1point  # Where altitude is beyond L1
+    flag_alt_too_low = altitude < 50e3  # Where altitude is below 50 km
     altitude[flag_alt_too_high] = None  # Set values to zero
     altitude[flag_alt_too_low] = None  # Set values to zero
 
@@ -84,11 +84,12 @@ def get_solar_array_size(trans_power):
 
     return solar_array_size
 
+
 def main():
 
     trans_wavelength = 850e-9
-    surf_flux = 30
-    rec_diameter = 1000
+    surf_flux = 400
+    rec_diameter = 250
 
     # wavelength = input('Enter the chosen transmitter wavelength (in m): ')
     # surf_flux = input('Enter the desired flux at the surface (in W/m2): ')
@@ -117,12 +118,4 @@ def main():
     print('Which pairs with a transmitter diameter of {} m.'.format(round(trans_radius[j] * 2.0, 6)))
 
 
-
-
-
-
-
 main()
-
-
-
