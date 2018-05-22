@@ -22,8 +22,8 @@ def scan_apogee_altitude(start, total_duration, scan_array):
     target_lighting = parse_csv_to_array(raw_target_lighting, start)
     eclipse_times = invert_events_list(target_lighting, total_duration)
     for i in range(len(scan_array)):
-        raw_sunlight = "SPS({}k)_Lighting.csv".format(scan_array[i])
-        raw_access = "SPS({}k)_Access.csv".format(scan_array[i])
+        raw_sunlight = "SPS(300,{}k)_Lighting.csv".format(scan_array[i])
+        raw_access = "SPS(300,{}k)_Access.csv".format(scan_array[i])
 
         access_times = parse_csv_to_array(raw_access, start)
         sunlight_times = parse_csv_to_array(raw_sunlight, start)
@@ -32,7 +32,7 @@ def scan_apogee_altitude(start, total_duration, scan_array):
         active_times = get_event_overlaps(sps_access_sunlit_times, eclipse_times)
 
         print('\n')
-        print('Apogee Altitude {}000 km'.format(scan_array[i]))
+        print('Altitude {}000 km'.format(scan_array[i]))
         total_active_time[i] = determine_SPS_active_time(sunlight_times, eclipse_times, access_times)
 
         max_blackout_time[i] = determine_blackout_data(active_times, eclipse_times, total_duration)
@@ -42,11 +42,12 @@ def scan_apogee_altitude(start, total_duration, scan_array):
     plt.figure(1)
     plt.subplot(211)
     plt.plot(scan_array * 1000.0, total_active_time / 3600.0)
-    plt.xlabel('Circular Orbit Altitude [km]')
+    plt.xlabel('Altitude [km]')
     plt.ylabel('Total Active Time [hrs]')
+    plt.title('Circular Orbits')
     plt.subplot(212)
     plt.plot(scan_array * 1000.0, max_blackout_time / 3600.0)
-    plt.xlabel('Circular Orbit Altitude [km]')
+    plt.xlabel('Altitude [km]')
     plt.ylabel('Maximum Blackout Duration [hrs]')
     plt.show()
 
@@ -58,8 +59,9 @@ def main():
     end = convert_string_to_datetime(['2020', '05', '17', '10', '0', '0.0'])
     total_duration = (end - start).total_seconds()
 
-    altitudes = np.asarray([3, 8, 10])
-    scan_apogee_altitude(start, total_duration, altitudes)
+    altitudes = np.asarray([2, 3, 4, 5, 6, 8, 10])
+    apogees = np.array([5, 6, 7, 8, 10, 15, 20])
+    scan_apogee_altitude(start, total_duration, apogees)
     # sps_access_raw = 'SPS(3k)_Access_89.45-222.69.csv'
     # sps_lighting_raw = 'SPS(3k)_Lighting_89.45-222.69.csv'
     # target_lighting_raw = 'Target_Lighting_89.45-222.69.csv'
