@@ -231,7 +231,7 @@ def determine_SPS_active_time(sunlight_sps, eclipse_target, access_times):
     # Calculate total active time for SPS (sum of durations)
     total_sps_time = np.sum(target_eclipse_sps_sunlit_during_access[2])
     print("Filtering out eclipses, total active time: {} hrs".format(round(total_sps_time / 3600.0, 2)))
-    return total_sps_time
+    return target_eclipse_sps_sunlit_during_access
 
 
 def determine_blackout_data(active_times, eclipse_target,  duration):
@@ -247,14 +247,14 @@ def determine_blackout_data(active_times, eclipse_target,  duration):
 
     # Calculate number of eclipses exceeding 84 hours, and the maximum eclipse duration
     dark_durations = np.array(dark_events[2])
-    long_eclipse_flag = (dark_durations / 3600.0) > 6.0
+    long_eclipse_flag = (dark_durations / 3600.0) > 84.0
     num_long_eclipse = np.sum(long_eclipse_flag)
     max_eclipse_duration = round(max([i/3600.0 for i in dark_events[2]]), 2)
     print('Maximum black-out duration with SPS: {} hrs'.format(max_eclipse_duration))
     print("Number of times duration exceeds six hours: {}".format(num_long_eclipse))
     print("\n")
 
-    return max(dark_durations)
+    return dark_events
 
 
 
