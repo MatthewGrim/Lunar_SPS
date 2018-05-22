@@ -24,7 +24,7 @@ def main():
     sps_lighting = parse_csv_to_array(sps_lighting_raw, start)
     target_eclipse = parse_csv_to_array(target_eclipse_raw, start)
 
-    SPS_active_time = determine_SPS_active_time(sps_lighting, target_eclipse, sps_access)
+    sps_active_time = determine_SPS_active_time(sps_lighting, target_eclipse, sps_access)
     sps_sunlit_access = get_event_overlaps(sps_access, sps_lighting)
     active_times = get_event_overlaps(sps_sunlit_access, target_eclipse)
     determine_blackout_data(active_times, target_eclipse, total_duration)
