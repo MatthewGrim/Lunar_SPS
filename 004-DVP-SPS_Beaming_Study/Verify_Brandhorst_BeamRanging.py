@@ -73,40 +73,8 @@ def determine_surface_beam_data(range_data):
 
 def eliminate_event_periods(range_data, event_data):
 
-    j = 0
-    i = 0
-    # while i < len(range_data[0]):
-    #
-    #     if j >= len(event_data[0]) and range_data[0][i] < event_data[1][j]:
-    #         if event_data[0][j] <= range_data[0][i] <= event_data[1][j]:
-    #             range_data[1][i] = 0
-    #             i += 1
-    #             print('i = {}'.format(i))
-    #
-    #         elif range_data[0][i] < event_data[0][j]:
-    #             i += 1
-    #
-    #         print('i = {}'.format(i))
-    #         print(i)
-    #
-    #     elif j >= len(event_data[0]) and range_data[0][i] > event_data[1][j]:
-    #         break
-    #
-    #     elif j < len(event_data[0]):
-    #
-    #         if event_data[0][j] <= range_data[0][i] <= event_data[1][j]:
-    #             range_data[1][i] = 0
-    #             i += 1
-    #             print('i = {}'.format(i))
-    #
-    #         elif range_data[0][i] > event_data[1][j]:
-    #             j += 1
-    #             print('j = {}'.format(j))
-    #         elif range_data[0][i] < event_data[0][j]:
-    #             i += 1
-    #
-    # return range_data
-
+    # Remove range data points which are time stamped during an
+    # conditional event in which the SPS would not be active
     for i in range(0, len(range_data[0])):
         for j in range(0, len(event_data[0])):
             if event_data[0][j] <= range_data[0][i] <= event_data[1][j]:
@@ -134,23 +102,30 @@ def main():
     range_days = range_data[0] / 86400.0
 
     # Brandhorst figures begin on the 414th (7:55 am) day of the simulation, and end on the 416th day (7:55 am)
-    brandhorst_range = range_days[(range_days >= 414.0) & (range_days <= 416.0)]
 
     plt.figure(1)
-    plt.subplot(221)
-    plt.scatter(range_days, range_data[1], s=0.1)
+    plt.subplot(211)
+    plt.scatter(range_days, range_data[1], s=1.0)
+    plt.title('SPS Beaming Range and Surface Flux')
     plt.ylabel('Distance to Target [km]')
-    plt.subplot(222)
-    plt.scatter(range_days, surf_flux, s=0.1)
+    plt.xlim([206, 217])
+    plt.subplot(212)
+    plt.scatter(range_days, surf_flux, s=1.0)
     plt.ylabel('Surface Beam Flux [AM0]')
-    plt.subplot(223)
-    plt.scatter(range_days, percent_rec_covered, s=0.1)
+    plt.xlim([206, 217])
+    plt.xlabel('Days')
+
+    plt.figure(2)
+    plt.subplot(211)
+    plt.scatter(range_days, percent_rec_covered, s=1.0)
     plt.xlabel('Days Since Simulation Start')
     plt.ylabel('Percentage of Receiver Covered')
-    plt.subplot(224)
-    plt.scatter(range_days, power_delivered / 1000.0, s=0.1)
+    plt.xlim([206, 217])
+    plt.subplot(212)
+    plt.scatter(range_days, power_delivered / 1000.0, s=1.0)
     plt.xlabel('Days Since Simulation Start')
     plt.ylabel('Power Delivered at Receiver [kW]')
+    plt.xlim([206, 217])
     plt.show()
 
 
