@@ -94,6 +94,38 @@ def parse_csv_to_array(file_name, sim_start):
     return parsed_data
 
 
+def import_range_data(file_name, sim_start):
+    the_file = open(file_name, "r")
+    size = file_len(file_name)
+    sps_range = np.zeros(size - 1)
+    start_time_sec_from_simstart = np.zeros(size - 1)
+    parsed_data = np.array((3, size))
+
+    # For loop parses data into three categories: start, end and duration of event
+    # This function can be used for target to satellite access times, or target/satellite illumination events
+    # .csv file must be three columns, with start time, end time, duration in that order
+    # The function outputs the start and end times of the event in seconds since the beginning of the simulation
+    for i, line in enumerate(the_file):
+        if i == 0:
+            continue
+        # Split line into table components, assuming comma delimited
+        components = line.split(",")
+        # Break once the final line is reached (which is a blank 'return')
+        if components[0] == '\n':
+            break
+
+        # Work out sunlit times and set new time t
+        start = components[0].split(":")
+        start_time = convert_string_to_datetime(start)
+        start_time_sec_from_simstart[i - 1] = (start_time - sim_start).total_seconds()
+
+        sps_range[i - 1] = components[1]
+
+        parsed_data = [start_time_sec_from_simstart, sps_range]
+
+    return parsed_data
+
+
 def get_event_overlaps(access_times, event_times):
     # This function finds overlap between events and access times between the SPS and the target.
     # "Conditional events" should be times when the SPS would be active, if it can access the target
@@ -247,7 +279,7 @@ def determine_blackout_data(active_times, eclipse_target,  duration):
 
     # Calculate number of eclipses exceeding 84 hours, and the maximum eclipse duration
     dark_durations = np.array(dark_events[2])
-    long_eclipse_flag = (dark_durations / 3600.0) > 84.0
+    long_eclipse_flag = (dark_durations / 3600.0) > 6.0
     num_long_eclipse = np.sum(long_eclipse_flag)
     max_eclipse_duration = round(max([i/3600.0 for i in dark_events[2]]), 2)
     print('Maximum black-out duration with SPS: {} hrs'.format(max_eclipse_duration))
@@ -255,7 +287,3 @@ def determine_blackout_data(active_times, eclipse_target,  duration):
     print("\n")
 
     return dark_events
-
-
-
-
