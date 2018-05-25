@@ -32,7 +32,7 @@ def get_altitude_from_wavelength_surfbeamsize(wave, diameter):
     wavelength = wave
     rec_radius = 0.5 * diameter
 
-    trans_radius = np.linspace(1.0e-3, diameter, 1e6)
+    trans_radius = np.linspace(1.0e-3, diameter, 1e3)
 
     # Calculate altitude and surface radius
     altitude = (np.pi * trans_radius ** 2) * np.sqrt((rec_radius / trans_radius) ** 2 - 1) / wavelength
@@ -73,11 +73,14 @@ def take_closest(array, number):
     return closest
 
 
-def get_solar_array_size(trans_power):
+def get_solar_array_size(trans_power, wavelength):
 
     solar_cell_efficiency = 0.4
     power_management_efficiency = 0.95
-    transmitter_efficiency = 0.7
+    if wavelength < 10e-6:
+        transmitter_efficiency = 0.7
+    else:
+        transmitter_efficiency = 0.85
     solar_flux = 1367
 
     solar_array_size = trans_power / (solar_cell_efficiency * transmitter_efficiency * power_management_efficiency * solar_flux)
@@ -88,8 +91,8 @@ def get_solar_array_size(trans_power):
 def main():
 
     trans_wavelength = 850e-9
-    surf_flux = 400
-    rec_diameter = 250
+    surf_flux = 30
+    rec_diameter = 20
 
     # wavelength = input('Enter the chosen transmitter wavelength (in m): ')
     # surf_flux = input('Enter the desired flux at the surface (in W/m2): ')
@@ -105,8 +108,8 @@ def main():
     # surf_flux = input('Enter the desired flux at the surface (in W/m2): ')
     req_trans_power = get_transpower_from_recieverarea_surfaceflux(surf_flux, rec_diameter)
     print('The minimum required transmitter power (assuming no loss) is {} kW.'.format(round(req_trans_power / 1000.0, 4)))
-    solar_array_size = get_solar_array_size(req_trans_power)
-    print('Which can be gathered with a solar array of size {} m2.'.format(round(solar_array_size, 2)))
+    solar_array_size = get_solar_array_size(req_trans_power, trans_wavelength)
+    print('Which can be gathered with a solar array of size {} m across.'.format(round(np.sqrt(solar_array_size), 2)))
     print('\n')
 
     i = np.nanargmin(altitude)
