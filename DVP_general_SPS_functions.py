@@ -252,18 +252,18 @@ def invert_events_list(active_times, duration):
 def determine_SPS_active_time(sunlight_sps, eclipse_target, access_times):
     # The total active time for solar power satellite is assumed to be the total available access time, minus
     # the times when the satellite is in eclipse, and minus the times that the target is illuminated by the sun.
-    total_availability = np.sum(access_times[2])
-    print("Total possible access time: {} hrs".format(round(total_availability / 3600.0, 2)))
 
-    # Get events which are intersection of SPS access periods, and target eclipsed periods
-    target_eclipse_during_access = get_event_overlaps(access_times, eclipse_target)
+    # Get events which are intersection of SPS access periods, and SPS sunlit periods
+    sps_available = get_event_overlaps(access_times, sunlight_sps)
+    total_availability = np.sum(sps_available[2])
+    print("Total time which SPS is sunlit and in range of target: {} hrs".format(round(total_availability / 3600.0, 2)))
     # Get events which are intersection of previously mentioned events with SPS sunlit periods
-    target_eclipse_sps_sunlit_during_access = get_event_overlaps(target_eclipse_during_access, sunlight_sps)
+    sps_active = get_event_overlaps(sps_available, eclipse_target)
 
     # Calculate total active time for SPS (sum of durations)
-    total_sps_time = np.sum(target_eclipse_sps_sunlit_during_access[2])
-    print("Filtering out eclipses, total active time: {} hrs".format(round(total_sps_time / 3600.0, 2)))
-    return target_eclipse_sps_sunlit_during_access
+    total_sps_time = np.sum(sps_active[2])
+    print("Filtering out periods when target is also sunlit, total SPS active time: {} hrs".format(round(total_sps_time / 3600.0, 2)))
+    return sps_active
 
 
 def determine_blackout_data(active_times, eclipse_target,  duration):
@@ -283,7 +283,20 @@ def determine_blackout_data(active_times, eclipse_target,  duration):
     num_long_eclipse = np.sum(long_eclipse_flag)
     max_eclipse_duration = round(max([i/3600.0 for i in dark_events[2]]), 2)
     print('Maximum black-out duration with SPS: {} hrs'.format(max_eclipse_duration))
-    print("Number of times duration exceeds six hours: {}".format(num_long_eclipse))
+    print('Percent per year spent in black-out with SPS: {}% '.format(round(100.0 * np.sum(dark_durations) / duration, 2)))
+    print("Number of times black-out duration exceeds six hours: {}".format(num_long_eclipse))
     print("\n")
 
     return dark_events
+
+
+def determine_field_of_view(altitude):
+
+    # This function calculates the field of view of an SPS for a given altitude. FOV is calculated
+    # as maximum change in latitude/longitude from directly below the SPS which is in view.
+
+    R_moon = 1737.0
+
+    theta_max = np.cos(R_moon / (R_moon + altitude))
+
+    return theta_max

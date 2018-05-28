@@ -39,7 +39,7 @@ def scan_latitudes(start, total_duration, scan_array):
     ranges = []
     blackout_durations = []
     surf_flux = []
-    power_deliv = []
+
     # Cycle through available target points, as function of latitude
     for i in range(len(scan_array)):
         print("For target at {} degree latitude".format(round(scan_array[i]/10, 2)))
@@ -47,6 +47,8 @@ def scan_latitudes(start, total_duration, scan_array):
         raw_target_lighting = os.path.join(fileDir, "Circle/Target_Lighting_{}.csv".format(scan_array[i]))
         target_lighting = parse_csv_to_array(raw_target_lighting, start)
         target_eclipse = invert_events_list(target_lighting, total_duration)
+        print('Maximum black-out duration w/o SPS: {}'.format(round(max(target_eclipse[2]) / 3600.0, 2)))
+        print('Total time spent in black-out w/o SPS: {}'.format(round(np.sum(target_eclipse[2]) / 3600.0, 2)))
         # Import range data for SPS (time, range to target)
         raw_range = os.path.join(fileDir, "Circle/SPS_Range_{}.csv".format(scan_array[i]))
         sps_range = import_range_data(raw_range, start)
