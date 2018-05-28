@@ -1,23 +1,17 @@
 """
 Author: Darian van Paridon
 Date: 03/05/2018
-This file contains functions which are used to analyze the design space for a
-solar power satellite architecture. The functions output feasible
-solutions for an SPS configuration based on certain desired inputs. The relationship
-between the transmitter and surface beam sizes is based on Gaussian beam divergence.
+
+This script is used to generate feasible design configurations for a solar power satellite.
+
+Inputs: Surface beam size, surface beam power, transmitter wavelength
+
+Outputs: Required transmitter power, compatible altitudes and corresponding transmitter aperture size.
+
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
-
-# Relevant parameters for solar power satellite configuration:
-
-# transmitter wavelength
-# transmitter power
-# transmitter beam size
-# altitude
-# surface beam size
-# surface flux
 
 
 def get_altitude_from_wavelength_surfbeamsize(wave, diameter):
@@ -73,26 +67,24 @@ def take_closest(array, number):
     return closest
 
 
-def get_solar_array_size(trans_power, wavelength):
+def get_solar_array_size(trans_power, transmitter_eff):
 
-    solar_cell_efficiency = 0.4
+    solar_cell_efficiency = 0.45
     power_management_efficiency = 0.95
-    if wavelength < 10e-6:
-        transmitter_efficiency = 0.7
-    else:
-        transmitter_efficiency = 0.85
     solar_flux = 1367
-
-    solar_array_size = trans_power / (solar_cell_efficiency * transmitter_efficiency * power_management_efficiency * solar_flux)
+    solar_array_size = trans_power / (solar_cell_efficiency * transmitter_eff * power_management_efficiency * solar_flux)
 
     return solar_array_size
 
 
 def main():
 
-    trans_wavelength = 850e-9
-    surf_flux = 30
-    rec_diameter = 20
+    # This example calculation describes a 100 kW laser (industrial welding/cutting applications) from IPG (YLS-100000).
+    trans_eff = 100.0 / 290.0
+    trans_wavelength = 1070e-9
+    # This surface beam corresponds to the 100 kW transmitter
+    surf_flux = 200
+    rec_diameter = 25
 
     # wavelength = input('Enter the chosen transmitter wavelength (in m): ')
     # surf_flux = input('Enter the desired flux at the surface (in W/m2): ')
@@ -108,7 +100,7 @@ def main():
     # surf_flux = input('Enter the desired flux at the surface (in W/m2): ')
     req_trans_power = get_transpower_from_recieverarea_surfaceflux(surf_flux, rec_diameter)
     print('The minimum required transmitter power (assuming no loss) is {} kW.'.format(round(req_trans_power / 1000.0, 4)))
-    solar_array_size = get_solar_array_size(req_trans_power, trans_wavelength)
+    solar_array_size = get_solar_array_size(req_trans_power, trans_eff)
     print('Which can be gathered with a solar array of size {} m across.'.format(round(np.sqrt(solar_array_size), 2)))
     print('\n')
 
