@@ -5,6 +5,10 @@ Author: Darian van Paridon
 This script is meant to analyze the beaming capabilities for a single SPS with
 multiple targets which are distributed at various latitudes relative to the orbital plane of the SPS.
 
+The data currently associated with this script are for an elliptic (300 km to 150000 km altitude) and a circular orbit
+(4000 km altitude) in the equitorial plane of the moon. The apogee of the elliptic orbits is directly
+overhead the longitude of the targets.
+
 """
 
 from DVP_general_SPS_functions import *
@@ -41,14 +45,15 @@ def scan_latitudes(start, total_duration, scan_array):
     surf_flux = []
 
     # Cycle through available target points, as function of latitude
+    # Change Circle/ to Eclipse/ and _{} to
     for i in range(len(scan_array)):
         print("For target at {} degree latitude".format(round(scan_array[i]/10, 2)))
         # Import target lighting data, and invert to find eclipse events
         raw_target_lighting = os.path.join(fileDir, "Circle/Target_Lighting_{}.csv".format(scan_array[i]))
         target_lighting = parse_csv_to_array(raw_target_lighting, start)
         target_eclipse = invert_events_list(target_lighting, total_duration)
-        print('Maximum black-out duration w/o SPS: {}'.format(round(max(target_eclipse[2]) / 3600.0, 2)))
-        print('Total time spent in black-out w/o SPS: {}'.format(round(np.sum(target_eclipse[2]) / 3600.0, 2)))
+        print('Maximum black-out duration w/o SPS: {} hrs'.format(round(max(target_eclipse[2]) / 3600.0, 2)))
+        print('Total time spent in black-out w/o SPS: {}% per year'.format(round(100.0 * np.sum(target_eclipse[2]) / (365.0 * 24.0 * 3600.0), 2)))
         # Import range data for SPS (time, range to target)
         raw_range = os.path.join(fileDir, "Circle/SPS_Range_{}.csv".format(scan_array[i]))
         sps_range = import_range_data(raw_range, start)
@@ -93,6 +98,7 @@ def main():
     end = convert_string_to_datetime(['2019', '05', '17', '10', '0', '0.0'])
     total_duration = (end - start).total_seconds()
 
+    # latitude of list of targets (multiplied by ten for processing the file names which don't contain decimals)
     latitudes = np.asarray([0, 125, 250, 375, 500, 625])
     times, ranges, blackouts, surf_flux = scan_latitudes(start, total_duration, latitudes)
 
@@ -115,7 +121,6 @@ def main():
         plt.ylabel('Range [km]')
         plt.title('Elliptical SPS, Multiple Targets')
         plt.xlim([2, 4])
-        # plt.ylim([3000, 5000])
         plt.legend()
         plt.subplot(212)
         plt.plot(times[i] / 86400.0, surf_flux[i], label='{} Degree Latitude'.format(latitudes[i]/10.0))
