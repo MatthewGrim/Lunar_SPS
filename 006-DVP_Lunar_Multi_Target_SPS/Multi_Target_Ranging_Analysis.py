@@ -6,7 +6,7 @@ This script is meant to analyze the beaming capabilities for a single SPS with
 multiple targets which are distributed at various latitudes relative to the orbital plane of the SPS.
 
 The data currently associated with this script are for an elliptic (300 km to 150000 km altitude) and a circular orbit
-(4000 km altitude) in the equitorial plane of the moon. The apogee of the elliptic orbits is directly
+(3000 km altitude) in the equitorial plane of the moon. The apogee of the elliptic orbits is directly
 overhead the longitude of the targets.
 
 """
@@ -120,13 +120,13 @@ def main():
         plt.xlabel("Days")
         plt.ylabel('Range [km]')
         plt.title('Elliptical SPS, Multiple Targets')
-        plt.xlim([2, 4])
+        # plt.xlim([2, 2.5])
         plt.legend()
         plt.subplot(212)
         plt.plot(times[i] / 86400.0, surf_flux[i], label='{} Degree Latitude'.format(latitudes[i]/10.0))
         plt.xlabel("Days")
         plt.ylabel('Surface Beam Flux [W/m2]')
-        plt.xlim([2, 4])
+        # plt.xlim([2, 2.5])
         plt.ylim([0, 500])
         plt.title('Surface Beam Flux (100 kW transmitter)')
         plt.legend()

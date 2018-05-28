@@ -80,11 +80,11 @@ def get_solar_array_size(trans_power, transmitter_eff):
 def main():
 
     # This example calculation describes a 100 kW laser (industrial welding/cutting applications) from IPG (YLS-100000).
-    trans_eff = 100.0 / 290.0
-    trans_wavelength = 1070e-9
+    trans_eff = 0.57
+    trans_wavelength = 850e-9
     # This surface beam corresponds to the 100 kW transmitter
-    surf_flux = 200
-    rec_diameter = 25
+    surf_flux = 30
+    rec_diameter = 1
 
     # wavelength = input('Enter the chosen transmitter wavelength (in m): ')
     # surf_flux = input('Enter the desired flux at the surface (in W/m2): ')

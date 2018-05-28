@@ -33,7 +33,7 @@ def get_altitude_from_wavelength_surfaceflux(wave, surf):
     surf_flux = surf
 
     trans_radius = np.logspace(-3, 0, 1000)
-    trans_power = np.logspace(1, 7, 1000)
+    trans_power = np.logspace(1, 7, 1001)
 
     # Calculate altitude and surface radius
     R, P = np.meshgrid(trans_radius, trans_power, indexing="ij")
@@ -53,7 +53,7 @@ def get_altitude_from_wavelength_surfaceflux(wave, surf):
     # All non-compatible altitudes (greater than L1 distance) are set to nan.
     plt.figure(1)
     plt.subplot(211)
-    plt.contourf(np.log10(trans_radius), np.log10(trans_power), altitude/1000, 100)
+    plt.contourf(np.log10(R), np.log10(P), altitude/1000, 100)
     cbar = plt.colorbar()
     cbar.set_label = 'Altitude [km]'
     plt.ylabel('Logarithm Transmitter Power')
@@ -61,7 +61,7 @@ def get_altitude_from_wavelength_surfaceflux(wave, surf):
     # This plot shows the surface beam diameters associated with the solutions from
     # the previous plot (for altitude of a range of transmitter designs)
     plt.subplot(212)
-    plt.contourf(np.log10(trans_radius), np.log10(trans_power), surf_diameter, 100)
+    plt.contourf(np.log10(R), np.log10(P), surf_diameter, 100)
     cbar = plt.colorbar()
     cbar.set_label = 'Beam Diameter [m]'
     plt.xlabel('Logarithm Transmitter Radius')

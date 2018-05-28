@@ -249,21 +249,131 @@ def invert_events_list(active_times, duration):
     return no_coverage
 
 
+def combine_events(events_1, events_2):
+    """
+    Takes two event dicts containing start and end events and compines them into a single list of events.
+
+    :param events_1: dict of first events
+    :param events_2: dict of second events
+    :return:
+    """
+    assert len(events_1[0]) == len(events_1[1])
+    assert len(events_2[0]) == len(events_2[1])
+    new_start = []
+    new_end = []
+    new_dur = []
+
+    idx_1 = 0
+    idx_2 = 0
+    while idx_1 < len(events_1[0]) and idx_2 < len(events_2[0]):
+        start_1 = events_1[0][idx_1]
+        end_1 = events_1[1][idx_1]
+        start_2 = events_2[0][idx_2]
+        end_2 = events_2[1][idx_2]
+
+        if idx_1 >= len(events_1[0]) and idx_2 < len(events_2[0]):
+            new_start.append(start_2)
+            new_end.append(end_2)
+            new_dur.append(end_2 - start_2)
+
+            idx_2 += 1
+            continue
+        if idx_2 >= len(events_2[0]):
+            new_start.append(start_1)
+            new_end.append(end_1)
+            new_dur.append(end_1 - start_1)
+
+            idx_1 += 1
+            continue
+        if start_1 < end_1 < start_2 < end_2:
+            # First event happens before second event with no overlap
+            new_start.append(start_1)
+            new_end.append(end_1)
+            new_dur.append(end_1 - start_1)
+
+            idx_1 += 1
+        elif start_2 < end_2 < start_1 < end_1:
+            # Second event happens before first event with no overlap
+            new_start.append(start_2)
+            new_end.append(end_2)
+            new_dur.append(end_2 - start_2)
+
+            idx_2 += 1
+        elif start_1 <= start_2 < end_2 <= end_1:
+            # First event contains second event
+            new_start.append(start_1)
+            new_end.append(end_1)
+            new_dur.append(end_1 - start_1)
+
+            idx_1 += 1
+            idx_2 += 1
+        elif start_2 <= start_1 < end_1 <= end_2:
+            # Second event contains first event
+            new_start.append(start_2)
+            new_end.append(end_2)
+            new_dur.append(end_2 - start_2)
+
+            idx_1 += 1
+            idx_2 += 1
+        elif start_1 <= start_2 < end_1 <= end_2:
+            # Events overlap starting at first, and ending in second
+            new_start.append(start_1)
+            new_end.append(end_2)
+            new_dur.append(end_2 - start_1)
+
+            idx_1 += 1
+            idx_2 += 1
+        elif start_2 <= start_1 < end_2 <= end_1:
+            # Events overlap starting at second, and ending in second
+            new_start.append(start_2)
+            new_end.append(end_1)
+            new_dur.append(end_1 - start_2)
+
+            idx_1 += 1
+            idx_2 += 1
+        else:
+            raise RuntimeError("Shouldn't be possible to get here!")
+
+    new_event_list = [new_start, new_end, new_dur]
+    return new_event_list
+
+
 def determine_SPS_active_time(sunlight_sps, eclipse_target, access_times):
     # The total active time for solar power satellite is assumed to be the total available access time, minus
     # the times when the satellite is in eclipse, and minus the times that the target is illuminated by the sun.
-
+    print("\n")
     # Get events which are intersection of SPS access periods, and SPS sunlit periods
     sps_available = get_event_overlaps(access_times, sunlight_sps)
-    total_availability = np.sum(sps_available[2])
-    print("Total time which SPS is sunlit and in range of target: {} hrs".format(round(total_availability / 3600.0, 2)))
     # Get events which are intersection of previously mentioned events with SPS sunlit periods
     sps_active = get_event_overlaps(sps_available, eclipse_target)
-
     # Calculate total active time for SPS (sum of durations)
     total_sps_time = np.sum(sps_active[2])
-    print("Filtering out periods when target is also sunlit, total SPS active time: {} hrs".format(round(total_sps_time / 3600.0, 2)))
+    print("Total time which SPS is sunlit and beaming (active): {} hrs".format(round(total_sps_time / 3600.0, 2)))
+    print("Maximum active event duration: {} hrs".format(round(max(sps_active[2]) / 3600.0, 2)))
     return sps_active
+
+
+def determine_SPS_storedpower_time(sps_eclipse, eclipse_target, sps_access):
+    # The total active time for solar power satellite is assumed to be the total available access time, minus
+    # the times when the satellite is in eclipse, and minus the times that the target is illuminated by the sun.
+    print("\n")
+    # Get events which are intersection of SPS access periods, and SPS eclipse periods
+    sps_available = get_event_overlaps(sps_access, eclipse_target)
+    sps_uses_stored_power = get_event_overlaps(sps_available, sps_eclipse)
+    total_availability = np.sum(sps_uses_stored_power[2])
+    print("Total time which SPS could use stored power: {} hrs".format(round(total_availability / 3600.0, 2)))
+    sps_stored_power = get_event_overlaps(sps_available, sps_eclipse)
+    print("Maximum duration for which stored power would be required: {} hrs".format(round(max(sps_stored_power[2]) / 3600.0, 2)))
+    return sps_available
+
+
+def determine_battery_chargeup_events(sps_sunlit, sps_access, duration):
+
+    # Get times when SPS cannot access target - thus it will not be beaming power
+    sps_no_access = invert_events_list(sps_access, duration)
+    # Get times during this when the SPS is sunlit - thus it can charge a battery
+    charge_events = get_event_overlaps(sps_sunlit, sps_no_access)
+    return charge_events
 
 
 def determine_blackout_data(active_times, eclipse_target,  duration):
@@ -285,7 +395,6 @@ def determine_blackout_data(active_times, eclipse_target,  duration):
     print('Maximum black-out duration with SPS: {} hrs'.format(max_eclipse_duration))
     print('Percent per year spent in black-out with SPS: {}% '.format(round(100.0 * np.sum(dark_durations) / duration, 2)))
     print("Number of times black-out duration exceeds six hours: {}".format(num_long_eclipse))
-    print("\n")
 
     return dark_events
 
