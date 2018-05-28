@@ -21,6 +21,7 @@ def scan_apogee(start, total_duration, scan_array):
     raw_target_lighting = "Target_Lighting.csv"
     target_lighting = parse_csv_to_array(raw_target_lighting, start)
     eclipse_times = invert_events_list(target_lighting, total_duration)
+
     for i in range(len(scan_array)):
         raw_sunlight = "SPS(300,{}k)_Lighting.csv".format(scan_array[i])
         raw_access = "SPS(300,{}k)_Access.csv".format(scan_array[i])
@@ -33,6 +34,8 @@ def scan_apogee(start, total_duration, scan_array):
 
         print('\n')
         print('Altitude {}000 km'.format(scan_array[i]))
+        print('Maximum black-out duration w/o SPS: {}'.format(max(eclipse_times[2])))
+        print('Total time spent in black-out w/o SPS: {}'.format(np.sum(eclipse_times[2])))
         activity = determine_SPS_active_time(sunlight_times, eclipse_times, access_times)
         total_active_time[i] = np.sum(activity[2])
         blacktivity = determine_blackout_data(active_times, eclipse_times, total_duration)
@@ -73,7 +76,9 @@ def scan_altitude(start, total_duration, scan_array):
         active_times = get_event_overlaps(sps_access_sunlit_times, eclipse_times)
 
         print('\n')
-        print('Altitude {}000 km'.format(scan_array[i]*1000))
+        print('Altitude {} km'.format(scan_array[i]*1000))
+        print('Maximum black-out duration w/o SPS: {} hrs'.format(round(max(eclipse_times[2]) / 3600.0, 2)))
+        print('Total time spent in black-out w/o SPS: {}% per year'.format(round(100.0 * np.sum(eclipse_times[2]) / (2.0 * 24.0 * 365.0 * 3600.0), 2)))
         activity = determine_SPS_active_time(sunlight_times, eclipse_times, access_times)
         total_active_time[i] = np.sum(activity[2])
         blacktivity = determine_blackout_data(active_times, eclipse_times, total_duration)
@@ -99,7 +104,7 @@ def main():
     end = convert_string_to_datetime(['2020', '05', '18', '10', '0', '0.0'])
     total_duration = (end - start).total_seconds()
 
-    altitudes = np.asarray([1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8, 9, 10])
+    altitudes = np.asarray([1, 1.5, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.5, 5, 6, 7, 8, 9, 10])
     apogees = np.array([5, 6, 7, 8, 10, 15, 20])
     # scan_apogee(start, total_duration, apogees)
     scan_altitude(start, total_duration, altitudes)
