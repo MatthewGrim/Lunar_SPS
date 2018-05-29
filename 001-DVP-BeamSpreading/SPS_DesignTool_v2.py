@@ -26,7 +26,7 @@ def get_altitude_from_wavelength_surfbeamsize(wave, diameter):
     wavelength = wave
     rec_radius = 0.5 * diameter
 
-    trans_radius = np.linspace(1.0e-3, diameter, 1e3)
+    trans_radius = np.linspace(1.0e-3, diameter, 5e7)
 
     # Calculate altitude and surface radius
     altitude = (np.pi * trans_radius ** 2) * np.sqrt((rec_radius / trans_radius) ** 2 - 1) / wavelength
@@ -80,11 +80,11 @@ def get_solar_array_size(trans_power, transmitter_eff):
 def main():
 
     # This example calculation describes a 100 kW laser (industrial welding/cutting applications) from IPG (YLS-100000).
-    trans_eff = 0.57
+    trans_eff = 100.0 / 290.0
     trans_wavelength = 850e-9
     # This surface beam corresponds to the 100 kW transmitter
-    surf_flux = 30
-    rec_diameter = 1
+    surf_flux = 1000
+    rec_diameter = 1000
 
     # wavelength = input('Enter the chosen transmitter wavelength (in m): ')
     # surf_flux = input('Enter the desired flux at the surface (in W/m2): ')
