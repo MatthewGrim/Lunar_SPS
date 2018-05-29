@@ -246,6 +246,10 @@ def invert_events_list(active_times, duration):
 
     check_sum(active_times, no_coverage, duration)
 
+    dummy_check = get_event_overlaps(active_times, no_coverage)
+    if np.sum(dummy_check[2]) > 60:
+        print('Original and inverted events overlapping!')
+
     return no_coverage
 
 
@@ -335,6 +339,7 @@ def combine_events(events_1, events_2):
             raise RuntimeError("Shouldn't be possible to get here!")
 
     new_event_list = [new_start, new_end, new_dur]
+
     return new_event_list
 
 

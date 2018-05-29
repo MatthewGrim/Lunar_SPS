@@ -1,4 +1,11 @@
+""""
+27/05/2018
+Author: Darian van Paridon
 
+This script takes calculates the active and blackout durations for an SPS configuration, including the
+events when the SPS is eclipsed during an access period. This simulates SPS uses stored power. As a result,
+the script also determines the available charging events (ie. when the SPS is sunlit, but not in range of the target)
+"""
 
 from DVP_general_SPS_functions import *
 
@@ -18,11 +25,13 @@ def main():
     # Import access data for sps
     raw_access = "Access(30k).csv"
     sps_access = parse_csv_to_array(raw_access, start)
+    no_access = invert_events_list(sps_access, total_duration)
 
     # Import target lighting data, and invert to find eclipse events
     raw_target_lighting = "Target1-Lighting-Edited.csv"
     target_lighting = parse_csv_to_array(raw_target_lighting, start)
     target_eclipse = invert_events_list(target_lighting, total_duration)
+
     print("\n")
     print('Maximum black-out duration w/o SPS: {} hrs'.format(round(max(target_eclipse[2]) / 3600.0, 2)))
     print('Total time spent in black-out w/o SPS: {}%'.format(
@@ -30,8 +39,8 @@ def main():
 
     sps_active = determine_SPS_active_time(sps_lighting, target_eclipse, sps_access)
     sps_stored_power = determine_SPS_storedpower_time(sps_eclipse, target_eclipse, sps_access)
-
     all_access_times = combine_events(sps_active, sps_stored_power)
+
     print("\n")
     print("For case where SPS only active while sunlit:")
     determine_blackout_data(sps_active, target_eclipse, total_duration)
@@ -58,5 +67,6 @@ def main():
     plt.ylabel("Charging Event Duration [h]")
     plt.xlabel('Days')
     plt.show()
+
 
 main()

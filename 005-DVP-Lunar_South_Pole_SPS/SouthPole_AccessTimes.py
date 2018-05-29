@@ -129,9 +129,10 @@ def main():
     total_duration = (end - start).total_seconds()
 
     altitudes = np.asarray([1, 1.5, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.5, 5, 6, 7, 8, 9, 10])
-    scan_altitude(start, total_duration, altitudes)
+    # scan_altitude(start, total_duration, altitudes)
 
     apogees = np.array([5, 6, 7, 8, 10, 15, 20])
-    # scan_apogee(start, total_duration, apogees)
+    scan_apogee(start, total_duration, apogees)
+
 
 main()

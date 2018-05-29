@@ -68,6 +68,9 @@ def determine_surface_beam_data(range_data):
     # Determine total power delivered to receiver
     power_delivered = surf_beam_area * surf_flux * solar_cell_eff
 
+    print(max(percent_rec_covered) * 2.0)
+    print(min(percent_rec_covered) * 2.0)
+
     return (surf_flux / solar_flux), percent_rec_covered, power_delivered
 
 
