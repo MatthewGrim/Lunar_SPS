@@ -32,7 +32,7 @@ def get_altitude_from_wavelength_surfbeamsize(wave, diameter):
     altitude = (np.pi * trans_radius ** 2) * np.sqrt((rec_radius / trans_radius) ** 2 - 1) / wavelength
 
     # Remove non-physical values, by setting altitude to zero
-    L1point = 5.82e7
+    L1point = 5.86e7
     flag_alt_too_high = altitude > L1point  # Where altitude is beyond L1
     flag_alt_too_low = altitude < 50e3  # Where altitude is below 50 km
     altitude[flag_alt_too_high] = None  # Set values to zero
@@ -77,14 +77,25 @@ def get_solar_array_size(trans_power, transmitter_eff):
     return solar_array_size
 
 
+def get_steady_state_temperature(solar_array_size, trans_eff, trans_power):
+
+    # Assume that the radiative area for the laser is the solar array.
+    array_emissivity = 0.8
+    waste_heat = trans_power * (1 / trans_eff - 1)
+    Tss = (waste_heat / (solar_array_size * array_emissivity * 5.67e-8)) ** 0.25
+    print("Steady state operating temperature: {} Celsius".format(round(Tss - 273.15, 2)))
+
+    return Tss
+
+
 def main():
 
     # This example calculation describes a 100 kW laser (industrial welding/cutting applications) from IPG (YLS-100000).
     trans_eff = 100.0 / 290.0
     trans_wavelength = 850e-9
     # This surface beam corresponds to the 100 kW transmitter
-    surf_flux = 1000
-    rec_diameter = 1000
+    surf_flux = 100
+    rec_diameter = 100
 
     # wavelength = input('Enter the chosen transmitter wavelength (in m): ')
     # surf_flux = input('Enter the desired flux at the surface (in W/m2): ')
@@ -102,6 +113,7 @@ def main():
     print('The minimum required transmitter power (assuming no loss) is {} kW.'.format(round(req_trans_power / 1000.0, 4)))
     solar_array_size = get_solar_array_size(req_trans_power, trans_eff)
     print('Which can be gathered with a solar array of size {} m across.'.format(round(np.sqrt(solar_array_size), 2)))
+    get_steady_state_temperature(solar_array_size, trans_eff, req_trans_power)
     print('\n')
 
     i = np.nanargmin(altitude)
