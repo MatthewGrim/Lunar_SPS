@@ -369,7 +369,7 @@ def determine_SPS_storedpower_time(sps_eclipse, eclipse_target, sps_access):
     print("Total time which SPS could use stored power: {} hrs".format(round(total_availability / 3600.0, 2)))
     sps_stored_power = get_event_overlaps(sps_available, sps_eclipse)
     print("Maximum duration for which stored power would be required: {} hrs".format(round(max(sps_stored_power[2]) / 3600.0, 2)))
-    return sps_available
+    return sps_stored_power
 
 
 def determine_battery_chargeup_events(sps_sunlit, sps_access, duration):
