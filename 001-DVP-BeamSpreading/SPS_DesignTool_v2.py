@@ -80,12 +80,18 @@ def get_solar_array_size(trans_power, transmitter_eff):
 def get_steady_state_temperature(solar_array_size, trans_eff, trans_power):
 
     # Assume that the radiative area for the laser is the solar array.
+    solar_flux = 1367
+    solar_cell_eff = 0.45
+    solar_heat = solar_flux * (1 - solar_cell_eff) * solar_array_size
     array_emissivity = 0.8
     waste_heat = trans_power * (1 / trans_eff - 1)
-    Tss = (waste_heat / (solar_array_size * array_emissivity * 5.67e-8)) ** 0.25
-    print("Steady state operating temperature: {} Celsius".format(round(Tss - 273.15, 2)))
+    steady_temp = ((waste_heat + solar_heat) / (solar_array_size * array_emissivity * 5.67e-8)) ** 0.25
+    desired_temp = 40
+    cooling_power = (waste_heat + solar_heat - (solar_array_size * array_emissivity * 5.67e-8 * (273+desired_temp) ** 4))
+    print("Steady state operating temperature: {} Celsius".format(round(steady_temp - 273.15, 2)))
+    print('Cooling power required to maintain 30 C temperature: {} kW'.format(round(cooling_power / 1000.0, 2)))
 
-    return Tss
+    return steady_temp
 
 
 def main():
@@ -94,8 +100,8 @@ def main():
     trans_eff = 100.0 / 290.0
     trans_wavelength = 850e-9
     # This surface beam corresponds to the 100 kW transmitter
-    surf_flux = 100
-    rec_diameter = 100
+    surf_flux = 100e3 / (np.pi * 0.5 ** 2)
+    rec_diameter = 1
 
     # wavelength = input('Enter the chosen transmitter wavelength (in m): ')
     # surf_flux = input('Enter the desired flux at the surface (in W/m2): ')

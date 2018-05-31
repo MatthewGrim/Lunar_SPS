@@ -17,7 +17,7 @@ def determine_battery_size(trans_power, duty_cycle, longest_event):
     duration = duty_cycle * longest_event
     battery_capacity = trans_power * duration  # in Watt hours
     battery_size = battery_capacity / li_ion_energy_density
-    print("To power the SPS for {}% of this duration, a {} kg Li-ion battery is required".format(active_percentage*100.0, round(battery_size, 2)))
+    print("To power the SPS for {}% of this duration, a {} kg Li-ion battery is required".format(duty_cycle*100.0, round(battery_size, 2)))
     return battery_size
 
 
@@ -45,7 +45,7 @@ def main():
         round(100.0 * np.sum(target_eclipse[2]) / (2.0 * 3600.0 * 365.0 * 24.0), 2)))
 
     stored_power_events = determine_SPS_storedpower_time(sps_eclipse, target_eclipse, sps_access)
-    duty_cycle = 0.5
+    duty_cycle = 1.0
     trans_power = 100e3
     determine_battery_size(trans_power, duty_cycle, max(stored_power_events[2]) / 3600.0)
     determine_SPS_active_time(sps_lighting, target_eclipse, sps_access)
