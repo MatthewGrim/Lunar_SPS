@@ -1,3 +1,21 @@
-# ignore the ds_store thingy
+# ignore peripheral STK scenario files
+*.sa
+*.sa3
+*.sca
+*.sc3
+*.sn
+*.sn3
+*.t
+*.t3
+*.wsp
+*.wsptb
+*.xml
+
+# ignore compile python scripts
+*.pyc
+
+# ignore data files
+*.csv
+
 /**/.DS_Store
 /**/.idea/
