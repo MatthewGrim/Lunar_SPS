@@ -11,6 +11,9 @@ def convert_string_to_datetime(time_components):
     minute = int(time_components[4])
     seconds = int(float(time_components[5]))
 
+    if seconds == 60:
+        seconds = 59
+
     t = datetime.datetime(year, month, day, hour, minute, seconds)
 
     return t
@@ -124,6 +127,42 @@ def import_range_data(file_name, sim_start):
         parsed_data = [start_time_sec_from_simstart, sps_range]
 
     return parsed_data
+
+
+def import_range_data_statistics(file_name, stk_data_path):
+
+    import re
+
+    the_file = open("{}/{}.txt".format(stk_data_path, file_name), "r")
+    new_file = open("{}/{}_Semi_Parsed.txt".format(stk_data_path, file_name), "w+")
+    mean_range = []
+    max_range = []
+    min_range = []
+
+    # Remove lines which do not contain data, and sort columns
+    # by removing white space
+    for i, line in enumerate(the_file):
+        if line[0] == "M":
+            removed_white_space = re.split('\s{2,}', line.strip())
+            new_file.write("{}\n".format(removed_white_space))
+    the_file.close()
+    new_file.close()
+
+    last_file = open("{}/{}_Semi_Parsed.txt".format(stk_data_path, file_name), "r")
+    # Sort data into minimum maximum and mean arrays
+    for j, new_line in enumerate(last_file):
+        new_line_split = new_line.split(",")
+        if new_line_split[0][2:-1] == "Min Range":
+            min_range.append(float(new_line_split[2][2:-3]))
+        elif new_line_split[0][2:-1] == "Max Range":
+            max_range.append(float(new_line_split[2][2:-3]))
+        elif new_line_split[0][2:-1] == "Mean Range":
+            mean_range.append(float(new_line_split[1][2:-3]))
+    new_file.close()
+
+    range_stats = [min_range, max_range, mean_range]
+
+    return range_stats
 
 
 def get_event_overlaps(access_times, event_times):
