@@ -16,6 +16,7 @@
 
 # ignore data files
 *.csv
+*.txt
 
 /**/.DS_Store
 /**/.idea/
