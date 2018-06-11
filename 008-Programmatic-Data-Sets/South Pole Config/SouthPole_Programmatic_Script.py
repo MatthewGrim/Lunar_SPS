@@ -11,40 +11,11 @@ is the collection of access and lighting times for an SPS in a lunar polar orbit
 
 import numpy as np
 import os
+import time
+from DVP_Programmatic_Functions import *
 
 
-def get_orbital_elements(resolution):
-
-    # This function generates a series of orbital data points, in terms of apogee/perigee which
-    # is then converted into semi major axis/eccentricity for execution in STK
-    print('Getting orbit data set...')
-    radius_moon = 1737.0
-
-    # Limits are set in terms of altitude, radius of moon is added later
-    min_perigee = 0.0
-    max_perigee = 10000.0
-    max_apogee = 55000.0
-    orbit_data = [0.0, 0.0]
-
-    # Get apogee and perigee of orbit
-    for j in range(1, int(max_perigee / resolution) + 1):
-        perigee = min_perigee + j * resolution
-        apogee = perigee
-        while apogee <= max_apogee:
-            orbit_data = np.vstack((orbit_data, [perigee + radius_moon, apogee + radius_moon]))
-            apogee += resolution
-
-    # Convert perigee/apogee pairs into orbital elements
-    eccentricity = np.zeros(len(orbit_data) - 1)
-    semi_maj_axis = np.zeros(len(orbit_data) - 1)
-    for i in range(0, len(orbit_data) - 1):
-        eccentricity[i] = ((orbit_data[i + 1][1] / orbit_data[i + 1][0]) - 1) / (1 + (orbit_data[i + 1][1] / orbit_data[i + 1][0]))
-        semi_maj_axis[i] = orbit_data[i + 1][0] / (1 - eccentricity[i])
-
-    return semi_maj_axis, eccentricity, orbit_data
-
-
-def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, study_name, file_path):
+def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, time_step, study_name, file_path):
 
     # This function takes in the various data points which are going to be passed to STK,
     # and then it writes a series of Connect Commands for autonomously varying the satellite
@@ -52,24 +23,27 @@ def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, study
 
     # New file with this name is generated in the current directory
     print('Writing connect commands....')
+    time_start = time.time()
     with open('CC_{}_OrbitStudy.txt'.format(study_name), 'w') as fh:
         fh.write('ReportCreate */Target/Target1 Type Export Style "Lighting_Times" File '
                  '"{}\DVP_{}_Target_Lighting.csv"\n'.format(file_path, study_name))
         for i in range(len(semi_maj_axis)):
             # Sets new orbit for satellite, varying semi major axis and eccentricity
             fh.write('SetState */Satellite/SPS1 Classical J4Perturbation "17 May 2018 10:00:00.000" "17 May 2020 '
-                     '10:00:00.000" 3600 J2000 "17 May 2018 10:00:00.000" {} {} '
-                     '90 90 0 360\n'.format(semi_maj_axis[i]*1000, eccentricity[i]))
+                     '10:00:00.000" {} J2000 "17 May 2018 10:00:00.000" {} {} '
+                     '90 90 0 360\n'.format(time_step, semi_maj_axis[i]*1000, eccentricity[i]))
             # Connect commands for generating reports require a save location
             # Generates new report of access time to target
             fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Access_Modified" File "{}\DVP_{}_{}perigee{}apogee_access.csv" AccessObject '
                      '*/Target/Target1\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1]))
             # Generates new report of SPS-to-target range statistics during access periods
-            fh.write('ReportCreate */Satellite/SPS1 Type Save Style "Access_Range_Stats" File "{}\DVP_{}_{}perigee{}apogee_range.csv" AccessObject '
+            fh.write('ReportCreate */Satellite/SPS1 Type Save Style "Access_Range_Stats" File "{}\DVP_{}_{}perigee{}apogee_range.txt" AccessObject '
                      '*/Target/Target1\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1]))
             # Generates new report of lighting times
             fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Lighting_Times" File "{}\DVP_{}_{}perigee{}apogee_'
                      'lighting.csv"\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1]))
+    time_end = time.time()
+    print('Time required to write connect commands: {} seconds'.format(time_end - time_start))
 
 
 def run_stk_v2(scenario_path, study_name):
@@ -114,16 +88,70 @@ def run_stk_v2(scenario_path, study_name):
     with open('CC_{}_OrbitStudy.txt'.format(study_name), 'r') as fh:
         commands = fh.readlines()
         size = len(commands)
-    for i in range(len(commands)):
-        # Print progress update
-        print('Progress: {}%'.format(round(i * 100.0 / (size - 1), 2)))
+    loop_start = time.time()
+
+    duration = np.zeros(size)
+    sat_duration = np.zeros(size)
+    acc_duration = np.zeros(size)
+    lit_duration = np.zeros(size)
+    ran_duration = np.zeros(size)
+
+    j = 0
+    for i in range(size):
+        time_start = time.time()
         root.ExecuteCommand(commands[i])
+        time_end = time.time()
+        if i == 0:
+            print('Generating target lighting time report...')
+        else:
+            if j == 0:
+                print('Adjusting Satellite orbit...')
+                j += 1
+                sat_duration[i] = time_end - time_start
+
+            elif j == 1:
+                print('Generating SPS access report...')
+                j += 1
+                acc_duration[i] = time_end - time_start
+
+            elif j == 2:
+                print('Generating SPS range report...')
+                j += 1
+                ran_duration[i] = time_end - time_start
+
+            elif j == 3:
+                print('Generating SPS lighting report...')
+                j = 0
+                lit_duration[i] = time_end - time_start
+        # Print progress update
+        print('Progress: {}%, Execution Time: {} seconds'.format(round(i * 100.0 / (size - 1), 2), round(time_end - time_start, 5)))
+        duration[i] = time_end - time_start
+    loop_end = time.time()
+
+    sat_duration = np.trim_zeros(sat_duration)
+    acc_duration = np.trim_zeros(acc_duration)
+    lit_duration = np.trim_zeros(lit_duration)
+    ran_duration = np.trim_zeros(ran_duration)
+
+    print('Total time to generate data: {} minutes'.format((loop_end - loop_start) / 60.0))
+    print('Average command execution time: {} seconds'.format(np.mean(duration)))
+    print('Adjust satellite: Max = {} seconds, Min = {} seconds, Avg = {} seconds'.format(np.max(sat_duration), np.min(sat_duration), np.mean(sat_duration)))
+    print('Print access: Max = {} seconds, Min = {} seconds, Avg = {} seconds'.format(np.max(acc_duration), np.min(acc_duration), np.mean(acc_duration)))
+    print('Print range: Max = {} seconds, Min = {} seconds, Avg = {} seconds'.format(np.max(ran_duration), np.min(ran_duration), np.mean(ran_duration)))
+    print('Print lighting: Max = {} seconds, Min = {} seconds, Avg = {} seconds'.format(np.max(lit_duration), np.min(lit_duration), np.mean(lit_duration)))
 
 
 def main():
 
     # Set resolution of data points in km
-    resolution = 1000.0
+    # resolution = 10.0
+    min_perigee = 0.0
+    max_perigee = 5000.0
+    max_apogee = 5000.0
+
+    # Set time step size for satellite in STK
+    # Note that this does not set the time step for the scenario. Change this by hand.
+    time_step = 60
 
     # Get pathway to main Lunar_SPS directory
     current_folder = os.getcwd()
@@ -131,13 +159,13 @@ def main():
     main_directory = os.path.dirname(issue_folder)
 
     # Pathway to scenario for this study
-    scenario_path = '{}/STK-Scenarios/Lunar South Pole/Lunar_SouthPole_SPS.sc'.format(main_directory)
+    scenario_path = '{}/STK-Scenarios/PolarOrbit/Lunar_SouthPole_SPS.sc'.format(main_directory)
 
     # Name of study - be descriptive
-    study_name = 'SouthPole_{}kmRes'.format(resolution)
+    study_name = 'SouthPole_IncrementedRes'
 
     # Create folder inside main directory for storing data sets
-    print('Creating new folder to store data...')
+    print('Creating new folder to store reports...')
     stk_data_path = r'{}/STK Data'.format(main_directory)
     if not os.path.exists(stk_data_path):
         os.makedirs(stk_data_path)
@@ -148,10 +176,10 @@ def main():
         os.makedirs(new_path)
 
     # Get set of orbit data, varying apogee and perigee
-    sma, ecc, orbit_data = get_orbital_elements(resolution)
+    sma, ecc, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee)
 
     # Generate connect commands for programmatically running STK simulations
-    generate_stk_connect_commands(sma, ecc, orbit_data, study_name, new_path)
+    generate_stk_connect_commands(sma, ecc, orbit_data, time_step, study_name, new_path)
 
     # Open STK, load scenario, and execute commands to create data set
     run_stk_v2(scenario_path, study_name)

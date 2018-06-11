@@ -132,6 +132,7 @@ def import_range_data(file_name, sim_start):
 def import_range_data_statistics(file_name, stk_data_path):
 
     import re
+    import os
 
     the_file = open("{}/{}.txt".format(stk_data_path, file_name), "r")
     new_file = open("{}/{}_Semi_Parsed.txt".format(stk_data_path, file_name), "w+")
@@ -158,9 +159,11 @@ def import_range_data_statistics(file_name, stk_data_path):
             max_range.append(float(new_line_split[2][2:-3]))
         elif new_line_split[0][2:-1] == "Mean Range":
             mean_range.append(float(new_line_split[1][2:-3]))
-    new_file.close()
+    last_file.close()
 
     range_stats = [min_range, max_range, mean_range]
+
+    os.remove("{}/{}_Semi_Parsed.txt".format(stk_data_path, file_name))
 
     return range_stats
 
@@ -438,7 +441,7 @@ def determine_blackout_data(active_times, eclipse_target,  duration):
     max_eclipse_duration = round(max([i/3600.0 for i in dark_events[2]]), 2)
     print('Maximum black-out duration with SPS: {} hrs'.format(max_eclipse_duration))
     print('Percent per year spent in black-out with SPS: {}% '.format(round(100.0 * np.sum(dark_durations) / duration, 2)))
-    print("Number of times black-out duration exceeds six hours: {}".format(num_long_eclipse))
+    # print("Number of times black-out duration exceeds six hours: {}".format(num_long_eclipse))
 
     return dark_events
 
