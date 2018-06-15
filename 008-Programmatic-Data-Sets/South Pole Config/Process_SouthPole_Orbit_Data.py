@@ -3,7 +3,13 @@
 Author: Darian van Paridon
 
 This script imports and process the data obtained programmatically from STK for evaluating
-the optimal SPS orbit for the polar lunar SPS configuration.
+the optimal SPS orbit for the polar lunar SPS configuration based on feasible pointing and power
+constraints.
+
+There is a section for reading and processing STK data reports, and writing the processed
+data to a file. The following section is for reading the processed data files if they have
+already been written. Comment out one section or the other as necessary.
+
 """
 
 from DVP_general_SPS_functions import *
@@ -30,67 +36,65 @@ def main():
     main_directory = os.path.dirname(issue_folder)
 
     # Name study
-    study_name = 'SouthPole_IncrementedRes'
+    study_name = 'SouthPole_IncrementedRes_Inertial'
 
     # Set file path for data
     stk_data_path = r'{}\STK Data\{}'.format(main_directory, study_name)
-
     ####################################################################################################################
 
-    # PARAMETRIC SCAN
-    ###################################################################################################################
-    # Import report data generated via STK Connect Commands
+    # READ AND PROCESS STK DATA REPORTS
+    ####################################################################################################################
+    # Initialize lists
     total_active_time = []
-    max_active_duration = []
-    mean_link_efficiency = []
-    mean_power_received = []
+    total_blackout_time = []
+    max_active_time = []
+    max_blackout_time = []
     mean_range = []
 
     # Import target illumination events
     target_lighting_raw = '{}\DVP_{}_Target_Lighting.csv'.format(stk_data_path, study_name)
     target_lighting = parse_csv_to_array(target_lighting_raw, start)
+    target_eclipse = invert_events_list(target_lighting, total_duration)
 
     # Cycle through available orbit configurations and calculate active/blackout durations
     # Comment out if reading processed data in from a txt file
-    # for i in range(1, len(orbit_data)):
-    #     print('Progress: {}%'.format(round(100.0 * (i - 1) / (len(orbit_data) - 2), 2)))
-    #     print("Perigee radius: {} km, Apogee radius: {} km".format(orbit_data[i][0], orbit_data[i][1]))
-    #
-    #     # CALCULATING ACTIVE TIMES
-    #     ################################################################################################################
-    #     # Import SPS illumination and access events
-    #     sps_lighting_raw = '{}\DVP_{}_{}perigee{}apogee_lighting.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1])
-    #     sps_lighting = parse_csv_to_array(sps_lighting_raw, start)
-    #     sps_access_raw = '{}\DVP_{}_{}perigee{}apogee_access.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1])
-    #     sps_access = parse_csv_to_array(sps_access_raw, start)
-    #
-    #     # Determine the total and maximum SPS active durations
-    #     sps_active = determine_SPS_active_time(sps_lighting, sps_access, target_lighting)
-    #     total_active_time.append(np.sum(sps_active[2]))
-    #     max_active_duration.append(max(sps_active[2]))
-    #
-    #     # CALCULATING MEAN RANGE
-    #     ################################################################################################################
-    #     # Import SPS range data
-    #     # First entry to sps_range is minimum range for each access event
-    #     # Second entry is maximum range for each access event
-    #     # Third entry is mean range for each access event
-    #     sps_range = import_range_data_statistics('DVP_{}_{}perigee{}apogee_range'.format(study_name, orbit_data[i][0], orbit_data[i][1]), stk_data_path)
-    #     mean_range.append(np.mean(sps_range[2]))
-    #
+    for i in range(1, len(orbit_data)):
+        print('Progress: {}%'.format(round(100.0 * (i - 1) / (len(orbit_data) - 2), 2)))
+        print("Perigee radius: {} km, Apogee radius: {} km".format(orbit_data[i][0], orbit_data[i][1]))
+
+        # Import SPS illumination and access events
+        sps_lighting_raw = '{}\DVP_{}_{}perigee{}apogee_lighting.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1])
+        sps_lighting = parse_csv_to_array(sps_lighting_raw, start)
+        sps_access_raw = '{}\DVP_{}_{}perigee{}apogee_access.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1])
+        sps_access = parse_csv_to_array(sps_access_raw, start)
+
+        # Determine the total and maximum SPS active durations
+        sps_active = determine_SPS_active_time(sps_lighting, target_eclipse, sps_access)
+        total_active_time.append(np.sum(sps_active[2]))
+        max_active_time.append(max(sps_active[2]))
+
+        # Determine the total and maximum target blackout durations
+        target_blackout = determine_blackout_data(sps_active, target_eclipse, total_duration)
+        total_blackout_time.append(np.sum(target_blackout[2]))
+        max_blackout_time.append(max(target_blackout[2]))
+
+        # Determine the mean range
+        sps_range = import_range_data_statistics('DVP_{}_{}perigee{}apogee_range'.format(study_name, orbit_data[i][0], orbit_data[i][1]), stk_data_path)
+        mean_range.append(np.mean(sps_range[2]))
     ####################################################################################################################
 
     # WRITE PROCESSED DATA TO FILE
-    ################################################################################################################
+    ####################################################################################################################
     # Write data to a file so that the file can be read as opposed to importing and processing
     # data every time. This can help speed up debugging/analysis. But first, remove the file
     # if it already exists and create a new one.
 
-    # # TOTAL ACTIVE TIME
-    # write_data_to_file(stk_data_path, study_name, total_active_time, 'TotalActive')
-    # # MEAN RANGE
-    # write_data_to_file(stk_data_path, study_name, mean_range, "MeanRange")
-
+    # TOTAL ACTIVE TIME
+    write_data_to_file(stk_data_path, study_name, total_active_time, 'TotalActive_Inertial_Extended')
+    # TOTAL BLACKOUT TIME
+    write_data_to_file(stk_data_path, study_name, total_blackout_time, 'TotalBlackout_Inertial_Extended')
+    # MEAN RANGE
+    write_data_to_file(stk_data_path, study_name, mean_range, "MeanRange_Inertial_Extended")
     ####################################################################################################################
 
     # READ IN DATA FILES IF THEY EXIST
@@ -98,27 +102,39 @@ def main():
     # Read in saved active time data, if the data is already processed and saved into a txt file
     # Comment this section out if the data is being processed, and the results are not yet written to a txt file
 
-    total_active_time = read_data_from_file(stk_data_path, study_name, "TotalActive")
+    total_active_time = read_data_from_file(stk_data_path, study_name, "TotalActive_Inertial_Extended")
 
-    mean_range = read_data_from_file(stk_data_path, study_name, "MeanRange")
+    total_blackout_time = read_data_from_file(stk_data_path, study_name, "TotalBlackout_Inertial_Extended")
+
+    mean_range = read_data_from_file(stk_data_path, study_name, "MeanRange_Inertial_Extended")
     ####################################################################################################################
 
     # ENFORCING POINTING AND POWER CONSTRAINTS
-    ################################################################################################################
-    # Transmitter parameters
+    ####################################################################################################################
+    # Transmitter parameters - IPG YLS10000 Industrial HP Laser
     wavelength = 1070e-9
-    trans_radius = 0.3
+    trans_radius = 0.1
     trans_power = 100e3
+    trans_mass = 3600.0
+    trans_eff = 0.35
     # Receiver parameters for AMALIA rover receiver
     rec_radius = 0.5
-    rec_efficiency = 0.35
+    rec_efficiency = 0.40
     # Pointing error in radians
     point_error = 1e-6
-    # Minimum power received by rover
-    min_power = 300.0
+    # Minimum power received at target
+    min_power = 100.0
+
+    # Initialize lists
+    mean_link_efficiency = []
+    mean_power_received = []
 
     for j in mean_range:
+
+        # Minimum beam radius as defined by pointing error
         min_beam_radius = rec_radius + (point_error * j * 1000.0)
+
+        # Actual beam radius as defined by Gaussian beam divergence
         surf_beam_radius = trans_radius * np.sqrt(1 + (wavelength * (j * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
 
         # Calculate mean link efficiency
@@ -139,26 +155,32 @@ def main():
         # Get mean power received
         mean_power_received.append(mean_pwr_temp)
 
-    # APPLY CONSTRAINTS TO REMAINING DATA SETS
-    ####################################################################################################################
-
+    # Apply effect of constraints to remaining data set
     for i in range(len(mean_power_received)):
         if math.isnan(mean_power_received[i]):
             total_active_time[i] = np.nan
-
+            total_blackout_time[i] = np.nan
     ####################################################################################################################
 
-    # REORGANIZE DATA FOR PLOTTING
+    # EVALUATE REQUIRED POWER GENERATOR METRICS
     ####################################################################################################################
-
-    active_times_sorted = sort_data_list_with_incremented_resolution_into_array(orbit_data, total_active_time)
-
-    link_efficiency_sorted = sort_data_list_with_incremented_resolution_into_array(orbit_data, mean_link_efficiency)
-
-    power_received_sorted = sort_data_list_with_incremented_resolution_into_array(orbit_data, mean_power_received)
+    # Power generator parameter - Stretched lens array SquareRigger platform
+    generator_eff = 0.4
+    generator_spec_pwr = 300
+    # Power required from generator
+    generator_pwr = trans_power / (generator_eff * trans_eff)
+    # Mass of generator
+    generator_mass = generator_pwr / generator_spec_pwr
+    ####################################################################################################################
 
     # PLOTTING THE ACTIVE TIMES, LINK EFFICIENCIES, AND OBJECTIVES
     ####################################################################################################################
+    # Reorganize the data lists into 2D array
+    active_times_sorted = sort_data_list_with_incremented_resolution_into_array(orbit_data, total_active_time)
+    blackout_times_sorted = sort_data_list_with_incremented_resolution_into_array(orbit_data, total_blackout_time)
+    link_efficiency_sorted = sort_data_list_with_incremented_resolution_into_array(orbit_data, mean_link_efficiency)
+    power_received_sorted = sort_data_list_with_incremented_resolution_into_array(orbit_data, mean_power_received)
+
     # Find unique perigees and apogees tested for plotting
     unique_perigees = [orbit_data[1][0]]
     unique_apogees = [orbit_data[1][1]]
@@ -170,20 +192,61 @@ def main():
             unique_apogees.append(orbit_data[i][1])
 
     # Find orbit which results in highest performance according to objective function
+    # Define weighted objective function
+    weight_active_time = 0.4
+    weight_link_eff = 0.3
+    weight_blackout_time = 0.3
+    # Normalize design variables for objective function evaluation
+    active_times_normalized = active_times_sorted / np.nanmax(active_times_sorted)
+    link_efficiency_normalized = link_efficiency_sorted / np.nanmax(link_efficiency_sorted)
+    blackout_times_normalized = blackout_times_sorted / np.nanmax(blackout_times_sorted)
+    # Calculate objective function
+    objective = np.array([weight_active_time * x + weight_link_eff * y + weight_blackout_time * z
+                          for x, y, z in zip(active_times_normalized,
+                                             link_efficiency_normalized,
+                                             (1 - blackout_times_normalized))])
+
+    # Find best orbit according to weighted objective function
     from numpy import unravel_index
-    best_orbit_idx = unravel_index(np.nanargmax(active_times_sorted), active_times_sorted.shape)
+    best_orbit_idx = unravel_index(np.nanargmax(objective), objective.shape)
     best_perigee = unique_perigees[best_orbit_idx[0]]
     best_apogee = unique_apogees[best_orbit_idx[1]]
+
+    # Display results
+    print('Generator and transmitter combined mass --> {} kg'.format(round(generator_mass + trans_mass, 2)))
     print('Best orbit --> Perigee: {} km, Apogee: {} km'.format(round(best_perigee - r_moon, 2), round(best_apogee - r_moon, 2)))
     print('Total active time --> {} hours, or {}%'.format(round(active_times_sorted[best_orbit_idx] / 3600.0, 2), round(
         100.0 * active_times_sorted[best_orbit_idx]/ total_duration, 2)))
+    print('Total blackout time --> {} hours, or {} %'.format(round(blackout_times_sorted[best_orbit_idx] / 3600.0, 2), round(
+        100.0 * blackout_times_sorted[best_orbit_idx]/ total_duration, 2)))
     print('Link efficiency --> {}%'.format(round(link_efficiency_sorted[best_orbit_idx] * 100.0, 5)))
     print('Power received --> {} W'.format(round(power_received_sorted[best_orbit_idx], 2)))
+    print('Original target eclipse duration --> {} %')
 
-    # Generate figures
+    # Reduce perigee and apogee to altitudes instead of radii
     perigee_altitudes = [i - r_moon for i in unique_perigees]
     apogee_altitudes = [i - r_moon for i in unique_apogees]
-    make_contour_plot(perigee_altitudes, apogee_altitudes, power_received_sorted, "Mean Power Received [W]", 1)
+
+    # Total active time
+    make_contour_plot(perigee_altitudes, apogee_altitudes, active_times_sorted / np.max(active_times_sorted), 'Active', 1)
+    # Total blackout time
+    make_contour_plot(perigee_altitudes, apogee_altitudes, 1 - blackout_times_normalized, 'Blackout', 2)
+    # Link efficiency
+    make_contour_plot(perigee_altitudes, apogee_altitudes, link_efficiency_sorted, 'Link', 3)
+
+    # Weighted objective
+    plt.figure(4)
+    plt.contourf(apogee_altitudes, perigee_altitudes, objective, 500)
+    plt.colorbar()
+    plt.scatter(best_apogee - r_moon, best_perigee - r_moon, marker='x')
+    textstr = 'Mean Power Received: {} W\nActive Time Weighting: {}%\nBlackout Time Weighting {}%\nLink Efficiency Weighting: {}%'\
+        .format(round(power_received_sorted[best_orbit_idx], 2), weight_active_time * 100.0, weight_blackout_time * 100.0, weight_link_eff * 100.0)
+    props = dict(boxstyle='round', facecolor='white', alpha=0.5)
+    plt.text(100, 2950, textstr, fontsize=8, verticalalignment='top', bbox=props)
+    plt.title("Weighted Objective Function")
+    plt.xlabel('Apogee Altitude [km]')
+    plt.ylabel('Perigee Altitude [km]')
+    plt.show()
 
 
 main()

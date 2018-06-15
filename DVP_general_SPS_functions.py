@@ -131,6 +131,13 @@ def import_range_data(file_name, sim_start):
 
 def import_range_data_statistics(file_name, stk_data_path):
 
+    # This function imports range data statistics reports from STK and
+    # returns the data in a tuple.
+
+    # First entry to is minimum range for each access event
+    # Second entry is maximum range for each access event
+    # Third entry is mean range for each access event
+
     import re
     import os
 
@@ -388,22 +395,20 @@ def combine_events(events_1, events_2):
 def determine_SPS_active_time(sunlight_sps, eclipse_target, access_times):
     # The total active time for solar power satellite is assumed to be the total available access time, minus
     # the times when the satellite is in eclipse, and minus the times that the target is illuminated by the sun.
-    print("\n")
     # Get events which are intersection of SPS access periods, and SPS sunlit periods
     sps_available = get_event_overlaps(access_times, sunlight_sps)
     # Get events which are intersection of previously mentioned events with SPS sunlit periods
     sps_active = get_event_overlaps(sps_available, eclipse_target)
     # Calculate total active time for SPS (sum of durations)
     total_sps_time = np.sum(sps_active[2])
-    print("Total time which SPS is sunlit and beaming (active): {} hrs".format(round(total_sps_time / 3600.0, 2)))
-    print("Maximum active event duration: {} hrs".format(round(max(sps_active[2]) / 3600.0, 2)))
+    print("Total SPS active time: {} hrs".format(round(total_sps_time / 3600.0, 2)))
+    # print("Maximum active event duration: {} hrs".format(round(max(sps_active[2]) / 3600.0, 2)))
     return sps_active
 
 
 def determine_SPS_storedpower_time(sps_eclipse, eclipse_target, sps_access):
     # The total active time for solar power satellite is assumed to be the total available access time, minus
     # the times when the satellite is in eclipse, and minus the times that the target is illuminated by the sun.
-    print("\n")
     # Get events which are intersection of SPS access periods, and SPS eclipse periods
     sps_available = get_event_overlaps(sps_access, eclipse_target)
     sps_uses_stored_power = get_event_overlaps(sps_available, sps_eclipse)
@@ -439,8 +444,8 @@ def determine_blackout_data(active_times, eclipse_target,  duration):
     long_eclipse_flag = (dark_durations / 3600.0) > 6.0
     num_long_eclipse = np.sum(long_eclipse_flag)
     max_eclipse_duration = round(max([i/3600.0 for i in dark_events[2]]), 2)
-    print('Maximum black-out duration with SPS: {} hrs'.format(max_eclipse_duration))
-    print('Percent per year spent in black-out with SPS: {}% '.format(round(100.0 * np.sum(dark_durations) / duration, 2)))
+    # print('Maximum black-out duration with SPS: {} hrs'.format(max_eclipse_duration))
+    print('Total target blackout time: {} hrs'.format(round(np.sum(dark_events[2]) / 3600.0, 2)))
     # print("Number of times black-out duration exceeds six hours: {}".format(num_long_eclipse))
 
     return dark_events

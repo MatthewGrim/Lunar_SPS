@@ -9,9 +9,6 @@ is the collection of access and lighting times for an SPS in a lunar polar orbit
 
 """
 
-import numpy as np
-import os
-import time
 from DVP_Programmatic_Functions import *
 
 
@@ -30,7 +27,7 @@ def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, time_
         for i in range(len(semi_maj_axis)):
             # Sets new orbit for satellite, varying semi major axis and eccentricity
             fh.write('SetState */Satellite/SPS1 Classical J4Perturbation "17 May 2018 10:00:00.000" "17 May 2020 '
-                     '10:00:00.000" {} J2000 "17 May 2018 10:00:00.000" {} {} '
+                     '10:00:00.000" {} Inertial "17 May 2018 10:00:00.000" {} {} '
                      '90 90 0 360\n'.format(time_step, semi_maj_axis[i]*1000, eccentricity[i]))
             # Connect commands for generating reports require a save location
             # Generates new report of access time to target
@@ -91,10 +88,6 @@ def run_stk_v2(scenario_path, study_name):
     loop_start = time.time()
 
     duration = np.zeros(size)
-    sat_duration = np.zeros(size)
-    acc_duration = np.zeros(size)
-    lit_duration = np.zeros(size)
-    ran_duration = np.zeros(size)
 
     j = 0
     for i in range(size):
@@ -107,45 +100,30 @@ def run_stk_v2(scenario_path, study_name):
             if j == 0:
                 print('Adjusting Satellite orbit...')
                 j += 1
-                sat_duration[i] = time_end - time_start
 
             elif j == 1:
                 print('Generating SPS access report...')
                 j += 1
-                acc_duration[i] = time_end - time_start
 
             elif j == 2:
                 print('Generating SPS range report...')
                 j += 1
-                ran_duration[i] = time_end - time_start
 
             elif j == 3:
                 print('Generating SPS lighting report...')
                 j = 0
-                lit_duration[i] = time_end - time_start
         # Print progress update
         print('Progress: {}%, Execution Time: {} seconds'.format(round(i * 100.0 / (size - 1), 2), round(time_end - time_start, 5)))
         duration[i] = time_end - time_start
     loop_end = time.time()
 
-    sat_duration = np.trim_zeros(sat_duration)
-    acc_duration = np.trim_zeros(acc_duration)
-    lit_duration = np.trim_zeros(lit_duration)
-    ran_duration = np.trim_zeros(ran_duration)
-
     print('Total time to generate data: {} minutes'.format((loop_end - loop_start) / 60.0))
     print('Average command execution time: {} seconds'.format(np.mean(duration)))
-    print('Adjust satellite: Max = {} seconds, Min = {} seconds, Avg = {} seconds'.format(np.max(sat_duration), np.min(sat_duration), np.mean(sat_duration)))
-    print('Print access: Max = {} seconds, Min = {} seconds, Avg = {} seconds'.format(np.max(acc_duration), np.min(acc_duration), np.mean(acc_duration)))
-    print('Print range: Max = {} seconds, Min = {} seconds, Avg = {} seconds'.format(np.max(ran_duration), np.min(ran_duration), np.mean(ran_duration)))
-    print('Print lighting: Max = {} seconds, Min = {} seconds, Avg = {} seconds'.format(np.max(lit_duration), np.min(lit_duration), np.mean(lit_duration)))
 
 
 def main():
 
     # Set resolution of data points in km
-    # resolution = 10.0
-    min_perigee = 0.0
     max_perigee = 5000.0
     max_apogee = 5000.0
 
@@ -162,7 +140,7 @@ def main():
     scenario_path = '{}/STK-Scenarios/PolarOrbit/Lunar_SouthPole_SPS.sc'.format(main_directory)
 
     # Name of study - be descriptive
-    study_name = 'SouthPole_IncrementedRes'
+    study_name = 'SouthPole_IncrementedRes_Inertial'
 
     # Create folder inside main directory for storing data sets
     print('Creating new folder to store reports...')

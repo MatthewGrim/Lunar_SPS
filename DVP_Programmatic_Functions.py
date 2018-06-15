@@ -22,11 +22,10 @@ def vary_orbital_elements(resolution, min_perigee, max_perigee, max_apogee):
 
     radius_moon = 1737.0
     orbit_data = [0.0, 0.0]
-
     print('Generating orbital elements...')
 
     start_time = time.time()
-    for j in range(1, int((max_perigee - min_perigee) / resolution) + 1):
+    for j in range(0, int((max_perigee - min_perigee) / resolution) + 1):
         perigee = min_perigee + (j * resolution)
         apogee = perigee
         while apogee <= max_apogee:
@@ -91,7 +90,7 @@ def vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee):
 
     start_time = time.time()
     resolution = np.array((10.0, 25.0, 50.0, 100.0))
-    thresholds = np.array((250.0, 500.0, 1000.0))
+    thresholds = np.array((100.0, 250.0, 1000.0))
     orbit_data = [0, 0]
     perigee = 0.0
     while perigee <= max_perigee:
@@ -145,13 +144,13 @@ def sort_data_list_with_incremented_resolution_into_array(orbit_data, data_list)
     data_array = np.zeros((len(unique_perigees), len(unique_apogees)))
 
     resolution = np.array((10.0, 25.0, 50.0, 100.0))
-    thresholds = np.array((250.0, 500.0, 1000.0))
+    thresholds = np.array((100.0, 250.0, 1000.0))
     steps_per_interval = np.array((thresholds[0] / resolution[0],
                                    (thresholds[1] - thresholds[0]) / resolution[1],
                                    (thresholds[2] - thresholds[1]) / resolution[2],
                                    (max_apogee - r_moon - thresholds[2]) / resolution[3]))
 
-    thresholds = np.array((250.0 + r_moon, 500.0 + r_moon, 1000.0 + r_moon))
+    thresholds = np.array((100.0 + r_moon, 250.0 + r_moon, 1000.0 + r_moon))
 
     # Sort data into a arrays for 2D plot
     num_apogees = []
@@ -171,6 +170,7 @@ def sort_data_list_with_incremented_resolution_into_array(orbit_data, data_list)
         j = 0
         while unique_apogees[j] < unique_perigees[k]:
             j += 1
+            data_array[k, j] = np.nan
         start = j
         for j in range(0, num_apogees[k]):
             idx = j + start
