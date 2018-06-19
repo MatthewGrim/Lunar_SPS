@@ -128,7 +128,7 @@ def vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee):
     return semi_maj_axis, eccentricity, orbit_data
 
 
-def sort_data_list_with_incremented_resolution_into_array(orbit_data, data_list):
+def sort_incremented_resolution_data(orbit_data, data_list):
 
     r_moon = 1737.0
     unique_perigees = [orbit_data[1][0]]
@@ -140,41 +140,30 @@ def sort_data_list_with_incremented_resolution_into_array(orbit_data, data_list)
             unique_apogees.append(orbit_data[i][1])
     max_apogee = max(unique_apogees)
 
-    # Initialize arrays for plotting
-    data_array = np.zeros((len(unique_perigees), len(unique_apogees)))
+    data_array = np.zeros([len(unique_perigees), len(unique_apogees)])
 
-    resolution = np.array((10.0, 25.0, 50.0, 100.0))
-    thresholds = np.array((100.0, 250.0, 1000.0))
-    steps_per_interval = np.array((thresholds[0] / resolution[0],
-                                   (thresholds[1] - thresholds[0]) / resolution[1],
-                                   (thresholds[2] - thresholds[1]) / resolution[2],
-                                   (max_apogee - r_moon - thresholds[2]) / resolution[3]))
+    resolution = [10.0, 25.0, 50.0, 100.0]
+    thresholds = [100.0 + r_moon, 250.0 + r_moon, 1000.0 + r_moon]
+    num_apogees = np.zeros([len(unique_perigees)])
 
-    thresholds = np.array((100.0 + r_moon, 250.0 + r_moon, 1000.0 + r_moon))
+    for j in range(len(unique_perigees)):
+        if r_moon < unique_perigees[j] < thresholds[0]:
+            num_apogees[j] = 1 + int((thresholds[0] - unique_perigees[j]) / resolution[0]) + int((thresholds[1] - thresholds[0]) / resolution[1]) + int((thresholds[2] - thresholds[1]) / resolution[2]) + int((max_apogee - thresholds[2]) / resolution[3])
+        elif thresholds[0] <= unique_perigees[j] < thresholds[1]:
+            num_apogees[j] = 1 + int((thresholds[1] - unique_perigees[j]) / resolution[1]) + int((thresholds[2] - thresholds[1]) / resolution[2]) + int((max_apogee - thresholds[2]) / resolution[3])
+        elif thresholds[1] <= unique_perigees[j] < thresholds[2]:
+            num_apogees[j] = 1 + int((thresholds[2] - unique_perigees[j]) / resolution[2]) + int((max_apogee - thresholds[2]) / resolution[3])
+        elif thresholds[2] <= unique_perigees[j]:
+            num_apogees[j] = 1 + int((max_apogee - unique_perigees[j]) / resolution[3])
 
-    # Sort data into a arrays for 2D plot
-    num_apogees = []
-    for k in range(len(unique_perigees)):
-        # Determine how many apogee steps required to reach the max value from current perigee
-        if r_moon <= unique_perigees[k] < thresholds[0]:
-            num_steps = int((thresholds[0] - unique_perigees[k]) / resolution[0]) + int(np.sum(steps_per_interval[1:]))
-        elif thresholds[0] <= unique_perigees[k] < thresholds[1]:
-            num_steps = int((thresholds[1] - unique_perigees[k]) / resolution[1]) + int(np.sum(steps_per_interval[2:]))
-        elif thresholds[1] <= unique_perigees[k] < thresholds[2]:
-            num_steps = int((thresholds[2] - unique_perigees[k]) / resolution[2]) + int(np.sum(steps_per_interval[3:]))
-        elif thresholds[2] <= unique_perigees[k]:
-            num_steps = int((max_apogee - unique_perigees[k]) / resolution[3])
-        # For perigee value (index k), collect data points for corresponding apogees (index j)
-        num_apogees.append(num_steps + 1)
-        # where j starts at the first unique apogee equal to the current perigee (circular orbit)
-        j = 0
-        while unique_apogees[j] < unique_perigees[k]:
-            j += 1
-            data_array[k, j] = np.nan
-        start = j
-        for j in range(0, num_apogees[k]):
-            idx = j + start
-            data_array[k, j + start] = data_list[idx]
+    start = np.zeros([len(unique_perigees)])
+    for j in range(len(unique_perigees)):
+        start[j] = np.sum(num_apogees[0:j])
+        for k in range(int(num_apogees[j])):
+            shift = int(len(unique_apogees) - num_apogees[j])
+            data_array[j, shift + k] = data_list[k + int(start[j])]
+
+    data_array[data_array == 0.0] = np.nan
 
     return data_array
 
@@ -204,7 +193,7 @@ def read_data_from_file(stk_data_path, study_name, data_name):
 
 def make_contour_plot(X, Y, data, title, fig_num):
     plt.figure(fig_num)
-    plt.contourf(Y, X, data, 500)
+    plt.contourf(X, Y, data, 500)
     plt.colorbar()
     plt.title('{}'.format(title))
     plt.xlabel('Apogee Altitude [km]')
