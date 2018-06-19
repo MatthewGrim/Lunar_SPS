@@ -199,3 +199,44 @@ def make_contour_plot(X, Y, data, title, fig_num):
     plt.xlabel('Apogee Altitude [km]')
     plt.ylabel('Perigee Altitude [km]')
     plt.show()
+
+
+import sympy
+from sympy import cos, sin
+
+
+def calculate_orbital_perturbations(semi_maj_axis, eccentricity):
+
+    # Initialize solar system data
+    mass_moon = 7.34767309e22
+    mass_earth = 5.972e24
+    mass_fraction = mass_earth / (mass_earth + mass_moon)
+    seperation_earth_moon = 385000e3
+    G = 6.67384e-11
+
+    # Relevant orbit data in lunar equatorial plane
+    inclination_ep = 90.0
+    arg_perigee_ep = 90.0 * np.pi / 180.0
+    RAAN_ep = 0.0
+
+    mean_motion_earth = np.sqrt(G * (mass_earth + mass_moon) / seperation_earth_moon ** 3)
+
+    # Transform into frame used in Ely paper
+    relative_inclination = 6.8 * np.pi / 180.0
+    RAAN_op = RAAN_ep
+    arg_perigee_op = arg_perigee_ep
+    i = sympy.Symbol('i')
+    inclination_op = sympy.solve(cos(relative_inclination) * cos(i) - sin(relative_inclination) * cos(RAAN_op) * sin(i), i)
+
+    inclination_op = inclination_op[inclination_op > 0]
+
+    # Calculate perturbations
+    arg_perigee_pert = np.zeros(len(semi_maj_axis))
+    eccentricity_pert = np.zeros(len(semi_maj_axis))
+    for j in range(len(eccentricity)):
+        arg_perigee_pert[j] = 3 * (5 * math.cos(inclination_op) ** 2 - 1 + eccentricity[j] ** 2 + 5 * (1 - eccentricity[j] ** 2 - math.cos(inclination_op) ** 2) * math.cos(2 * arg_perigee_op)) * mass_fraction * mean_motion_earth ** 2 / (8 * math.sqrt(1 - eccentricity[j] ** 2) * math.sqrt(G * mass_moon / semi_maj_axis[j] ** 3))
+        eccentricity_pert[j] = 15 * mass_fraction * mean_motion_earth ** 2 * eccentricity[j] * np.sqrt(1 - eccentricity[j] ** 2) * math.sin(inclination_op) ** 2 * math.sin(2 * arg_perigee_op) / (8 * math.sqrt(G * mass_moon / semi_maj_axis[j] ** 3))
+
+    perturbations = [arg_perigee_pert, eccentricity_pert]
+
+    return perturbations

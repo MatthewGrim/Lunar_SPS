@@ -133,24 +133,24 @@ def main():
     ####################################################################################################################
     # Transmitter parameters
     # IPG YLS10000 Industrial HP Laser
+    # wavelength = 1070e-9
+    # trans_radius = 0.25
+    # trans_power = 100e3
+    # trans_mass = 3600.0
+    # trans_eff = 0.35
+    # IPG YLS-CUT
     wavelength = 1070e-9
     trans_radius = 0.25
-    trans_power = 100e3
-    trans_mass = 3600.0
+    trans_power = 15e3
+    trans_mass = 440.0
     trans_eff = 0.35
-    # IPG YLS-CUT
-    # wavelength = 1070e-9
-    # trans_radius = 0.1
-    # trans_power = 15e3
-    # trans_mass = 440.0
-    # trans_eff = 0.35
     # Receiver parameters for AMALIA rover receiver
     rec_radius = 0.5
     rec_efficiency = 0.40
     # Pointing error in radians
     point_error = 1e-6
     # Minimum power received at target
-    min_power = 300.0
+    min_power = 100.0
 
     # Initialize lists
     mean_link_efficiency = []
@@ -238,9 +238,19 @@ def main():
     generator_mass = generator_pwr / generator_spec_pwr
     ####################################################################################################################
 
-    # PLOTTING THE ACTIVE TIMES, LINK EFFICIENCIES, AND OBJECTIVES
+    # ESTIMATE MAGNITUDE OF ORBITAL PERTURBATIONS
     ####################################################################################################################
-    # Reorganize the data lists into 2D array
+    # Orbital perturbations on argument of perigee and eccentricity due to Earth's gravity
+    perturbations = calculate_orbital_perturbations(semi_maj_axis, eccentricity)
+
+    arg_perigee_pert_norm = abs(perturbations[0]) / np.max(abs(perturbations[0]))
+    ecc_pert_norm = perturbations[1] / np.max(perturbations[1])
+    combined_pert = (arg_perigee_pert_norm + ecc_pert_norm) / max(arg_perigee_pert_norm + ecc_pert_norm)
+    ####################################################################################################################
+
+    # PARSING DATA
+    ####################################################################################################################
+    # Reorganize the data lists into 2D arrays
     total_active_times_sorted = sort_incremented_resolution_data(orbit_data, total_active_time)
     total_blackout_times_sorted = sort_incremented_resolution_data(orbit_data, total_blackout_time)
 
@@ -255,6 +265,10 @@ def main():
     power_received_sorted = sort_incremented_resolution_data(orbit_data, mean_power_received)
     total_energy_sorted = sort_incremented_resolution_data(orbit_data, total_energy)
 
+    arg_perigee_pert_sorted = sort_incremented_resolution_data(orbit_data, arg_perigee_pert_norm)
+    eccentricity_pert_sorted = sort_incremented_resolution_data(orbit_data, ecc_pert_norm)
+    combined_pert_sorted = sort_incremented_resolution_data(orbit_data, combined_pert)
+
     # Find unique perigees and apogees tested for plotting
     unique_perigees = [orbit_data[1][0]]
     unique_apogees = [orbit_data[1][1]]
@@ -264,29 +278,39 @@ def main():
             unique_perigees.append(orbit_data[i][0])
         if orbit_data[i][1] > max(unique_apogees):
             unique_apogees.append(orbit_data[i][1])
+    ####################################################################################################################
 
+    # DEFINE AND EVALUATE OBJECTIVE FUNCTION
+    ####################################################################################################################
     # Find orbit which results in highest performance according to objective function
-    # Define weighted objective function
-    weight_active_time = 0.525
-    weight_energy = 0.475
-    weight_blackout_time = 0.0
-    # Normalize design variables for objective function evaluation
+
+    # Define weights for generalized objective function
+    weight_active_time = 0.4
+    weight_energy = 0.2
+    weight_blackout_time = 0.2
+    weight_perturbations = 0.2
+
+    # Normalize design variables for direct comparison in objective function
     active_times_normalized = total_active_times_sorted / np.nanmax(total_active_times_sorted)
     total_energy_normalized = total_energy_sorted / np.nanmax(total_energy_sorted)
     blackout_times_normalized = mean_blackout_times_sorted / np.nanmax(mean_blackout_times_sorted)
-    # Calculate objective function
-    objective = np.array([weight_active_time * x + weight_energy * y + weight_blackout_time * z
-                          for x, y, z in zip(active_times_normalized,
+
+    # Evaluate objective function
+    objective = np.array([weight_active_time * a + weight_energy * b + weight_blackout_time * c + weight_perturbations * d
+                          for a, b, c, d in zip(active_times_normalized,
                                              total_energy_normalized,
-                                             (1 - blackout_times_normalized))])
+                                             (1 - blackout_times_normalized),
+                                             (1 - combined_pert_sorted))])
 
     # Find best orbit according to weighted objective function
     from numpy import unravel_index
     best_orbit_idx = unravel_index(np.nanargmax(objective), objective.shape)
     best_perigee = unique_perigees[best_orbit_idx[0]]
     best_apogee = unique_apogees[best_orbit_idx[1]]
+    ####################################################################################################################
 
-    # Display results
+    # DISPLAY RESULTS
+    ####################################################################################################################
     print('Generator and transmitter combined mass --> {} kg'.format(round(generator_mass + trans_mass, 2)))
     print('Best orbit --> Perigee: {} km, Apogee: {} km'.format(round(best_perigee - r_moon, 2), round(best_apogee - r_moon, 2)))
     print('Total active time --> {} hours, or {}%'.format(round(total_active_times_sorted[best_orbit_idx] / 3600.0, 2), round(
@@ -303,19 +327,17 @@ def main():
     perigee_altitudes = [i - r_moon for i in unique_perigees]
     apogee_altitudes = [i - r_moon for i in unique_apogees]
 
-    # make_contour_plot(perigee_altitudes, apogee_altitudes, [i / total_duration for i in total_energy_sorted], "Average Power [W]", 1)
-    # make_contour_plot(perigee_altitudes, apogee_altitudes, total_energy_sorted, "Total Energy [J]", 2)
-    # make_contour_plot(perigee_altitudes, apogee_altitudes, [i / 3600.0 for i in max_blackout_times_sorted], "Max Blackout Durations [h]", 3)
+    make_contour_plot(perigee_altitudes, apogee_altitudes, 1 - combined_pert_sorted, "Orbital Perturbations Normalized", 1)
 
     # Weighted objective
     plt.figure(4)
     plt.contourf(apogee_altitudes, perigee_altitudes, objective, 500)
     plt.colorbar()
     plt.scatter(best_apogee - r_moon, best_perigee - r_moon, marker='x')
-    textstr = 'Mean Power Received: {} W\nTotal Active Time Weighting: {}%\nMean Blackout Time Weighting {}%\nTotal Energy Weighting: {}%'\
-        .format(round(power_received_sorted[best_orbit_idx], 2), weight_active_time * 100.0, weight_blackout_time * 100.0, weight_energy * 100.0)
+    textstr = 'Mean Power Received: {} W\nTotal Active Time Weighting: {}%\nMean Blackout Time Weighting {}%\nTotal Energy Weighting: {}%\nOrbital Perturbation Weighting: {}%'\
+        .format(round(power_received_sorted[best_orbit_idx], 2), weight_active_time * 100.0, weight_blackout_time * 100.0, weight_energy * 100.0, weight_perturbations * 100.0)
     props = dict(boxstyle='round', facecolor='white', alpha=0.5)
-    plt.text(100, 4000, textstr, fontsize=7, verticalalignment='top', bbox=props)
+    plt.text(100, 3000, textstr, fontsize=7, verticalalignment='top', bbox=props)
     plt.title("Weighted Objective Function")
     plt.xlabel('Apogee Altitude [km]')
     plt.ylabel('Perigee Altitude [km]')
