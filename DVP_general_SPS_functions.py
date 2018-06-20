@@ -102,7 +102,7 @@ def import_range_data(file_name, sim_start):
     size = file_len(file_name)
     sps_range = np.zeros(size - 1)
     start_time_sec_from_simstart = np.zeros(size - 1)
-    parsed_data = np.array((3, size))
+    parsed_data = np.array((2, size))
 
     # For loop parses data into three categories: start, end and duration of event
     # This function can be used for target to satellite access times, or target/satellite illumination events
@@ -118,13 +118,13 @@ def import_range_data(file_name, sim_start):
             break
 
         # Work out sunlit times and set new time t
-        # start = components[0].split(":")
-        # start_time = convert_string_to_datetime(start)
-        # start_time_sec_from_simstart[i - 1] = (start_time - sim_start).total_seconds()
+        start = components[0].split(":")
+        start_time = convert_string_to_datetime(start)
+        start_time_sec_from_simstart[i - 1] = (start_time - sim_start).total_seconds()
 
         sps_range[i - 1] = components[1]
 
-        # parsed_data = [start_time_sec_from_simstart, sps_range]
+        parsed_data = [start_time_sec_from_simstart, sps_range]
 
     return sps_range
 
