@@ -76,6 +76,8 @@ def sort_data_list_into_array(orbit_data, resolution, data_list):
                 idx = int(np.sum(num_apogees) - num_apogees[k] + j + start)
             data_array[k, j + start] = data_list[idx]
 
+    data_array[data_array == 0.0] = np.nan
+
     return data_array
 
 
@@ -238,5 +240,6 @@ def calculate_orbital_perturbations(semi_maj_axis, eccentricity):
         eccentricity_pert[j] = 15 * mass_fraction * mean_motion_earth ** 2 * eccentricity[j] * np.sqrt(1 - eccentricity[j] ** 2) * math.sin(inclination_op) ** 2 * math.sin(2 * arg_perigee_op) / (8 * math.sqrt(G * mass_moon / semi_maj_axis[j] ** 3))
 
     perturbations = [arg_perigee_pert, eccentricity_pert]
+
 
     return perturbations

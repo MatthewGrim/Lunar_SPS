@@ -118,15 +118,15 @@ def import_range_data(file_name, sim_start):
             break
 
         # Work out sunlit times and set new time t
-        start = components[0].split(":")
-        start_time = convert_string_to_datetime(start)
-        start_time_sec_from_simstart[i - 1] = (start_time - sim_start).total_seconds()
+        # start = components[0].split(":")
+        # start_time = convert_string_to_datetime(start)
+        # start_time_sec_from_simstart[i - 1] = (start_time - sim_start).total_seconds()
 
         sps_range[i - 1] = components[1]
 
-        parsed_data = [start_time_sec_from_simstart, sps_range]
+        # parsed_data = [start_time_sec_from_simstart, sps_range]
 
-    return parsed_data
+    return sps_range
 
 
 def import_range_data_statistics(file_name, stk_data_path):
