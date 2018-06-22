@@ -6,15 +6,16 @@ This script contains functions used for the SPS constrained design tool.
 
 """
 
+
 def sps_constraints(rover):
 
-    constraints = {"point_error": 0, "min_active_time": 0, "min_power": 0, "blackout_limit": 0, "max_arg_perigee_skew": 0}
-    active_constraints = {"point_error": 0, "active_time": 0, "power": 0, "blackout": 0, "perigee_skew": 0}
+    constraints = {}
+    active_constraints = {}
 
     # Minimum pointing error of SPS system in radians
     constraints['point_error'] = 1e-6
     # Minimum reduction in overall blackout time in percent
-    constraints['min_active_time'] = 13.0
+    constraints['min_active_time'] = 33.0
     # Minimum power requirement at target in Watts
     constraints['min_power'] = rover['operation_pwr']
     # Maximum time rover can survive without recharging in hours
@@ -34,7 +35,7 @@ def sps_constraints(rover):
 
 def rover_metrics(rover_name):
 
-    rover = {"rec_radius": 0, "rec_efficiency": 0, "operation_pwr": 0, "hibernation_pwr": 0, "battery_capacity": 0}
+    rover = {}
 
     if rover_name == "amalia":
         # Team ITALIA AMALIA (intermediate)
@@ -63,6 +64,29 @@ def rover_metrics(rover_name):
         print('Invalid rover name. Valid names: amalia, sorato, curiosity')
 
     return rover
+
+
+def trans_metrics(selection):
+
+    transmitter = {}
+
+    if selection == 'high power':
+        # IPG YLS10000
+        transmitter['wavelength'] = 1070e-9
+        transmitter['power'] = 100e3
+        transmitter['mass'] = 3600.0
+        transmitter['efficiency'] = 0.35
+
+    elif selection == 'low power':
+        # IPG YLS-CUT
+        transmitter['wavelength'] = 1070e-9
+        transmitter['power'] = 15e3
+        transmitter['mass'] = 440.0
+        transmitter['efficiency'] = 0.35
+    else:
+        print('Select either \high power/ or \low power/')
+
+    return transmitter
 
 
 def enforce_constraints(data_set, data_type, constraints, constraint_name, constraint_type):

@@ -49,27 +49,17 @@ def main():
 
     # SELECT RECEIVER
     ####################################################################################################################
-    rover = rover_metrics('sorato')
+    rover_selection = 'sorato'
+    rover = rover_metrics(rover_selection)
     ####################################################################################################################
 
     # SELECT TRANSMITTER
     ####################################################################################################################
     # Optimize transmitter radius to maximize link efficiency
-    optimum = optimize_link_efficiency()
-
-    # IPG YLS10000 (high power)
-    # wavelength = 1070e-9
-    # trans_radius = optimum.x
-    # trans_power = 100e3
-    # trans_mass = 3600.0
-    # trans_eff = 0.35
-
-    # IPG YLS-CUT (low power)
-    wavelength = 1070e-9
-    trans_radius = optimum.x
-    trans_power = 15e3
-    trans_mass = 440.0
-    trans_eff = 0.35
+    trans_selection = 'high power'
+    optimum = optimize_link_efficiency(trans_selection, rover_selection, semi_maj_axis, eccentricity)
+    transmitter = trans_metrics(trans_selection)
+    transmitter['radius'] = optimum.x
     ####################################################################################################################
 
     # SPECIFY DESIGN CONSTRAINTS
@@ -79,9 +69,7 @@ def main():
 
     # READ IN DATA FILES
     ####################################################################################################################
-    data_set = {"total_active_time": [], 'total_blackout_time': [], 'max_active_time': [],
-                'max_blackout_time': [], 'mean_range': [], 'mean_active_time': [], 'mean_blackout_time': []}
-
+    data_set = {}
     data_set['total_active_time'] = read_data_from_file(stk_data_path, study_name, "TotalActive_Inertial_Extended")
     data_set['total_blackout_time'] = read_data_from_file(stk_data_path, study_name, "TotalBlackout_Inertial_Extended")
     data_set['max_active_time'] = read_data_from_file(stk_data_path, study_name, "MaxActive_Inertial_Extended")
@@ -89,6 +77,8 @@ def main():
     data_set['mean_range'] = read_data_from_file(stk_data_path, study_name, "MeanRange_Inertial_Extended")
     data_set['mean_active_time'] = read_data_from_file(stk_data_path, study_name, "MeanActive_Inertial_Extended")
     data_set['mean_blackout_time'] = read_data_from_file(stk_data_path, study_name, "MeanBlackout_Inertial_Extended")
+    data_set['max_stored_power_time'] = read_data_from_file(stk_data_path, study_name, 'MaxStoredPowerEvent_Inertial_Extended')
+    data_set['total_stored_power_time'] = read_data_from_file(stk_data_path, study_name, 'TotalStoredPowerEvent_Inertial_Extended')
     ####################################################################################################################
 
     # ESTIMATE MAGNITUDE OF ORBITAL PERTURBATIONS
@@ -108,21 +98,27 @@ def main():
         # Minimum beam radius as defined by pointing error
         min_beam_radius = rover['rec_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)
         # Actual beam radius as defined by Gaussian beam divergence
-        surf_beam_radius = trans_radius * np.sqrt(1 + (wavelength * (data_set['mean_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
+        surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2)
         # Calculate link efficiency
-        if surf_beam_radius < min_beam_radius:
-            if active_constraints['point_error'] == 1:
+        # IF constraint is active, remove data points
+        if active_constraints['point_error'] == 1:
+            if surf_beam_radius < min_beam_radius:
                 data_set['mean_link_efficiency'].append(np.nan)
-                data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * trans_power)
-                # apply constraint all other data lists
+                data_set['mean_power_received'].append(np.nan)
+                # Apply constraint all other data lists
                 for j in data_set:
                     data_set[j][i] = np.nan
             else:
-                data_set['mean_link_efficiency'].append(1.0)
-                data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * trans_power)
+                data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius) ** 2)
+                data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
+        # ELSE calculate as normal
         else:
-            data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius) ** 2)
-            data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * trans_power)
+            if surf_beam_radius <= rover['rec_radius']:
+                data_set['mean_link_efficiency'].append(1.0)
+                data_set['mean_power_received'].append(rover['rec_efficiency'] * transmitter['power'])
+            else:
+                data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius) ** 2)
+                data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
     # Calculate total energy delivered to receiver
     data_set['total_energy'] = []
     data_set['total_energy'] = [i * j for i, j in zip(data_set['mean_power_received'], data_set['total_active_time'])]
@@ -148,7 +144,7 @@ def main():
         data_set = enforce_constraints(data_set, 'total_active_time', constraints, 'min_active_time', 'min')
     else:
         pass
-    # Remove data points for which the overall blackout time is not sufficiently reduced
+    # Remove data points for which the estimated skew in argument of perigee is too great
     if active_constraints['max_arg_perigee_skew'] == 1:
         data_set = enforce_constraints(data_set, 'arg_perigee_skew', constraints, 'max_perigee_skew', 'max')
     else:
@@ -158,10 +154,10 @@ def main():
     # EVALUATE REQUIRED POWER GENERATOR METRICS
     ####################################################################################################################
     # Power generator parameters - Stretched lens array SquareRigger platform
-    generator_eff = 0.4
+    generator_eff = 0.3
     generator_spec_pwr = 300
     # Power required from generator
-    generator_pwr = trans_power / trans_eff
+    generator_pwr = transmitter['power'] / transmitter['efficiency']
     # Mass of generator
     generator_mass = generator_pwr / generator_spec_pwr
     ####################################################################################################################
@@ -171,13 +167,13 @@ def main():
     # Heat absorbed by generator
     generator_heat = (1 - generator_eff) * generator_pwr
     # Heat generated by transmitter
-    transmitter_heat = (1 - trans_eff) * trans_power
+    transmitter_heat = (1 - transmitter['efficiency']) * transmitter['power']
     # Total heat in system
     total_heat = transmitter_heat + generator_heat
     # Steady state temperature
     solar_irradiance = 1367.0
-    emissivity = 0.9
-    steady_state_temp = (solar_irradiance * (1 - generator_eff * trans_eff) / (2 * emissivity * 5.67e-8)) ** 0.25
+    emissivity = 0.8
+    steady_state_temp = (solar_irradiance * (1 - generator_eff * transmitter['efficiency']) / (2 * emissivity * 5.67e-8)) ** 0.25
     ####################################################################################################################
 
     # PARSING DATA
@@ -211,40 +207,43 @@ def main():
 
     # ESTIMATE SPS BATTERY MASS
     ####################################################################################################################
-    sps_battery_capacity = trans_power * sorted_data_set['mean_blackout_time'][best_orbit_idx] / 3600.0 * trans_eff
+    sps_battery_capacity = transmitter['power'] * sorted_data_set['max_stored_power_time'][best_orbit_idx] / 3600.0 * transmitter['efficiency']
     lipo_specific_power = 270.0
     sps_battery_mass = sps_battery_capacity / lipo_specific_power
     ####################################################################################################################
 
-    # EVALUATE FLUX AT RECEIVER
+    # EVALUATE FLUX AND HEAT LOAD AT RECEIVER
     ####################################################################################################################
-    surf_beam_radius = trans_radius * np.sqrt(1 + (wavelength * (sorted_data_set['mean_range'][best_orbit_idx] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
-    target_flux = trans_power / (np.pi * surf_beam_radius ** 2)
+    surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (sorted_data_set['mean_range'][best_orbit_idx] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2)
+    target_flux = transmitter['power'] / (np.pi * surf_beam_radius ** 2)
+    target_heat_load = target_flux * (1 - rover['rec_efficiency']) * np.pi * rover['rec_radius'] ** 2
     ####################################################################################################################
 
     # DISPLAY RESULTS
     ####################################################################################################################
     # Print out performance results for optimal orbit
     print('-----------------------------------------------------------------------------------------------------------')
-    print('Combined mass of generator and transmitter --> {} kg'.format(round(generator_mass + trans_mass, 2)))
+    print('Combined mass of generator and transmitter --> {} kg'.format(round(generator_mass + transmitter['mass'], 2)))
     print('Combined heat load of generator and transmitter --> {} kW'.format(round(total_heat / 1000.0, 2)))
     print('Steady state temperature --> {} Celsius'.format(round(steady_state_temp - 273.15, 2)))
     print('-----------------------------------------------------------------------------------------------------------')
     print('Optimal orbit altitudes --> Perigee: {} km, Apogee: {} km'.format(round(best_perigee - r_moon, 2), round(best_apogee - r_moon, 2)))
     print('Estimated argument of perigee slew rate --> {} deg/yr'.format(round(sorted_data_set['arg_perigee_skew'][best_orbit_idx], 2)))
     print('-----------------------------------------------------------------------------------------------------------')
-    print('Total active time (blackout reduction) --> {}%'.format(round(sorted_data_set['total_active_time'][best_orbit_idx], 2)))
+    print('Total active time (blackout reduction) --> {} %'.format(round(sorted_data_set['total_active_time'][best_orbit_idx], 2)))
     print('Total blackout time --> {} %'.format(round(100.0 * sorted_data_set['total_blackout_time'][best_orbit_idx] / total_duration, 2)))
     print('Max active period duration --> {} hours'.format(round(sorted_data_set['max_active_time'][best_orbit_idx] / 3600.0, 2)))
     print('Max blackout period duration --> {} hours'.format(round(sorted_data_set['max_blackout_time'][best_orbit_idx], 2)))
     print('-----------------------------------------------------------------------------------------------------------')
-    print('Mean blackout period duration --> {} hours'.format(round(sorted_data_set['mean_blackout_time'][best_orbit_idx] / 3600.0, 2)))
-    print('Approximate battery mass required to eliminate mean blackout --> {} kg'.format(round(sps_battery_mass, 2)))
+    print('Max event duration during which SPS requires stored power --> {} hours'.format(round(sorted_data_set['max_stored_power_time'][best_orbit_idx] / 3600.0, 2)))
+    print('Approximate battery mass required to eliminate max duration event --> {} kg'.format(round(sps_battery_mass, 2)))
+    print('Total time blackout time which could be eliminated with battery --> {} hours'.format(round(sorted_data_set['total_stored_power_time'][best_orbit_idx] / 3600.0, 2)))
     print('-----------------------------------------------------------------------------------------------------------')
-    print('Link efficiency --> {}%'.format(round(sorted_data_set['mean_link_efficiency'][best_orbit_idx] * 100.0, 5)))
+    print('Mean link efficiency --> {} %'.format(round(sorted_data_set['mean_link_efficiency'][best_orbit_idx] * 100.0, 5)))
     print('Power received per access period --> {} W'.format(round(sorted_data_set['mean_power_received'][best_orbit_idx], 2)))
-    print('Mean flux at receiver --> {} W/m2'.format(round(target_flux, 2)))
     print('Total energy transferred --> {} MJ per year'.format(round(sorted_data_set['total_energy'][best_orbit_idx] / 2e6, 2)))
+    print('Mean flux at receiver --> {} W/m2'.format(round(target_flux, 2)))
+    print('Heat load on receiver --> {} W'.format(round(target_heat_load, 2)))
 
     # Plot weighted objective function
     plt.subplot(221)

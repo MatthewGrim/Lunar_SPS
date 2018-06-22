@@ -257,10 +257,7 @@ def calculate_orbital_perturbations(semi_maj_axis, eccentricity):
             dwdt_oblate[j] = -0.75 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 2 * J2 * (1 - 5 * np.cos(inclination_ep) ** 2)
         else:
             dwdt_oblate[j] = (-0.75 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 2 * J2 * (1 - 5 * np.cos(inclination_ep) ** 2) / (1 - eccentricity[j] ** 2) ** 2) \
-                             # - 1.5 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 3 * (J3 / eccentricity[j] * (1 - eccentricity[j] ** 2) ** 3) * (1.25 * np.sin(inclination_ep) ** 2 - 1) * np.sin(inclination_ep) ** 2
-
-            - 1.5 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 3 * (J3 / eccentricity[j] * (1 - eccentricity[j] ** 2) ** 3) * (np.sin(arg_perigee_ep) / np.sin(inclination_ep)) * ((1.25 * np.sin(inclination_ep) ** 2 - 1) * np.sin(inclination_ep) ** 2 + eccentricity[j] ** 2 * (1 - (35.0 / 4.0) * np.sin(inclination_ep) ** 2 * np.cos(inclination_ep) ** 2))
-                         # - (1.5 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 3 * J3 * (np.sin(arg_perigee_ep) / np.sin(inclination_ep)) * ((1.25 * np.sin(inclination_ep) ** 2 - 1) * sin(inclination_ep) ** 2 + (eccentricity[j] ** 2 * (1 - (35.0 / 4.0) * np.sin(inclination_ep) ** 2 * np.cos(inclination_ep) ** 2))) / eccentricity[j] * (1 - eccentricity[j] ** 2) ** 3)
+            - 1.5 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 3 * (J3 / (eccentricity[j] * (1 - eccentricity[j] ** 2) ** 3)) * (np.sin(arg_perigee_ep) / np.sin(inclination_ep)) * ((1.25 * np.sin(inclination_ep) ** 2 - 1) * np.sin(inclination_ep) ** 2 + eccentricity[j] ** 2 * (1 - (35.0 / 4.0) * np.sin(inclination_ep) ** 2 * np.cos(inclination_ep) ** 2))
 
     # Combine effects of Earth and lunar oblateness
     dwdt_total = [i + j for i, j in zip(dwdt_oblate, dwdt_earth)]
