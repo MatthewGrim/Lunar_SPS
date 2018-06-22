@@ -88,8 +88,6 @@ def vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee):
 
     radius_moon = 1737.0
 
-    print('Generating orbital elements...')
-
     start_time = time.time()
     resolution = np.array((10.0, 25.0, 50.0, 100.0))
     thresholds = np.array((100.0, 250.0, 1000.0))
@@ -124,8 +122,6 @@ def vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee):
         eccentricity[i] = ((orbit_data[i + 1][1] / orbit_data[i + 1][0]) - 1) / (1 + (orbit_data[i + 1][1] / orbit_data[i + 1][0]))
         semi_maj_axis[i] = orbit_data[i + 1][0] / (1 - eccentricity[i])
     end_time = time.time()
-
-    print('Time required to generate {} sets of orbital elements: {} seconds'.format(len(orbit_data), round(end_time - start_time, 5)))
 
     return semi_maj_axis, eccentricity, orbit_data
 
@@ -203,43 +199,73 @@ def make_contour_plot(X, Y, data, title, fig_num):
     plt.show()
 
 
-import sympy
-from sympy import cos, sin
-
-
 def calculate_orbital_perturbations(semi_maj_axis, eccentricity):
+    import sympy
+    from sympy import cos, sin
+
+    semi_maj_axis = semi_maj_axis * 1000.0
 
     # Initialize solar system data
     mass_moon = 7.34767309e22
+    r_moon = 1737e3
+    # Zonal harmonics of moon from GLGM-1 gravitational model
+    J2 = 0.00020374485
+    J3 = 0.0000010262740
     mass_earth = 5.972e24
     mass_fraction = mass_earth / (mass_earth + mass_moon)
     seperation_earth_moon = 385000e3
     G = 6.67384e-11
 
-    # Relevant orbit data in lunar equatorial plane
-    inclination_ep = 90.0
+    # Relevant orbit data in lunar equatorial plane (for south pole SPS)
+    inclination_ep = 90.0 * np.pi / 180.0
     arg_perigee_ep = 90.0 * np.pi / 180.0
     RAAN_ep = 0.0
 
+    # Apparent mean motion of Earth around moon
     mean_motion_earth = np.sqrt(G * (mass_earth + mass_moon) / seperation_earth_moon ** 3)
 
-    # Transform into frame used in Ely paper
+    # Transform into frame used in Ely paper (apparent orbital plane of Earth around moon)
     relative_inclination = 6.8 * np.pi / 180.0
     RAAN_op = RAAN_ep
     arg_perigee_op = arg_perigee_ep
     i = sympy.Symbol('i')
     inclination_op = sympy.solve(cos(relative_inclination) * cos(i) - sin(relative_inclination) * cos(RAAN_op) * sin(i), i)
-
+    # Select positive solution
     inclination_op = inclination_op[inclination_op > 0]
 
-    # Calculate perturbations
-    arg_perigee_pert = np.zeros(len(semi_maj_axis))
-    eccentricity_pert = np.zeros(len(semi_maj_axis))
+    # initialize arrays
+    dwdt_earth = np.zeros(len(semi_maj_axis))
+    dedt_earth = np.zeros(len(semi_maj_axis))
+    dedt_oblate = np.zeros(len(semi_maj_axis))
+    dwdt_oblate = np.zeros(len(semi_maj_axis))
+    didt_oblate = np.zeros(len(semi_maj_axis))
+
+    # Calculate perturbations on initial orbits
     for j in range(len(eccentricity)):
-        arg_perigee_pert[j] = 3 * (5 * math.cos(inclination_op) ** 2 - 1 + eccentricity[j] ** 2 + 5 * (1 - eccentricity[j] ** 2 - math.cos(inclination_op) ** 2) * math.cos(2 * arg_perigee_op)) * mass_fraction * mean_motion_earth ** 2 / (8 * math.sqrt(1 - eccentricity[j] ** 2) * math.sqrt(G * mass_moon / semi_maj_axis[j] ** 3))
-        eccentricity_pert[j] = 15 * mass_fraction * mean_motion_earth ** 2 * eccentricity[j] * np.sqrt(1 - eccentricity[j] ** 2) * math.sin(inclination_op) ** 2 * math.sin(2 * arg_perigee_op) / (8 * math.sqrt(G * mass_moon / semi_maj_axis[j] ** 3))
+        # Due to Earth's gravity
+        dwdt_earth[j] = 3 * (5 * math.cos(inclination_op) ** 2 - 1 + eccentricity[j] ** 2 + 5 * (1 - eccentricity[j] ** 2 - math.cos(inclination_op) ** 2) * math.cos(2 * arg_perigee_op)) * mass_fraction * mean_motion_earth ** 2 / (8 * math.sqrt(1 - eccentricity[j] ** 2) * math.sqrt(G * mass_moon / semi_maj_axis[j] ** 3))
+        dedt_earth[j] = 15 * mass_fraction * mean_motion_earth ** 2 * eccentricity[j] * np.sqrt(1 - eccentricity[j] ** 2) * math.sin(inclination_op) ** 2 * math.sin(2 * arg_perigee_op) / (8 * math.sqrt(G * mass_moon / semi_maj_axis[j] ** 3))
 
-    perturbations = [arg_perigee_pert, eccentricity_pert]
+        # Due to oblateness of moon
+        mean_motion_sat = np.sqrt(G * mass_moon / semi_maj_axis[j] ** 3)
 
+        didt_oblate[j] = - 1.5 * (r_moon / semi_maj_axis[j]) ** 3 * J3 * eccentricity[j] * np.cos(inclination_ep) * np.cos(arg_perigee_ep) * (1.25 * np.sin(inclination_ep) ** 2 - 1) / (1 - eccentricity[j] ** 2) ** 2
+        dedt_oblate[j] = 1.5 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 3 * J3 * np.sin(inclination_ep) * np.cos(arg_perigee_ep) * (np.sin(inclination_ep) ** 2 - 1) / (1 - eccentricity[j] ** 2) ** 2
+
+        # Manage singularity for circular orbits
+        if eccentricity[j] == 0.0:
+            dwdt_oblate[j] = -0.75 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 2 * J2 * (1 - 5 * np.cos(inclination_ep) ** 2)
+        else:
+            dwdt_oblate[j] = (-0.75 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 2 * J2 * (1 - 5 * np.cos(inclination_ep) ** 2) / (1 - eccentricity[j] ** 2) ** 2) \
+                             # - 1.5 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 3 * (J3 / eccentricity[j] * (1 - eccentricity[j] ** 2) ** 3) * (1.25 * np.sin(inclination_ep) ** 2 - 1) * np.sin(inclination_ep) ** 2
+
+            - 1.5 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 3 * (J3 / eccentricity[j] * (1 - eccentricity[j] ** 2) ** 3) * (np.sin(arg_perigee_ep) / np.sin(inclination_ep)) * ((1.25 * np.sin(inclination_ep) ** 2 - 1) * np.sin(inclination_ep) ** 2 + eccentricity[j] ** 2 * (1 - (35.0 / 4.0) * np.sin(inclination_ep) ** 2 * np.cos(inclination_ep) ** 2))
+                         # - (1.5 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 3 * J3 * (np.sin(arg_perigee_ep) / np.sin(inclination_ep)) * ((1.25 * np.sin(inclination_ep) ** 2 - 1) * sin(inclination_ep) ** 2 + (eccentricity[j] ** 2 * (1 - (35.0 / 4.0) * np.sin(inclination_ep) ** 2 * np.cos(inclination_ep) ** 2))) / eccentricity[j] * (1 - eccentricity[j] ** 2) ** 3)
+
+    # Combine effects of Earth and lunar oblateness
+    dwdt_total = [i + j for i, j in zip(dwdt_oblate, dwdt_earth)]
+    dedt_total = [i + j for i, j in zip(dedt_oblate, dedt_earth)]
+
+    perturbations = [dwdt_total, dedt_total, didt_oblate]
 
     return perturbations

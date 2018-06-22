@@ -33,7 +33,7 @@ def check_sum(lighting, eclipse, duration):
     check_sum = (np.sum(lighting[2]) + np.sum(eclipse[2]))
     if abs(check_sum - duration) > 30:
         print('Inverted and original event times do not add to total duration! '
-              '{} hours of total time unaccounted for.'.format(round((duration - check_sum) / 3600.0, 2)))
+              '{} minutes of total time unaccounted for.'.format(round((duration - check_sum) / 60.0, 2)))
 
 
 def check_event_order_consistency(events):
@@ -295,9 +295,9 @@ def invert_events_list(active_times, duration):
 
     check_sum(active_times, no_coverage, duration)
 
-    dummy_check = get_event_overlaps(active_times, no_coverage)
-    if np.sum(dummy_check[2]) > 60:
-        print('Original and inverted events overlapping!')
+    # dummy_check = get_event_overlaps(active_times, no_coverage)
+    # if np.sum(dummy_check[2]) > 60:
+    #     print('Original and inverted events overlapping!')
 
     return no_coverage
 
@@ -411,11 +411,7 @@ def determine_SPS_storedpower_time(sps_eclipse, eclipse_target, sps_access):
     # the times when the satellite is in eclipse, and minus the times that the target is illuminated by the sun.
     # Get events which are intersection of SPS access periods, and SPS eclipse periods
     sps_available = get_event_overlaps(sps_access, eclipse_target)
-    sps_uses_stored_power = get_event_overlaps(sps_available, sps_eclipse)
-    total_availability = np.sum(sps_uses_stored_power[2])
-    print("Total time which SPS could use stored power: {} hrs".format(round(total_availability / 3600.0, 2)))
     sps_stored_power = get_event_overlaps(sps_available, sps_eclipse)
-    print("Maximum duration for which stored power would be required: {} hrs".format(round(max(sps_stored_power[2]) / 3600.0, 2)))
     return sps_stored_power
 
 
