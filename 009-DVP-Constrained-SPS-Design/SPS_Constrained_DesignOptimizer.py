@@ -31,16 +31,16 @@ def calculate_link_eff(trans_radius, args):
     # Set file path for data
     stk_data_path = r'{}\STK Data\{}'.format(main_directory, study_name)
 
-    # Get transmitter metrics
+    # Retrieve transmitter metrics
     transmitter = trans_metrics(args[0])
-    # Get rover/target metrics
+    # Retrieve rover/target metrics
     rover = rover_metrics(args[1])
-    # Orbit data
+    # Retrieve orbit data
     semi_maj_axis = args[2]
     eccentricity = args[3]
-    # Specify constraints
-    constraints, active_constraints = sps_constraints(rover)
-
+    # Retrieve constraints
+    constraints = args[4]
+    active_constraints = args[5]
     ####################################################################################################################
 
     # READ IN DATA FILES
@@ -139,12 +139,11 @@ def calculate_link_eff(trans_radius, args):
     return 1.0 - mean_link_efficiency[best_orbit_idx]
 
 
-def optimize_link_efficiency(trans_selection, rover_selection, semi_maj_axis, eccentricity):
+def optimize_link_efficiency(trans_selection, rover_selection, semi_maj_axis, eccentricity, constraints, active_constraints):
 
     from scipy.optimize import minimize_scalar
 
-    args = [trans_selection, rover_selection, semi_maj_axis, eccentricity]
+    args = [trans_selection, rover_selection, semi_maj_axis, eccentricity, constraints, active_constraints]
     optimum = minimize_scalar(calculate_link_eff, bounds=(0, 0.3345), method='bounded', args=args)
-    print('Transmitter aperture radius: {} cm'.format(round(optimum.x * 100.0, 2)))
 
     return optimum

@@ -7,32 +7,6 @@ This script contains functions used for the SPS constrained design tool.
 """
 
 
-def sps_constraints(rover):
-
-    constraints = {}
-    active_constraints = {}
-
-    # Minimum pointing error of SPS system in radians
-    constraints['point_error'] = 1e-6
-    # Minimum reduction in overall blackout time in percent
-    constraints['min_active_time'] = 33.0
-    # Minimum power requirement at target in Watts
-    constraints['min_power'] = rover['operation_pwr']
-    # Maximum time rover can survive without recharging in hours
-    constraints['max_blackout'] = rover['battery_capacity'] / rover['hibernation_pwr']
-    # Maximum allowable skew in argument of perigee, in degrees per year
-    constraints['max_arg_perigee_skew'] = 113.0
-
-    # Specify which constraints are active
-    active_constraints['point_error'] = 1
-    active_constraints['min_active_time'] = 1
-    active_constraints['min_power'] = 1
-    active_constraints['max_blackout'] = 1
-    active_constraints['max_arg_perigee_skew'] = 0
-
-    return constraints, active_constraints
-
-
 def rover_metrics(rover_name):
 
     rover = {}
@@ -70,19 +44,28 @@ def trans_metrics(selection):
 
     transmitter = {}
 
-    if selection == 'high power':
+    if selection == '100kW':
         # IPG YLS10000
         transmitter['wavelength'] = 1070e-9
         transmitter['power'] = 100e3
         transmitter['mass'] = 3600.0
         transmitter['efficiency'] = 0.35
 
-    elif selection == 'low power':
+    elif selection == '15kW':
         # IPG YLS-CUT
         transmitter['wavelength'] = 1070e-9
         transmitter['power'] = 15e3
         transmitter['mass'] = 440.0
         transmitter['efficiency'] = 0.35
+
+    elif selection == '4kW':
+        # Fujikura
+        # Mass is estimated based on specific power of IPG lasers
+        transmitter['wavelength'] = 1080e-9
+        transmitter['power'] = 4e3
+        transmitter['mass'] = 150.0
+        transmitter['efficiency'] = 0.26
+
     else:
         print('Select either \high power/ or \low power/')
 
