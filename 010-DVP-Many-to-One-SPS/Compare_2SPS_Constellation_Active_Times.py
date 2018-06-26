@@ -53,11 +53,11 @@ def main():
     ####################################################################################################################
     constellation_total_active = []
     for i in range(1, len(true_anomalies)):
-        constellation_active = combine_events_v2(sps_active['0deg'], sps_active['{}deg'.format(true_anomalies[i])])
+        constellation_active = combine_events(sps_active['0deg'], sps_active['{}deg'.format(true_anomalies[i])])
         constellation_total_active.append(np.sum(constellation_active[2]))
     ####################################################################################################################
 
-    plt.plot(true_anomalies[1:], [i / total_duration for i in constellation_total_active])
+    plt.plot(true_anomalies[1:], [100.0 * i / total_duration for i in constellation_total_active])
     plt.xlabel('Relative True Anomaly of Second SPS [deg]')
     plt.ylabel('Total Active Time [%]')
     plt.title("Comparison of Dual-SPS Constellation Performance")

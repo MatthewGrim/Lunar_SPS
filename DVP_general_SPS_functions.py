@@ -295,21 +295,15 @@ def invert_events_list(active_times, duration):
 
     check_sum(active_times, no_coverage, duration)
 
-    # dummy_check = get_event_overlaps(active_times, no_coverage)
-    # if np.sum(dummy_check[2]) > 60:
-    #     print('Original and inverted events overlapping!')
+    dummy_check = get_event_overlaps(active_times, no_coverage)
+    if np.sum(dummy_check[2]) > 60:
+        print('Original and inverted events overlapping!')
 
     return no_coverage
 
 
 def combine_events(events_1, events_2):
-    """
-    Takes two event dicts containing start and end events and compines them into a single list of events.
 
-    :param events_1: dict of first events
-    :param events_2: dict of second events
-    :return:
-    """
     assert len(events_1[0]) == len(events_1[1])
     assert len(events_2[0]) == len(events_2[1])
     new_start = []
@@ -324,6 +318,7 @@ def combine_events(events_1, events_2):
         start_2 = events_2[0][idx_2]
         end_2 = events_2[1][idx_2]
 
+        # If one event list is finished, add element from other list
         if idx_1 >= len(events_1[0]) and idx_2 < len(events_2[0]):
             new_start.append(start_2)
             new_end.append(end_2)
@@ -338,6 +333,8 @@ def combine_events(events_1, events_2):
 
             idx_1 += 1
             continue
+
+        # If there is no overlap, add the first event
         if start_1 < end_1 < start_2 < end_2:
             # First event happens before second event with no overlap
             new_start.append(start_1)
@@ -345,51 +342,80 @@ def combine_events(events_1, events_2):
             new_dur.append(end_1 - start_1)
 
             idx_1 += 1
-        elif start_2 < end_2 < start_1 < end_1:
+            continue
+        if start_2 < end_2 < start_1 < end_1:
             # Second event happens before first event with no overlap
             new_start.append(start_2)
             new_end.append(end_2)
             new_dur.append(end_2 - start_2)
 
             idx_2 += 1
-        elif start_1 <= start_2 < end_2 <= end_1:
-            # First event contains second event
-            new_start.append(start_1)
-            new_end.append(end_1)
-            new_dur.append(end_1 - start_1)
-
-            idx_1 += 1
-            idx_2 += 1
-        elif start_2 <= start_1 < end_1 <= end_2:
-            # Second event contains first event
-            new_start.append(start_2)
-            new_end.append(end_2)
-            new_dur.append(end_2 - start_2)
-
-            idx_1 += 1
-            idx_2 += 1
-        elif start_1 <= start_2 < end_1 <= end_2:
-            # Events overlap starting at first, and ending in second
-            new_start.append(start_1)
-            new_end.append(end_2)
-            new_dur.append(end_2 - start_1)
-
-            idx_1 += 1
-            idx_2 += 1
-        elif start_2 <= start_1 < end_2 <= end_1:
-            # Events overlap starting at second, and ending in second
-            new_start.append(start_2)
-            new_end.append(end_1)
-            new_dur.append(end_1 - start_2)
-
-            idx_1 += 1
-            idx_2 += 1
+            continue
         else:
-            raise RuntimeError("Shouldn't be possible to get here!")
+            # Combine overlapped events recursively
+            if start_1 <= start_2 and end_2 <= end_1:
+                # First event contains second event
+                new_start.append(start_1)
+                new_end.append(end_1)
+                new_dur.append(end_1 - start_1)
+
+                idx_1 += 1
+                idx_2 += 1
+            elif start_2 <= start_1 and end_1 <= end_2:
+                # Second event contains first event
+                new_start.append(start_2)
+                new_end.append(end_2)
+                new_dur.append(end_2 - start_2)
+
+                idx_1 += 1
+                idx_2 += 1
+            elif start_1 <= start_2 and end_1 <= end_2:
+                # Events overlap starting at first, and ending in second
+                new_start.append(start_1)
+                new_end.append(end_2)
+                new_dur.append(end_2 - start_1)
+
+                idx_1 += 1
+                idx_2 += 1
+            elif start_2 <= start_1 and end_2 <= end_1:
+                # Events overlap starting at second, and ending in second
+                new_start.append(start_2)
+                new_end.append(end_1)
+                new_dur.append(end_1 - start_2)
+
+                idx_1 += 1
+                idx_2 += 1
+            else:
+                raise RuntimeError("Shouldn't be possible to get here!")
+
+            # Recursively loop through lists to get new events
+            while idx_1 < len(events_1[0]) and idx_2 < len(events_2[0]):
+                if events_1[0][idx_1] < events_2[0][idx_2]:
+                    first_idx = idx_1
+                    first_list = events_1
+                else:
+                    first_idx = idx_2
+                    first_list = events_2
+
+                first_start_time = first_list[0][first_idx]
+
+                if first_start_time < new_end[-1]:
+                    new_end[-1] = first_list[1][first_idx]
+                    new_dur[-1] = new_end[-1] - new_start[-1]
+
+                    if events_1[0][idx_1] < events_2[0][idx_2]:
+                        idx_1 += 1
+                    else:
+                        idx_2 += 1
+                else:
+                    break
 
     new_event_list = [new_start, new_end, new_dur]
 
+    check_event_order_consistency(new_event_list)
+
     return new_event_list
+
 
 
 def determine_SPS_active_time(sunlight_sps, eclipse_target, access_times):

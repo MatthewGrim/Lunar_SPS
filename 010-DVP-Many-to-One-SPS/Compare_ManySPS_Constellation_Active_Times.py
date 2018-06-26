@@ -55,25 +55,25 @@ def main():
     for i in range(number_of_sps):
         true_anomalies[i] = 0.0 + (i * 360.0 / number_of_sps)
 
-    double_sps = combine_events_v2(sps_active['0deg'], sps_active['180deg'])
+    double_sps = combine_events(sps_active['0deg'], sps_active['180deg'])
 
-    triple_sps = combine_events_v2(sps_active['0deg'], sps_active['120deg'])
-    triple_sps = combine_events_v2(triple_sps, sps_active['240deg'])
+    triple_sps = combine_events(sps_active['0deg'], sps_active['120deg'])
+    triple_sps = combine_events(triple_sps, sps_active['240deg'])
 
-    quad_sps1 = combine_events_v2(sps_active['0deg'], sps_active['90deg'])
-    quad_sps2 = combine_events_v2(sps_active['180deg'], sps_active['270deg'])
-    quad_sps = combine_events_v2(quad_sps1, quad_sps2)
+    quad_sps1 = combine_events(sps_active['0deg'], sps_active['90deg'])
+    quad_sps2 = combine_events(sps_active['180deg'], sps_active['270deg'])
+    quad_sps = combine_events(quad_sps1, quad_sps2)
 
-    quint_sps1 = combine_events_v2(sps_active['0deg'], sps_active['72deg'])
-    quint_sps2 = combine_events_v2(sps_active['144deg'], sps_active['216deg'])
-    quint_sps3 = combine_events_v2(quint_sps1, quint_sps2)
-    quint_sps = combine_events_v2(quint_sps3, sps_active['288deg'])
+    quint_sps1 = combine_events(sps_active['0deg'], sps_active['72deg'])
+    quint_sps2 = combine_events(sps_active['144deg'], sps_active['216deg'])
+    quint_sps3 = combine_events(quint_sps1, quint_sps2)
+    quint_sps = combine_events(quint_sps3, sps_active['288deg'])
 
-    ses_sps1 = combine_events_v2(sps_active['0deg'], sps_active['60deg'])
-    ses_sps2 = combine_events_v2(sps_active['120deg'], sps_active['180deg'])
-    ses_sps3 = combine_events_v2(sps_active['240deg'], sps_active['300deg'])
-    ses_sps4 = combine_events_v2(ses_sps1, ses_sps2)
-    ses_sps = combine_events_v2(ses_sps3, ses_sps4)
+    ses_sps1 = combine_events(sps_active['0deg'], sps_active['60deg'])
+    ses_sps2 = combine_events(sps_active['120deg'], sps_active['180deg'])
+    ses_sps3 = combine_events(sps_active['240deg'], sps_active['300deg'])
+    ses_sps4 = combine_events(ses_sps1, ses_sps2)
+    ses_sps = combine_events(ses_sps3, ses_sps4)
 
     single_sps_blackout = determine_blackout_data(sps_active['0deg'], target_eclipse, total_duration)
     double_sps_blackout = determine_blackout_data(double_sps, target_eclipse, total_duration)
