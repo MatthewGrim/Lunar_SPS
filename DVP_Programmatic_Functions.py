@@ -22,9 +22,7 @@ def vary_orbital_elements(resolution, min_perigee, max_perigee, max_apogee):
 
     radius_moon = 1737.0
     orbit_data = [0.0, 0.0]
-    print('Generating orbital elements...')
 
-    start_time = time.time()
     for j in range(0, int((max_perigee - min_perigee) / resolution) + 1):
         perigee = min_perigee + (j * resolution)
         apogee = perigee
@@ -37,9 +35,6 @@ def vary_orbital_elements(resolution, min_perigee, max_perigee, max_apogee):
     for i in range(0, len(orbit_data) - 1):
         eccentricity[i] = ((orbit_data[i + 1][1] / orbit_data[i + 1][0]) - 1) / (1 + (orbit_data[i + 1][1] / orbit_data[i + 1][0]))
         semi_maj_axis[i] = orbit_data[i + 1][0] / (1 - eccentricity[i])
-    end_time = time.time()
-
-    print('Time required to generate {} sets of orbital elements: {} seconds'.format(len(orbit_data), round(end_time - start_time, 5)))
 
     return semi_maj_axis, eccentricity, orbit_data
 
@@ -62,7 +57,7 @@ def sort_data_list_into_array(orbit_data, resolution, data_list):
     num_apogees = list()
     for k in range(len(unique_perigees)):
         # Determine how many apogee steps required to reach the max value.
-        num_apogees.append(int(math.floor((max_apogee - unique_perigees[k]) / resolution)))
+        num_apogees.append(int((max_apogee - unique_perigees[k]) / resolution))
         # For perigee value (index k), collect data points for corresponding apogees (index j)
         # where j starts at the first unique apogee equal to the current perigee
         j = 0
@@ -199,7 +194,7 @@ def make_contour_plot(X, Y, data, title, fig_num):
     plt.show()
 
 
-def calculate_orbital_perturbations(semi_maj_axis, eccentricity):
+def calculate_orbital_perturbations(semi_maj_axis, eccentricity, study_name):
     import sympy
     from sympy import cos, sin
 
@@ -216,8 +211,11 @@ def calculate_orbital_perturbations(semi_maj_axis, eccentricity):
     seperation_earth_moon = 385000e3
     G = 6.67384e-11
 
-    # Relevant orbit data in lunar equatorial plane (for south pole SPS)
-    inclination_ep = 90.0 * np.pi / 180.0
+    # Relevant orbit data in lunar equatorial plane
+    if study_name == 'Brandhorst_1000.0kmRes':
+        inclination_ep = 0.0 * np.pi / 180.0
+    elif study_name == 'SouthPole_IncrementedRes_Inertial':
+        inclination_ep = 90.0 * np.pi / 180.0
     arg_perigee_ep = 90.0 * np.pi / 180.0
     RAAN_ep = 0.0
 
@@ -255,6 +253,8 @@ def calculate_orbital_perturbations(semi_maj_axis, eccentricity):
         # Manage singularity for circular orbits
         if eccentricity[j] == 0.0:
             dwdt_oblate[j] = -0.75 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 2 * J2 * (1 - 5 * np.cos(inclination_ep) ** 2)
+        elif inclination_ep == 0.0:
+            dwdt_oblate[j] = 0.0
         else:
             dwdt_oblate[j] = (-0.75 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 2 * J2 * (1 - 5 * np.cos(inclination_ep) ** 2) / (1 - eccentricity[j] ** 2) ** 2) \
             - 1.5 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 3 * (J3 / (eccentricity[j] * (1 - eccentricity[j] ** 2) ** 3)) * (np.sin(arg_perigee_ep) / np.sin(inclination_ep)) * ((1.25 * np.sin(inclination_ep) ** 2 - 1) * np.sin(inclination_ep) ** 2 + eccentricity[j] ** 2 * (1 - (35.0 / 4.0) * np.sin(inclination_ep) ** 2 * np.cos(inclination_ep) ** 2))

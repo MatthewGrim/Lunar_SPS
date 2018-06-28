@@ -126,7 +126,7 @@ def import_range_data(file_name, sim_start):
 
         parsed_data = [start_time_sec_from_simstart, sps_range]
 
-    return sps_range
+    return parsed_data
 
 
 def import_range_data_statistics(file_name, stk_data_path):
