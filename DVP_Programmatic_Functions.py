@@ -266,3 +266,55 @@ def calculate_orbital_perturbations(semi_maj_axis, eccentricity):
     perturbations = [dwdt_total, dedt_total, didt_oblate]
 
     return perturbations
+
+
+def determine_constellation_size(eccentricity):
+
+    from DVP_general_SPS_functions import convert_string_to_datetime, parse_csv_to_array, invert_events_list
+    import sympy
+    from sympy import cos
+    import numpy as np
+
+    # Initialization
+    start = convert_string_to_datetime(['2018', '05', '17', '10', '0', '0.0'])
+    end = convert_string_to_datetime(['2020', '05', '17', '10', '0', '0.0'])
+    total_duration = (end - start).total_seconds()
+
+    # Get pathway to main Lunar_SPS directory
+    current_folder = os.getcwd()
+    issue_folder = os.path.dirname(current_folder)
+    main_directory = os.path.dirname(issue_folder)
+
+    # Name study
+    study_name = 'SouthPole_IncrementedRes_Inertial'
+
+    # Set file path for data
+    stk_data_path = r'{}\STK Data\{}'.format(main_directory, study_name)
+
+    # Read in total active times
+    total_active_time = read_data_from_file(stk_data_path, study_name, "TotalActive_Inertial_Extended")
+    # Import target illumination events
+    target_lighting_raw = '{}\DVP_{}_Target_Lighting.csv'.format(stk_data_path, study_name)
+    target_lighting = parse_csv_to_array(target_lighting_raw, start)
+    target_eclipse = invert_events_list(target_lighting, total_duration)
+    total_target_eclipse = np.sum(target_eclipse[2])
+
+    # Calculate SPS constellation size required
+    number_of_sps = [int(math.ceil(total_target_eclipse / i)) for i in total_active_time]
+
+    # Calculate distribution of SPS in true anomaly
+    unique_num_sps = range(2, max(number_of_sps) + 1)
+
+    mean_anomalies = {}
+    for i in unique_num_sps:
+        mean_anomalies['{}sps'.format(i)] = []
+        for j in range(1, i):
+            true_anomaly = j * (2 * np.pi / i)
+            E = sympy.Symbol('E')
+            if j <= (i / 2):
+                eccentric_anomaly = float(min(sympy.solve(cos(true_anomaly) - (cos(E) - eccentricity[i])/(1 - eccentricity[i] * cos(E)), E)))
+            elif j > (i / 2):
+                eccentric_anomaly = float(max(sympy.solve(cos(true_anomaly) - (cos(E) - eccentricity[i])/(1 - eccentricity[i] * cos(E)), E)))
+            mean_anomalies['{}sps'.format(i)].append(round((180.0 / np.pi) * eccentric_anomaly - eccentricity[i] * np.sin(eccentric_anomaly), 4))
+
+    return number_of_sps, mean_anomalies
