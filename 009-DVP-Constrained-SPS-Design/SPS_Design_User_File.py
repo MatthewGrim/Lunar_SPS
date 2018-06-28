@@ -2,7 +2,7 @@
 25/06/2018
 Author: Darian van Paridon
 
-This script serves for simple user interaction with the SPS constrained design tool.
+This script serves for simplified user interaction with the SPS constrained design tool.
 
 """
 
@@ -12,13 +12,16 @@ from SPS_Constrained_DesignFunctions import rover_metrics
 
 def main():
 
-    # SELECT TRANSMITTER
+    # INITIALIZATION
     ####################################################################################################################
-    transmitter_selection = '4kW'
-    ####################################################################################################################
+    # Select scenario/configuration
+    # study_name = 'SouthPole_IncrementedRes_Inertial'
+    study_name = 'Brandhorst_1000.0kmRes'
 
-    # SELECT RECEIVER
-    ####################################################################################################################
+    # Select transmitter
+    transmitter_selection = '100kW'
+
+    # Select receiver
     rover_selection = 'sorato'
     ####################################################################################################################
 
@@ -32,9 +35,10 @@ def main():
     rover = rover_metrics(rover_selection)
 
     # Minimum pointing error of SPS system in radians
+    constraints['point_error'] = 4.0325e-7
     constraints['point_error'] = 1e-6
     # Minimum reduction in overall blackout time in percent
-    constraints['min_active_time'] = 0.0
+    constraints['min_active_time'] = 22.0
     # Minimum power requirement at target in Watts
     constraints['min_power'] = rover['operation_pwr']
     # Maximum time rover can survive without recharging in hours
@@ -46,12 +50,12 @@ def main():
     # 1 = active, anything else = inactive
     active_constraints['point_error'] = 1
     active_constraints['min_active_time'] = 0
-    active_constraints['min_power'] = 1
-    active_constraints['max_blackout'] = 1
+    active_constraints['min_power'] = 0
+    active_constraints['max_blackout'] = 0
     active_constraints['max_arg_perigee_skew'] = 0
     ####################################################################################################################
 
-    generate_design_space(rover_selection, transmitter_selection, constraints, active_constraints)
+    generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints)
 
 
 main()

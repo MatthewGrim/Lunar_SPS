@@ -17,37 +17,30 @@ def calculate_link_eff(trans_radius, args):
 
     # INITIALIZATION
     ####################################################################################################################
-    start = convert_string_to_datetime(['2018', '05', '17', '10', '0', '0.0'])
-    end = convert_string_to_datetime(['2020', '05', '17', '10', '0', '0.0'])
-    total_duration = (end - start).total_seconds()
-
     # Get pathway to main Lunar_SPS directory
     current_folder = os.getcwd()
     main_directory = os.path.dirname(current_folder)
-
-    # Name study
-    study_name = 'SouthPole_IncrementedRes_Inertial'
-
-    # Set file path for data
-    stk_data_path = r'{}\STK Data\{}'.format(main_directory, study_name)
 
     # Retrieve transmitter metrics
     transmitter = trans_metrics(args[0])
     # Retrieve rover/target metrics
     rover = rover_metrics(args[1])
-    # Retrieve orbit data
-    semi_maj_axis = args[2]
-    eccentricity = args[3]
     # Retrieve constraints
-    constraints = args[4]
-    active_constraints = args[5]
+    constraints = args[2]
+    active_constraints = args[3]
+    # Retrieve study name
+    study_name = args[4]
+    study = study_initialization(study_name)
+
+    # Set file path for data
+    stk_data_path = r'{}\STK Data\{}'.format(main_directory, study_name)
     ####################################################################################################################
 
     # READ IN DATA FILES
     ####################################################################################################################
-    total_active_time = read_data_from_file(stk_data_path, study_name, "TotalActive_Inertial_Extended")
-    max_blackout_time = read_data_from_file(stk_data_path, study_name, "MaxBlackout_Inertial_Extended")
-    mean_range = read_data_from_file(stk_data_path, study_name, "MeanRange_Inertial_Extended")
+    total_active_time = read_data_from_file(stk_data_path, study_name, "TotalActive")
+    max_blackout_time = read_data_from_file(stk_data_path, study_name, "MaxBlackout")
+    mean_range = read_data_from_file(stk_data_path, study_name, "MeanRange")
     ####################################################################################################################
 
     # CALCULATE LINK EFFICIENCY, MEAN POWER, and TOTAL ENERGY DELIVERED
@@ -70,8 +63,8 @@ def calculate_link_eff(trans_radius, args):
     # ESTIMATE MAGNITUDE OF ORBITAL PERTURBATIONS
     ####################################################################################################################
     # Orbital perturbations on argument of perigee [0], eccentricity [1], and inclination [2]
-    perturbations = calculate_orbital_perturbations(semi_maj_axis, eccentricity)
-    arg_perigee_skew = [i * total_duration * 180.0 / np.pi for i in perturbations[0]]
+    perturbations = calculate_orbital_perturbations(study['semi-maj-axis'], study['eccentricity'], study_name)
+    arg_perigee_skew = [i * study['duration'] * 180.0 / np.pi for i in perturbations[0]]
     ####################################################################################################################
 
     # ENFORCE POINTING CONSTRAINTS
@@ -116,7 +109,7 @@ def calculate_link_eff(trans_radius, args):
     if active_constraints['min_active_time'] == 1:
         # Remove data points for which the overall blackout time is not sufficiently reduced
         for i in range(len(total_active_time)):
-            if (100.0 * total_active_time[i] / total_duration) < constraints['min_active_time']:
+            if (100.0 * total_active_time[i] / study['duration']) < constraints['min_active_time']:
                 mean_link_efficiency[i] = 0.0
     else:
         pass
@@ -139,11 +132,11 @@ def calculate_link_eff(trans_radius, args):
     return 1.0 - mean_link_efficiency[best_orbit_idx]
 
 
-def optimize_link_efficiency(trans_selection, rover_selection, semi_maj_axis, eccentricity, constraints, active_constraints):
+def optimize_link_efficiency(trans_selection, rover_selection, constraints, active_constraints, study_name):
 
     from scipy.optimize import minimize_scalar
 
-    args = [trans_selection, rover_selection, semi_maj_axis, eccentricity, constraints, active_constraints]
-    optimum = minimize_scalar(calculate_link_eff, bounds=(0, 0.3345), method='bounded', args=args)
+    args = [trans_selection, rover_selection, constraints, active_constraints, study_name]
+    optimum = minimize_scalar(calculate_link_eff, bounds=(0, 4.0), method='bounded', args=args)
 
     return optimum

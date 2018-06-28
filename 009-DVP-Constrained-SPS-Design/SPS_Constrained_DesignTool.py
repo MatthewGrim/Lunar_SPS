@@ -21,27 +21,16 @@ from SPS_Constrained_DesignOptimizer import optimize_link_efficiency
 from SPS_Constrained_DesignFunctions import *
 
 
-def generate_design_space(rover_selection, transmitter_selection, constraints, active_constraints):
+def generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints):
 
     # INITIALIZATION
     ####################################################################################################################
-    start = convert_string_to_datetime(['2018', '05', '17', '10', '0', '0.0'])
-    end = convert_string_to_datetime(['2020', '05', '17', '10', '0', '0.0'])
-    total_duration = (end - start).total_seconds()
-
-    # Set bounds on parametric scan
-    max_perigee = 5000.0
-    max_apogee = 5000.0
-
-    # Get orbit data set
-    semi_maj_axis, eccentricity, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee)
+    # Specific info for selected study
+    study = study_initialization(study_name)
 
     # Get pathway to main Lunar_SPS directory
     current_folder = os.getcwd()
     main_directory = os.path.dirname(current_folder)
-
-    # Name study
-    study_name = 'SouthPole_IncrementedRes_Inertial'
 
     # Set file path for data
     stk_data_path = r'{}\STK Data\{}'.format(main_directory, study_name)
@@ -57,30 +46,30 @@ def generate_design_space(rover_selection, transmitter_selection, constraints, a
     ####################################################################################################################
     # Based on current constraints, determine transmitter aperture size which provides highest possible link efficiency
     # within constrained design space
-    optimum = optimize_link_efficiency(transmitter_selection, rover_selection,
-                                       semi_maj_axis, eccentricity,
-                                       constraints, active_constraints)
+    optimum = optimize_link_efficiency(transmitter_selection, rover_selection, constraints, active_constraints, study_name)
     transmitter['radius'] = optimum.x
     ####################################################################################################################
 
     # READ IN DATA FILES
     ####################################################################################################################
     data_set = {}
-    data_set['total_active_time'] = read_data_from_file(stk_data_path, study_name, "TotalActive_Inertial_Extended")
-    data_set['total_blackout_time'] = read_data_from_file(stk_data_path, study_name, "TotalBlackout_Inertial_Extended")
-    data_set['max_active_time'] = read_data_from_file(stk_data_path, study_name, "MaxActive_Inertial_Extended")
-    data_set['max_blackout_time'] = read_data_from_file(stk_data_path, study_name, "MaxBlackout_Inertial_Extended")
-    data_set['mean_range'] = read_data_from_file(stk_data_path, study_name, "MeanRange_Inertial_Extended")
-    data_set['mean_active_time'] = read_data_from_file(stk_data_path, study_name, "MeanActive_Inertial_Extended")
-    data_set['mean_blackout_time'] = read_data_from_file(stk_data_path, study_name, "MeanBlackout_Inertial_Extended")
-    data_set['max_stored_power_time'] = read_data_from_file(stk_data_path, study_name, 'MaxStoredPowerEvent_Inertial_Extended')
-    data_set['total_stored_power_time'] = read_data_from_file(stk_data_path, study_name, 'TotalStoredPowerEvent_Inertial_Extended')
+    data_set['total_active_time'] = read_data_from_file(stk_data_path, study_name, "TotalActive")
+    plt.plot(data_set['total_active_time'])
+    plt.show()
+    data_set['total_blackout_time'] = read_data_from_file(stk_data_path, study_name, "TotalBlackout")
+    data_set['max_active_time'] = read_data_from_file(stk_data_path, study_name, "MaxActive")
+    data_set['max_blackout_time'] = read_data_from_file(stk_data_path, study_name, "MaxBlackout")
+    data_set['mean_range'] = read_data_from_file(stk_data_path, study_name, "MeanRange")
+    data_set['mean_active_time'] = read_data_from_file(stk_data_path, study_name, "MeanActive")
+    data_set['mean_blackout_time'] = read_data_from_file(stk_data_path, study_name, "MeanBlackout")
+    data_set['max_stored_power_time'] = read_data_from_file(stk_data_path, study_name, 'MaxStoredPowerEvent')
+    data_set['total_stored_power_time'] = read_data_from_file(stk_data_path, study_name, 'TotalStoredPowerEvent')
     ####################################################################################################################
 
     # ESTIMATE MAGNITUDE OF ORBITAL PERTURBATIONS
     ####################################################################################################################
     # Orbital perturbations on argument of perigee [0], eccentricity [1], and inclination [2]
-    perturbations = calculate_orbital_perturbations(semi_maj_axis, eccentricity)
+    perturbations = calculate_orbital_perturbations(study['semi-maj-axis'], study['eccentricity'], study_name)
     # Calculate skew in argument of perigee in degrees per year
     data_set['arg_perigee_skew'] = [i * (365.0 * 24.0 * 3600.0) * 180.0 / np.pi for i in perturbations[0]]
     ####################################################################################################################
@@ -124,7 +113,7 @@ def generate_design_space(rover_selection, transmitter_selection, constraints, a
     ####################################################################################################################
     # Convert data to appropriate units for applying constraints
     data_set['max_blackout_time'] = [i / 3600.0 for i in data_set['max_blackout_time']]
-    data_set['total_active_time'] = [100.0 * i / total_duration for i in data_set['total_active_time']]
+    data_set['total_active_time'] = [100.0 * i / study['duration'] for i in data_set['total_active_time']]
     # Remove data points for which not enough power is delivered on average
     if active_constraints['min_power'] == 1:
         data_set = enforce_constraints(data_set, 'mean_power_received', constraints, 'min_power', 'min')
@@ -175,21 +164,24 @@ def generate_design_space(rover_selection, transmitter_selection, constraints, a
     # PARSING DATA
     ####################################################################################################################
     # Reorganize the data lists into 2D arrays
-    sorted_data_set = sort_data_lists(data_set, orbit_data)
+    sorted_data_set = sort_data_lists(data_set, study['orbits'], study_name)
 
     # Extract unique perigees and apogees tested for plotting
-    unique_perigees = [orbit_data[1][0]]
-    unique_apogees = [orbit_data[1][1]]
+    unique_perigees = [study['orbits'][1][0]]
+    unique_apogees = [study['orbits'][1][1]]
     r_moon = 1737.0
-    for i in range(1, len(orbit_data)):
-        if orbit_data[i][0] > max(unique_perigees):
-            unique_perigees.append(orbit_data[i][0])
-        if orbit_data[i][1] > max(unique_apogees):
-            unique_apogees.append(orbit_data[i][1])
+    for i in range(1, len(study['orbits'])):
+        if study['orbits'][i][0] > max(unique_perigees):
+            unique_perigees.append(study['orbits'][i][0])
+        if study['orbits'][i][1] > max(unique_apogees):
+            unique_apogees.append(study['orbits'][i][1])
 
     # Reduce perigee and apogee to altitudes instead of radii
     perigee_altitudes = [i - r_moon for i in unique_perigees]
     apogee_altitudes = [i - r_moon for i in unique_apogees]
+
+    plt.plot(apogee_altitudes, sorted_data_set['total_active_time'][3])
+    plt.show()
     ####################################################################################################################
 
     # SELECT SOLUTION WITH HIGHEST LINK EFFICIENCY
@@ -199,6 +191,9 @@ def generate_design_space(rover_selection, transmitter_selection, constraints, a
     best_orbit_idx = unravel_index(np.nanargmax(sorted_data_set['mean_link_efficiency']), sorted_data_set['mean_link_efficiency'].shape)
     best_perigee = unique_perigees[best_orbit_idx[0]]
     best_apogee = unique_apogees[best_orbit_idx[1]]
+    eccentricity = ((best_perigee / best_apogee) - 1) / (1 + (best_apogee / best_perigee))
+    semi_maj_axis = best_perigee / (1 - eccentricity)
+    orbit_period = 2 * np.pi * np.sqrt((semi_maj_axis * 1000.0) ** 3 / (6.674e-11 * 7.347673e22))
     ####################################################################################################################
 
     # ESTIMATE SPS BATTERY MASS
@@ -219,20 +214,35 @@ def generate_design_space(rover_selection, transmitter_selection, constraints, a
     target_heat_load = target_flux * (1 - rover['rec_efficiency']) * np.pi * rover['rec_radius'] ** 2
     ####################################################################################################################
 
+    # ESTIMATE STATION KEEPING
+    ####################################################################################################################
+    # Find events when SPS could perform station keeping
+    sps_lighting_raw = '{}\DVP_{}_{}perigee{}apogee_lighting.csv'.format(stk_data_path, study_name, best_perigee, best_apogee)
+    sps_lighting = parse_csv_to_array(sps_lighting_raw, study['start'])
+    sps_access_raw = '{}\DVP_{}_{}perigee{}apogee_access.csv'.format(stk_data_path, study_name, best_perigee, best_apogee)
+    sps_access = parse_csv_to_array(sps_access_raw, study['start'])
+    sps_station_keeping_events = determine_battery_chargeup_events(sps_lighting, sps_access, study['duration'])
+
+    # Available delta v integrated across all events, assuming 1N thrust for 20kW power
+    delta_v = 1.0 * np.sum(sps_station_keeping_events[2]) / (generator_mass + transmitter['mass'])
+    ####################################################################################################################
+
     # DISPLAY RESULTS
     ####################################################################################################################
     # Print out performance results for optimal orbit
     print('-----------------------------------------------------------------------------------------------------------')
-    print('Transmitter aperture radius: {} cm'.format(round(optimum.x * 100.0, 2)))
+    print('Transmitter aperture radius: {} cm'.format(round(transmitter['radius'] * 100.0, 2)))
     print('Combined mass of generator and transmitter --> {} kg'.format(round(generator_mass + transmitter['mass'], 2)))
     print('Combined heat load of generator and transmitter --> {} kW'.format(round(total_heat / 1000.0, 2)))
     print('Steady state temperature --> {} Celsius'.format(round(steady_state_temp - 273.15, 2)))
     print('-----------------------------------------------------------------------------------------------------------')
     print('Optimal orbit altitudes --> Perigee: {} km, Apogee: {} km'.format(round(best_perigee - r_moon, 2), round(best_apogee - r_moon, 2)))
+    print('Orbital period --> {} mins'.format(round(orbit_period / 60.0, 2)))
     print('Estimated argument of perigee slew rate --> {} deg/yr'.format(round(sorted_data_set['arg_perigee_skew'][best_orbit_idx], 2)))
+    print('Estimated delta v available per year to correct slew --> {} m/s'.format(round(delta_v, 2)))
     print('-----------------------------------------------------------------------------------------------------------')
     print('Total active time (blackout reduction) --> {} %'.format(round(sorted_data_set['total_active_time'][best_orbit_idx], 2)))
-    print('Total blackout time --> {} %'.format(round(100.0 * sorted_data_set['total_blackout_time'][best_orbit_idx] / total_duration, 2)))
+    print('Total blackout time --> {} %'.format(round(100.0 * sorted_data_set['total_blackout_time'][best_orbit_idx] / study['duration'], 2)))
     print('Max active period duration --> {} hours'.format(round(sorted_data_set['max_active_time'][best_orbit_idx] / 3600.0, 2)))
     print('Max blackout period duration --> {} hours'.format(round(sorted_data_set['max_blackout_time'][best_orbit_idx], 2)))
     print('-----------------------------------------------------------------------------------------------------------')

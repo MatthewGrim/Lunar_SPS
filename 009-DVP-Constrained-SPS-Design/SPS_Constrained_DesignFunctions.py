@@ -7,6 +7,50 @@ This script contains functions used for the SPS constrained design tool.
 """
 
 
+def study_initialization(study_name):
+
+    from DVP_general_SPS_functions import convert_string_to_datetime
+    from DVP_Programmatic_Functions import vary_orbital_elements, vary_orbital_elements_incrementing_resolution
+
+    study = {}
+    if study_name == 'Brandhorst_1000.0kmRes':
+        study['start'] = convert_string_to_datetime(['2008', '07', '01', '10', '0', '0.0'])
+        study['end'] = convert_string_to_datetime(['2010', '06', '30', '10', '0', '0.0'])
+        study['duration'] = (study['end'] - study['start']).total_seconds()
+
+        # Difference in subsequent apogee/perigee radii
+        resolution = 1000.0
+        max_perigee = 10000.0
+        min_perigee = 1000.0
+        max_apogee = 54000.0
+
+        # Get orbital data
+        semi_maj_axis, eccentricity, orbit_data = vary_orbital_elements(resolution, min_perigee, max_perigee, max_apogee)
+        study['semi-maj-axis'] = semi_maj_axis
+        study['eccentricity'] = eccentricity
+        study['orbits'] = orbit_data
+
+    elif study_name == 'SouthPole_IncrementedRes_Inertial':
+        study['start'] = convert_string_to_datetime(['2018', '05', '17', '10', '0', '0.0'])
+        study['end'] = convert_string_to_datetime(['2020', '05', '17', '10', '0', '0.0'])
+        study['duration'] = (study['end'] - study['start']).total_seconds()
+
+        # Set bounds on parametric scan
+        max_perigee = 5000.0
+        max_apogee = 5000.0
+
+        # Get orbit data set
+        semi_maj_axis, eccentricity, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee)
+        study['semi-maj-axis'] = semi_maj_axis
+        study['eccentricity'] = eccentricity
+        study['orbits'] = orbit_data
+
+    else:
+        print('Invalid study name')
+
+    return study
+
+
 def rover_metrics(rover_name):
 
     rover = {}
@@ -91,13 +135,17 @@ def enforce_constraints(data_set, data_type, constraints, constraint_name, const
     return data_set
 
 
-def sort_data_lists(data_set, orbit_data):
+def sort_data_lists(data_set, orbit_data, study_name):
 
-    from DVP_Programmatic_Functions import sort_incremented_resolution_data
+    from DVP_Programmatic_Functions import sort_incremented_resolution_data, sort_data_list_into_array
 
     data_set_sorted = {}
 
-    for j in data_set:
-        data_set_sorted[j] = sort_incremented_resolution_data(orbit_data, data_set[j])
+    if study_name == 'Brandhorst_1000.0kmRes':
+        for j in data_set:
+            data_set_sorted[j] = sort_data_list_into_array(orbit_data, 1000.0, data_set[j])
+    elif study_name == 'SouthPole_IncrementedRes_Inertial':
+        for j in data_set:
+            data_set_sorted[j] = sort_incremented_resolution_data(orbit_data, data_set[j])
 
     return data_set_sorted
