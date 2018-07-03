@@ -1,0 +1,47 @@
+# Integration with STK
+
+Python is used to integrate with Systems Tool Kit (STK), a free AGI software product which is used to generate data reports for calculating solar power satellite performance. With Python integration, a huge range of orbits can be tested automatically, as opposed to altering the orbit and generating the reports by hand via the GUI. Some data sets were generated this way during this project - these data sets are available upon request. In the case that you would like to generate your own data, the following info will be helpful in understanding the scripts in this repository which were used for programmatic generation of STK data reports.
+
+1. SPS Configuration Details
+
+	Classical orbital elements: [a, e, i, RAAN, w, nu]
+
+		a = semi-major axis [km]
+		e = eccentricity
+		i = inclination [deg]
+		RAAN = right angle of the ascending node [deg]
+		w = argument of perigee [deg]
+		M = mean anomaly [deg]
+	
+	The SPS configurations studied with parametric scans are characterized as follows.
+
+	The variables which remain in the orbit description are the ones which are parametrically scanned.
+
+
+	CONFIGURATION		# of SPS		ORBIT				TARGET		
+	
+	Equatorial		N			[a, e, 0, 0, 0, M]			45 N, 0 W/E
+
+	South Pole		N			[a, e, 90, 0, 90, M]		-90 S, 0 W/E
+
+
+
+2. STK Integration/Pro License
+
+	a. Requesting license
+
+	An Integration and Pro STK license are necessary in order to remotely send commands to STK via Python. A free trial version of these licenses (Evaluation License) can be requested here: www.agi.com/eval. AGI will send you the license files within 7 days, and the features will be available for 14 days after installation. 
+
+	b. Connect Commands
+
+	Operations in STK, such as adjusting the orbit of a satellite or generating a data report, can be performed using Connect Commands. These commands can be executed remotely via Python integration. The command syntax can be found here: http://help.agi.com/stk/index.htm#../Subsystems/connectCmds/Content/list_alpha.htm. By generating a list of commands and executing them sequentially, a variety of scenarios can be tested automatically.
+
+	b. Server Execution Failure
+
+	Sometimes when you attempt to run STK programmatically very shortly after finishing or canceling an ongoing programmatic scan, Python will throw an error claiming that a server execution failed. Close all open STK windows and wait a minute before trying again.
+	
+
+
+
+
+
