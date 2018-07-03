@@ -1,0 +1,9 @@
+Project Directories:
+000-RR-InitialWork: Contains initial work to scope out the use of STK, assess the viability of carrying out further analysis with this workflow. The studies inside are initial attempts to replicate H. Brandhorst's work.
+001-DVP-BeamSpreading: Contains 0D design tools to assess the performance of wireless power transmission links. The scripts inside take different approaches to this, incorporating constraints, such as beam spreading, pointing accuracy, power requirements at the receiver etc. These tools are used to inform the parameter space for future 
+orbit studies.
+002-DVP-BrandhorstStudy: Contains the scripts and data necessary to replicate the active times plots in figure 3 of the H. Brandhorst studies.
+003-DVP-SPS_Orbit_Study: Contains a parametric scan to investigate whether 30000km is the best equatorial elliptical orbit for a 45 degree north target.
+004-DVP-SPS_Beaming_Study: Validates the beam ranging calculations by comparing them to Brandhorst work.
+
+
