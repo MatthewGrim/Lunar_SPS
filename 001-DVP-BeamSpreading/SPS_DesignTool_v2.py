@@ -2,7 +2,11 @@
 Author: Darian van Paridon
 Date: 03/05/2018
 
-This script is used to generate feasible design configurations for a solar power satellite.
+This script is used to generate feasible design configurations for a solar power satellite. The main purpose is
+to evaluate compatible altitude/transmitter aperture sizes that provide a desired surface beam size. For this
+analysis, the transmitter size is limited to smaller than the receiver size. Other functions include determination of
+the solar array size necessary to power the SPS transmitter, and the steady state temperature of the
+transmitter/array system.
 
 Inputs: Surface beam size, surface beam power, transmitter wavelength
 
@@ -14,7 +18,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def get_altitude_from_wavelength_surfbeamsize(wave, diameter):
+def get_altitude_from_wavelength_surfbeamsize(wavelength, diameter):
     #############################################################################
     # This function determines altitudes (within the L1 point) for a solar power satellite
     # based on the available transmitter wavelength and desired surface beam diameter.
@@ -23,7 +27,6 @@ def get_altitude_from_wavelength_surfbeamsize(wave, diameter):
     # Variables: Transmitter aperture size
     # Determine: Compatible altitudes within L1 point, and corresponding transmitter size
     #############################################################################
-    wavelength = wave
     rec_radius = 0.5 * diameter
 
     trans_radius = np.linspace(1.0e-3, diameter, 5e7)
@@ -32,8 +35,8 @@ def get_altitude_from_wavelength_surfbeamsize(wave, diameter):
     altitude = (np.pi * trans_radius ** 2) * np.sqrt((rec_radius / trans_radius) ** 2 - 1) / wavelength
 
     # Remove non-physical values, by setting altitude to zero
-    L1point = 5.86e7
-    flag_alt_too_high = altitude > L1point  # Where altitude is beyond L1
+    L1_distance = 5.86e7
+    flag_alt_too_high = altitude > L1_distance  # Where altitude is beyond L1
     flag_alt_too_low = altitude < 50e3  # Where altitude is below 50 km
     altitude[flag_alt_too_high] = None  # Set values to zero
     altitude[flag_alt_too_low] = None  # Set values to zero
@@ -41,7 +44,7 @@ def get_altitude_from_wavelength_surfbeamsize(wave, diameter):
     return altitude, trans_radius
 
 
-def get_transpower_from_recieverarea_surfaceflux(flux, diameter):
+def get_transpower_from_recieverarea_surfaceflux(surf_flux, diameter):
     #############################################################################
     # This function determines the required transmitter power based on the specified
     # receiver size and surface flux requirement
@@ -51,7 +54,6 @@ def get_transpower_from_recieverarea_surfaceflux(flux, diameter):
     #############################################################################
 
     surf_radius = 0.5 * diameter
-    surf_flux = flux
 
     # Calculate the necessary transmitter power based on desired surface flux and surface beam diameter
     trans_power = surf_flux * np.pi * surf_radius ** 2
@@ -77,34 +79,27 @@ def get_solar_array_size(trans_power, transmitter_eff):
     return solar_array_size
 
 
-def get_steady_state_temperature(solar_array_size, trans_eff, trans_power):
+def get_steady_state_temperature(trans_eff):
 
     # Assume that the radiative area for the laser is the solar array.
-    solar_flux = 1367
+    solar_flux = 1367.0
     solar_cell_eff = 0.45
-    solar_heat = solar_flux * (1 - solar_cell_eff) * solar_array_size
     array_emissivity = 0.8
-    waste_heat = trans_power * (1 / trans_eff - 1)
-    steady_temp = ((waste_heat + solar_heat) / (solar_array_size * array_emissivity * 5.67e-8)) ** 0.25
-    desired_temp = 40
-    cooling_power = (waste_heat + solar_heat - (solar_array_size * array_emissivity * 5.67e-8 * (273+desired_temp) ** 4))
-    print("Steady state operating temperature: {} Celsius".format(round(steady_temp - 273.15, 2)))
-    print('Cooling power required to maintain 30 C temperature: {} kW'.format(round(cooling_power / 1000.0, 2)))
+    steady_state_temp = (solar_flux * (1 - solar_cell_eff * trans_eff) / (2 * array_emissivity * 5.67e-8)) ** 0.25
+    print("Steady state operating temperature: {} Celsius".format(round(steady_state_temp - 273.15, 2)))
 
-    return steady_temp
+    return steady_state_temp
 
 
 def main():
 
     # This example calculation describes a 100 kW laser (industrial welding/cutting applications) from IPG (YLS-100000).
     trans_eff = 100.0 / 290.0
-    trans_wavelength = 850e-9
+    trans_wavelength = 1070e-9
     # This surface beam corresponds to the 100 kW transmitter
     surf_flux = 100e3 / (np.pi * 0.5 ** 2)
-    rec_diameter = 1
+    rec_diameter = 1.0
 
-    # wavelength = input('Enter the chosen transmitter wavelength (in m): ')
-    # surf_flux = input('Enter the desired flux at the surface (in W/m2): ')
     altitude, trans_radius = get_altitude_from_wavelength_surfbeamsize(trans_wavelength, rec_diameter)
 
     plt.plot(trans_radius * 2, altitude / 1000.0)
@@ -113,13 +108,11 @@ def main():
     plt.title('Compatible Transmitter Sizes and Altitudes')
     plt.show()
 
-    # rec_area = input('Enter the desired surface beam diameter (in m): ')
-    # surf_flux = input('Enter the desired flux at the surface (in W/m2): ')
     req_trans_power = get_transpower_from_recieverarea_surfaceflux(surf_flux, rec_diameter)
     print('The minimum required transmitter power (assuming no loss) is {} kW.'.format(round(req_trans_power / 1000.0, 4)))
     solar_array_size = get_solar_array_size(req_trans_power, trans_eff)
     print('Which can be gathered with a solar array of size {} m across.'.format(round(np.sqrt(solar_array_size), 2)))
-    get_steady_state_temperature(solar_array_size, trans_eff, req_trans_power)
+    get_steady_state_temperature(trans_eff)
     print('\n')
 
     i = np.nanargmin(altitude)

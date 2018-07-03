@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 
 def get_surfaceflux_from_wavelength_and_laser_power(wavelength, laser_powers, receiver_area, 
-                                                    power_req=30.0, pointing_error=1e-6):
+                                                    power_req, pointing_error=1e-6):
     """
     Plot the surface flux, and beam radius of a design at a specified wavelength, laser power, 
     and receiver size.
@@ -24,7 +24,7 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, laser_powers, re
     """
     # Set the parameter space
     trans_radius = np.logspace(-3, 1, 1000)
-    altitudes = np.logspace(4, 6, 1001)
+    altitudes = np.logspace(4, 6.699, 1001)
     R, Z = np.meshgrid(trans_radius, altitudes, indexing="ij")
 
     fig, ax = plt.subplots(1, len(laser_powers), sharey=True)
@@ -44,11 +44,11 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, laser_powers, re
         receiver_power /= laser_power
         receiver_power[receiver_power < 0.01] = np.nan
 
-        im = ax[i].contourf(np.log10(R), np.log10(Z), receiver_power, 100)
+        im = ax[i].contourf(np.log10(R), Z / 1e3, receiver_power, 100)
         fig.colorbar(im, ax=ax[i])
         ax[i].set_title('Laser Power: {}kW'.format(laser_power / 1e3))
-        ax[i].set_xlabel('Radius [m]')
-    ax[0].set_ylabel('Altitude [m]')  
+        ax[i].set_xlabel('Logarithm Radius [m]')
+    ax[0].set_ylabel('Altitude [km]')
     fig.suptitle("Total efficiency for possible architectures to achieve greater than {}W receiver power using a {} wavelength laser.".format(power_req, wavelength))
     plt.show()
 
@@ -56,11 +56,11 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, laser_powers, re
 
 
 def main():
-    trans_wavelength = 850e-9
-    laser_power = [1e3, 1e4, 1e5]
+    trans_wavelength = 1070e-9
+    laser_power = [4e3, 15e3, 100e3]
     rec_area = 1.0
-
-    _, _ = get_surfaceflux_from_wavelength_and_laser_power(trans_wavelength, laser_power, rec_area)
+    power_req = 270.0
+    _, _ = get_surfaceflux_from_wavelength_and_laser_power(trans_wavelength, laser_power, rec_area, power_req)
 
 
 if __name__ == '__main__':
