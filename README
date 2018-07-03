@@ -1,3 +1,6 @@
+# Lunar Solar Power Satellite Project
+This project is a study of lunar orbits for satellites used to power receivers wirelessly on the surface of the Moon. The project is geared towards enabling lunar rover exploration that can survive the lunar night. 
+
 Project Directories:
 000-RR-InitialWork: Contains initial work to scope out the use of STK, assess the viability of carrying out further analysis with this workflow. The studies inside are initial attempts to replicate H. Brandhorst's work.
 001-DVP-BeamSpreading: Contains 0D design tools to assess the performance of wireless power transmission links. The scripts inside take different approaches to this, incorporating constraints, such as beam spreading, pointing accuracy, power requirements at the receiver etc. These tools are used to inform the parameter space for future 
