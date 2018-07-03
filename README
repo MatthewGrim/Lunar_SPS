@@ -1,12 +1,36 @@
 # Lunar Solar Power Satellite Project
-This project is a study of lunar orbits for satellites used to power receivers wirelessly on the surface of the Moon. The project is geared towards enabling lunar rover exploration that can survive the lunar night. 
 
+Authors:
+Darian van Paridon (dvanpar@gmail.com)
+Rohan Ramasamy ()
+
+Maintained By:
+Rohan Ramasamy
+
+This project is a study of lunar orbits for satellites used to power receivers wirelessly on the surface of the Moon. The project is geared towards enabling lunar rover exploration that can survive the lunar night. The first few project directories are related to developing the groundwork for replication of results from an H. W. Brandhorst paper called "A solar electric propulsion mission for lunar power beaming" which is a useful benchmark publication for lunar solar power satellite design. Later project directories are focused on development of a design tool for solar power satellites which can provide wireless power service to lunar rovers.
+
+**Getting Started**
 Project Directories:
-000-RR-InitialWork: Contains initial work to scope out the use of STK, assess the viability of carrying out further analysis with this workflow. The studies inside are initial attempts to replicate H. Brandhorst's work.
-001-DVP-BeamSpreading: Contains 0D design tools to assess the performance of wireless power transmission links. The scripts inside take different approaches to this, incorporating constraints, such as beam spreading, pointing accuracy, power requirements at the receiver etc. These tools are used to inform the parameter space for future 
-orbit studies.
-002-DVP-BrandhorstStudy: Contains the scripts and data necessary to replicate the active times plots in figure 3 of the H. Brandhorst studies.
-003-DVP-SPS_Orbit_Study: Contains a parametric scan to investigate whether 30000km is the best equatorial elliptical orbit for a 45 degree north target.
-004-DVP-SPS_Beaming_Study: Validates the beam ranging calculations by comparing them to Brandhorst work.
 
+000-RR-InitialWork: Contains initial work to scope out the use of STK, assess the viability of carrying out further analysis with this workflow. The studies inside are initial attempts to replicate H. Brandhorst's work.
+
+001-DVP-BeamSpreading: Contains 0D design tools to assess the performance of wireless power transmission links. The scripts inside take different approaches to this, incorporating constraints, such as beam spreading, pointing accuracy, power requirements at the receiver etc. These tools are used to inform the parameter space for future orbit studies.
+
+002-DVP-BrandhorstStudy: Contains the scripts and STK data reports necessary to replicate the active times plots in Figure 3 of the Brandhorst study. This figure shows the total active time for a specific dual SPS constellation as a function of the argument of perigee between the two satellite orbits. Scripts to perform the replication and comparison to the original data are available.
+
+003-DVP-SPS_Orbit_Study: Contains STK data reports, and the scripts for processing the data in order to determine whether the orbit proposed by Brandhorst (500 km perigee, 30000 km apogee) is the best equatorial elliptical orbit for servicing a target at 45 degree north. 
+
+004-DVP-SPS_Beaming_Study: Contains the data derived via STK data reports, and the scripts for processing the data in order to validate the beam ranging calculations provided in the Brandhorst paper.
+
+005-DVP-Lunar_South_Pole_SPS: Contains STK data reports and scripts related to the analysis of solar power satellite access to the lunar south pole.
+
+006-DVP-Lunar_Multi_Target_SPS: Contains STK data reports and scripts which are used to explore the effects on the solar power satellite power link when multiple targets are distributed on the lunar surface.
+
+007-DVP-SPS-Power-Storage: Contains scripts related to the analysis of the power storage for a lunar solar power satellites related to events for which stored power would be necessary in order to maintain the link.
+
+008-DVP-STK-Programmatic-Scripts: Contains scripts which are used to generates and executes Connect Commands for Python integration with STK. These are used to generate large data sets automatically.
+
+009-DVP-Constrained-SPS-Design: Contains main solar power satellite design tool which is used to optimize the link efficiency between discrete receiver and transmitter options within a constrained orbital design space.
+
+010-DVP-Many-to-One-SPS: Contains scripts related to the analysis of lunar solar power satellite constellations. 
 
