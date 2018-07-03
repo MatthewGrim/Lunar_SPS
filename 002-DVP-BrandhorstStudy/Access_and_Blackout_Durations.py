@@ -12,13 +12,11 @@ from DVP_general_SPS_functions import *
 
 def main():
     # Import data and set the start and end times of the simulation
-    raw_sunlight_SPS2 = "SPS2-Lighting(135).csv"
-    raw_eclipse_SPS2 = "SPS2-Eclipse(135).csv"
-    raw_access_SPS2 = "SPS2-Access(135).csv"
-    raw_sunlight_SPS1 = "SPS1-Lighting(0)-Edited.csv"
-    raw_eclipse_SPS1 = "SPS1-Eclipse(0)-Edited.csv"
-    raw_access_SPS1 = "SPS1-Access(0).csv"
-    raw_sunlight_target = 'Target1-Lighting-Edited.csv'
+    raw_sps2_lighting = "SPS2-Lighting(135).csv"
+    raw_sps2_access = "SPS2-Access(135).csv"
+    raw_sps1_lighting = "SPS1-Lighting(0)-Edited.csv"
+    raw_sps1_access = "SPS1-Access(0).csv"
+    raw_target_lighting = 'Target1-Lighting-Edited.csv'
     start = convert_string_to_datetime(['2008', '07', '01', '10', '0', '0.0'])
     end = convert_string_to_datetime(['2010', '06', '30', '10', '0', '0.0'])
     total_duration = (end - start).total_seconds()
@@ -28,30 +26,30 @@ def main():
     # and line-of-sight access between the target and the SPS
 
     # Solar Power Satellite 1
-    LOS_access1 = parse_csv_to_array(raw_access_SPS1, start)
-    sunlight_SPS1 = parse_csv_to_array(raw_sunlight_SPS1, start)
+    sps1_access = parse_csv_to_array(raw_sps1_access, start)
+    sps1_lighting = parse_csv_to_array(raw_sps1_lighting, start)
 
     # Solar Power Satellite 2
-    LOS_access2 = parse_csv_to_array(raw_access_SPS2, start)
-    sunlight_SPS2 = parse_csv_to_array(raw_sunlight_SPS2, start)
+    sps2_access = parse_csv_to_array(raw_sps2_access, start)
+    sps2_lighting = parse_csv_to_array(raw_sps2_lighting, start)
 
     # Lunar Target
-    sunlight_target = parse_csv_to_array(raw_sunlight_target, start)
-    eclipse_target = invert_events_list(sunlight_target, total_duration)
+    target_lighting = parse_csv_to_array(raw_target_lighting, start)
+    target_eclipse = invert_events_list(target_lighting, total_duration)
 
     # Calculates the total active time for SPS, based on target access
     # and eclipses, as well as satellite illumination times
     print("\n")
     print("ACCESS AVAILABILITY for SPS1")
     # Calculate blackout periods and active periods for SPS1 solo
-    sps1_active = determine_SPS_active_time(sunlight_SPS1, eclipse_target, LOS_access1)
-    sps1_blackout = determine_blackout_data(sps1_active, eclipse_target, total_duration)
+    sps1_active = determine_SPS_active_time(sps1_lighting, target_eclipse, sps1_access)
+    sps1_blackout = determine_blackout_data(sps1_active, target_eclipse, total_duration)
 
     print("\n")
     print("ACCESS AVAILABILITY for SPS2")
     # Calculate blackout periods and active periods for SPS2 solo
-    sps2_active = determine_SPS_active_time(sunlight_SPS2, eclipse_target, LOS_access2)
-    sps2_blackout = determine_blackout_data(sps2_active, eclipse_target, total_duration)
+    sps2_active = determine_SPS_active_time(sps2_lighting, target_eclipse, sps2_access)
+    sps2_blackout = determine_blackout_data(sps2_active, target_eclipse, total_duration)
 
     print("\n")
     print('ACCESS AVAILABILITY for PAIR')
@@ -62,7 +60,7 @@ def main():
     sps_pair_inactive = get_event_overlaps(sps1_inactive, sps2_inactive)
     # Need to invert to call function determine_blackout_data, which takes in active times not inactive times
     sps_pair_active = invert_events_list(sps_pair_inactive, total_duration)
-    sps_pair_blackout = determine_blackout_data(sps_pair_active, eclipse_target, total_duration)
+    sps_pair_blackout = determine_blackout_data(sps_pair_active, target_eclipse, total_duration)
 
     sps1_days = [i / 86400.0 for i in sps1_blackout[0]]
     sps1_dur = [i / 3600.0 for i in sps1_blackout[2]]

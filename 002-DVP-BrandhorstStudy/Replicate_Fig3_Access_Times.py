@@ -13,7 +13,7 @@ from general_functions import *
 from DVP_general_SPS_functions import *
 
 
-def scan_perigee_angles(start, total_duration, eclipse_target):
+def scan_perigee_angles(start, total_duration, target_eclipse):
     # This function is used to scan through a series of .csv files from STK to analyze
     # the coverage availability for various arguments of perigee
     relative_perigees = np.asarray([15, 45, 75, 105, 135, 165, 195, 225, 255, 285, 315, 345])
@@ -23,14 +23,14 @@ def scan_perigee_angles(start, total_duration, eclipse_target):
         raw_eclipse = "SPS2-Eclipse({}).csv".format(relative_perigees[i])
         raw_access = "SPS2-Access({}).csv".format(relative_perigees[i])
 
-        access_times = parse_csv_to_array(raw_access, start)
-        sunlight_times = parse_csv_to_array(raw_sunlight, start)
-        eclipse_times = parse_csv_to_array(raw_eclipse, start)
-        check_sum(sunlight_times, eclipse_times, total_duration)
+        sps_access = parse_csv_to_array(raw_access, start)
+        sps_lighting = parse_csv_to_array(raw_sunlight, start)
+        sps_eclipse = parse_csv_to_array(raw_eclipse, start)
+        check_sum(sps_lighting, sps_eclipse, total_duration)
 
         print('\n')
         print('Relative perigee {}'.format(relative_perigees[i]))
-        sps_active = determine_SPS_active_time(sunlight_times, eclipse_target, access_times)
+        sps_active = determine_SPS_active_time(sps_lighting, target_eclipse, sps_access)
         total_active_time[i] = np.sum(sps_active[2])
 
     # Plot which shows the variation in total access time
@@ -46,15 +46,14 @@ def scan_perigee_angles(start, total_duration, eclipse_target):
 
 
 def remake_brandhorst_fig3():
+
     # Import data and set the start and end times of the simulation
-    raw_sunlight_SPS2 = "SPS2-Lighting(135).csv"
-    raw_eclipse_SPS2 = "SPS2-Eclipse(135).csv"
+    raw_sps2_lighting = "SPS2-Lighting(135).csv"
     raw_access_SPS2 = "SPS2-Access(135).csv"
-    raw_sunlight_SPS1 = "SPS1-Lighting(0)-Edited.csv"
-    raw_eclipse_SPS1 = "SPS1-Eclipse(0)-Edited.csv"
+    raw_sps1_lighting = "SPS1-Lighting(0)-Edited.csv"
     raw_access_SPS1 = "SPS1-Access(0).csv"
-    raw_sunlight_target = 'Target1-Lighting-Edited.csv'
-    raw_eclipse_target = 'Target1-Eclipse-Edited.csv'
+    raw_target_eclipse = 'Target1-Eclipse-Edited.csv'
+
     start = convert_string_to_datetime(['2008', '07', '01', '10', '0', '0.0'])
     end = convert_string_to_datetime(['2010', '06', '30', '10', '0', '0.0'])
     total_duration = (end - start).total_seconds()
@@ -64,34 +63,30 @@ def remake_brandhorst_fig3():
     # and line-of-sight access between the target and the SPS
 
     # Solar Power Satellite 1
-    LOS_access1 = parse_csv_to_array(raw_access_SPS1, start)
-    sunlight_SPS1 = parse_csv_to_array(raw_sunlight_SPS1, start)
-    eclipse_SPS1 = parse_csv_to_array(raw_eclipse_SPS1, start)
+    sps1_access = parse_csv_to_array(raw_access_SPS1, start)
+    sps1_lighting = parse_csv_to_array(raw_sps1_lighting, start)
 
     # Solar Power Satellite 2
-    LOS_access2 = parse_csv_to_array(raw_access_SPS2, start)
-    sunlight_SPS2 = parse_csv_to_array(raw_sunlight_SPS2, start)
-    eclipse_SPS2 = parse_csv_to_array(raw_eclipse_SPS2, start)
+    sps2_access = parse_csv_to_array(raw_access_SPS2, start)
+    sps2_lighting = parse_csv_to_array(raw_sps2_lighting, start)
 
     # Lunar Target
-    sunlight_target = parse_csv_to_array(raw_sunlight_target, start)
-    eclipse_target = parse_csv_to_array(raw_eclipse_target, start)
+    target_eclipse = parse_csv_to_array(raw_target_eclipse, start)
 
-
-    # Calculates the total active time for SPS, based on target access
-    # and eclipses, as well as satellite illumination times
+    # Calculates the total active time for SPS, based on target access and eclipses, as well as satellite
+    # illumination times
     print("\n")
     print("ACCESS AVAILABILITY for SPS1")
-    determine_SPS_active_time(sunlight_SPS1, eclipse_target, LOS_access1)
-    determine_blackout_data(LOS_access1, eclipse_target, total_duration)
+    determine_SPS_active_time(sps1_lighting, target_eclipse, sps1_access)
+    determine_blackout_data(sps1_access, target_eclipse, total_duration)
 
     print("\n")
     print("ACCESS AVAILABILITY for SPS2")
-    determine_SPS_active_time(sunlight_SPS2, eclipse_target, LOS_access2)
-    determine_blackout_data(LOS_access2, eclipse_target, total_duration)
+    determine_SPS_active_time(sps2_lighting, target_eclipse, sps2_access)
+    determine_blackout_data(sps2_access, target_eclipse, total_duration)
 
     # Calculates the total access time for various relative arguments of perigee
-    perigees, active_times = scan_perigee_angles(start, total_duration, eclipse_target)
+    perigees, active_times = scan_perigee_angles(start, total_duration, target_eclipse)
 
     return perigees, active_times
 
