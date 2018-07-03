@@ -2,8 +2,13 @@
 11/05/2018
 Author: Darian van Paridon
 
-This script is for verifying the optimal apogee altitude for a lunar SPS mission, which Brandhorst claims
-is 30000 km in the paper "A solar electric propulsion mission for lunar power beaming"
+This script is for verifying Brandhorst's claim that the optimal apogee altitude for the proposed SPS constellation
+(in " A solar electric propulsion mission for lunar power beaming ") is 30000 km. In that paper, the perigee altitude
+is 500 km. This hypothesis is tested as well.
+
+The verification is addressed by fixing the above mentioned perigee and apogee altitudes, and varying the other altitude.
+The highest performing orbit is determined by calculating the total active time and maximum blackout event duration. The
+optimal orbit would have the highest total active, and lowest maximum blackout times.
 
 """
 
@@ -15,8 +20,8 @@ def scan_apogee_altitudes(apogees, start, total_duration):
     # This function analyzes the availability of the SPS to a lunar target at 45 N as a function of the
     # altitude of the orbital apogee
 
-    total_active_time = np.zeros(len(apogees))
-    total_blackout_time = np.zeros(len(apogees))
+    total_active_time = []
+    max_blackout_time = []
 
     raw_eclipse_target = 'Target1-Eclipse-Edited.csv'
     eclipse_target = parse_csv_to_array(raw_eclipse_target, start)
@@ -24,23 +29,25 @@ def scan_apogee_altitudes(apogees, start, total_duration):
     for i in range(len(apogees)):
         raw_sunlight = "Lighting({}k).csv".format(apogees[i])
         raw_access = "Access({}k).csv".format(apogees[i])
-        access_times = parse_csv_to_array(raw_access, start)
-        sunlight_times = parse_csv_to_array(raw_sunlight, start)
+        sps_access = parse_csv_to_array(raw_access, start)
+        sps_lighting = parse_csv_to_array(raw_sunlight, start)
         print('\n')
         print('Apogee {}000 km, Perigee 500 km'.format(apogees[i]))
-        total_active_time[i] = determine_SPS_active_time(sunlight_times, eclipse_target, access_times)
+        sps_active = determine_SPS_active_time(sps_lighting, eclipse_target, sps_access)
+        total_active_time.append(np.sum(sps_active[2]))
         print('Maximum eclipse without SPS: {} hrs'.format(round(max(eclipse_target[2]) / 3600.0, 2)))
-        total_blackout_time[i] = determine_blackout_data(access_times, eclipse_target, total_duration)
+        sps_blackout = determine_blackout_data(sps_access, eclipse_target, total_duration)
+        max_blackout_time.append(max(sps_blackout[2]))
 
-    return total_active_time, total_blackout_time
+    return total_active_time, max_blackout_time
 
 
 def scan_perigee_altitudes(perigees, start, total_duration):
     # This function analyzes the availability of the SPS to a lunar target at 45 N as a function of the
     # altitude of the orbital apogee
 
-    total_active_time = np.zeros(len(perigees))
-    max_blackout_time = np.zeros(len(perigees))
+    total_active_time = []
+    max_blackout_time = []
 
     raw_eclipse_target = 'Target1-Eclipse-Edited.csv'
     eclipse_target = parse_csv_to_array(raw_eclipse_target, start)
@@ -48,14 +55,16 @@ def scan_perigee_altitudes(perigees, start, total_duration):
     for i in range(len(perigees)):
         raw_sunlight = "Lighting({},30k).csv".format(perigees[i])
         raw_access = "Access({},30k).csv".format(perigees[i])
-        access_times = parse_csv_to_array(raw_access, start)
-        sunlight_times = parse_csv_to_array(raw_sunlight, start)
+        sps_access = parse_csv_to_array(raw_access, start)
+        sps_lighting = parse_csv_to_array(raw_sunlight, start)
 
         print('\n')
         print('Perigee {} km, Apogee 30000 km'.format(perigees[i]))
-        total_active_time[i] = determine_SPS_active_time(sunlight_times, eclipse_target, access_times)
+        sps_active = determine_SPS_active_time(sps_lighting, eclipse_target, sps_access)
+        total_active_time.append(np.sum(sps_active[2]))
         print('Maximum eclipse without SPS: {} hrs'.format(round(max(eclipse_target[2]) / 3600.0, 2)))
-        max_blackout_time[i] = determine_blackout_data(access_times, eclipse_target, total_duration)
+        sps_blackout = determine_blackout_data(sps_access, eclipse_target, total_duration)
+        max_blackout_time.append(max(sps_blackout[2]))
 
     return total_active_time, max_blackout_time
 
