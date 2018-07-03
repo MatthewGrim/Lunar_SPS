@@ -2,11 +2,13 @@
 21/05/2018
 Author: Darian van Paridon
 
-This script is used to plot a bar graph of the SPS active times and blackout periods for a given configuration
+This script is used to plot a bar graph of the SPS active times and blackout periods in order to replicate the results
+of the Brandhorst study: " A solar electric propulsion mission for lunar power beaming "
 
 """
 
 from DVP_general_SPS_functions import *
+
 
 def main():
     # Import data and set the start and end times of the simulation

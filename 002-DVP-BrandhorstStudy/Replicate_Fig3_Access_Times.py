@@ -2,8 +2,11 @@
 Author: Darian van Paridon
 Date: 04/05/2018
 
-This file processes csv output data from STK for evaluating the access times of a solar power satellite
-to a lunar base at 45N degree latitude, for comparison to the Brandhorst paper.
+This file processes csv data reports from STK which contain the access and lighting times for a SPS. The purpose is to
+replicate Figure 3 from Brandhorst's paper " A solar electric propulsion mission for lunar power beaming " which shows
+the variation in total active time as a function of relevant argument of perigee between the two satellites in the
+proposed SPS constellation.
+
 """
 
 from general_functions import *
@@ -27,7 +30,8 @@ def scan_perigee_angles(start, total_duration, eclipse_target):
 
         print('\n')
         print('Relative perigee {}'.format(relative_perigees[i]))
-        total_active_time[i] = determine_SPS_active_time(sunlight_times, eclipse_target, access_times)
+        sps_active = determine_SPS_active_time(sunlight_times, eclipse_target, access_times)
+        total_active_time[i] = np.sum(sps_active[2])
 
     # Plot which shows the variation in total access time
     # as a function of relative argument of perigee between SPS2 and SPS1

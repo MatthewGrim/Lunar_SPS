@@ -2,8 +2,15 @@
 11/05/2018
 Author: Darian van Paridon
 
-This script compares the results of the the replication of the Brandhorst figure 3 for SPS access time as a function
-of argument of perigee to the results published in the paper
+This script compares the results of the the replication of the Brandhorst study Figure 3 from
+" Replicate_Fig3_Access_Times.py " to the results from Brandhorst's paper, which were extrapolated using an
+online plot digitizer.
+
+Figure 3 shows the SPS system total active time as a function of relative argument of perigee between the two
+SPS in the proposed constellation.
+
+Relevant paper: " A solar electric propulsion mission for lunar power beaming "
+
 """
 
 from Replicate_Fig3_Access_Times import *
@@ -20,7 +27,6 @@ def parse_fig3_data(file_name):
     size = file_len(file_name)
     perigees = np.zeros(size)
     total_access_time = np.zeros(size)
-    parsed_data = np.array((2, size))
 
     # For loop parses data into three categories: start, end and duration of event
     # This function can be used for target to satellite access times, or target/satellite illumination events
@@ -43,12 +49,6 @@ def main():
     # Process the STK data, import Brandhorst data, initialize array for comparison of data
     perigees, active_times = remake_brandhorst_fig3()
     brandhorst_data = parse_fig3_data("Brandhorst_Fig3_Data.csv")
-
-    # i = 0
-    # for i in range(len(brandhorst_data[0])):
-    #     if brandhorst_data[0][i] < 0:
-    #         brandhorst_data[0][i] += 360
-    #     i += 1
 
     brandhorst_data[0] += abs(min(brandhorst_data[0]))
 
