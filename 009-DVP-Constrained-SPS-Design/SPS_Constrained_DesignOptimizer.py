@@ -64,7 +64,7 @@ def calculate_link_eff(trans_radius, args):
     ####################################################################################################################
     # Orbital perturbations on argument of perigee [0], eccentricity [1], and inclination [2]
     perturbations = calculate_orbital_perturbations(study['semi-maj-axis'], study['eccentricity'], study_name)
-    arg_perigee_skew = [i * study['duration'] * 180.0 / np.pi for i in perturbations[0]]
+    arg_perigee_skew = [abs(i * study['duration'] * 180.0 / np.pi) for i in perturbations[0]]
     ####################################################################################################################
 
     # ENFORCE POINTING CONSTRAINTS
@@ -137,6 +137,6 @@ def optimize_link_efficiency(trans_selection, rover_selection, constraints, acti
     from scipy.optimize import minimize_scalar
 
     args = [trans_selection, rover_selection, constraints, active_constraints, study_name]
-    optimum = minimize_scalar(calculate_link_eff, bounds=(0.0, 4.0), method='bounded', args=args)
+    optimum = minimize_scalar(calculate_link_eff, bounds=(1e-3, 0.4), method='bounded', args=args)
 
     return optimum

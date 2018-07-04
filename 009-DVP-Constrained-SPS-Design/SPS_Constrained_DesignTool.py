@@ -112,11 +112,6 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     # Convert data to appropriate units for applying constraints
     data_set['max_blackout_time'] = [i / 3600.0 for i in data_set['max_blackout_time']]
     data_set['total_active_time'] = [100.0 * i / study['duration'] for i in data_set['total_active_time']]
-    # Remove data points for which not enough power is delivered on average
-    if active_constraints['min_power'] == 1:
-        data_set = enforce_constraints(data_set, 'mean_power_received', constraints, 'min_power', 'min')
-    else:
-        pass
     # Remove data points for which blackout durations exceed the limit
     if active_constraints['max_blackout'] == 1:
         data_set = enforce_constraints(data_set, 'max_blackout_time', constraints, 'max_blackout', 'max')
@@ -130,6 +125,11 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     # Remove data points for which the estimated skew in argument of perigee is too great
     if active_constraints['max_arg_perigee_skew'] == 1:
         data_set = enforce_constraints(data_set, 'arg_perigee_skew', constraints, 'max_arg_perigee_skew', 'max')
+    else:
+        pass
+    # Remove data points for which not enough power is delivered on average
+    if active_constraints['min_power'] == 1:
+        data_set = enforce_constraints(data_set, 'mean_power_received', constraints, 'min_power', 'min')
     else:
         pass
     ####################################################################################################################
@@ -253,6 +253,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     print('Heat load on receiver --> {} W'.format(round(target_heat_load, 2)))
 
     # Plot weighted objective function
+    plt.figure(1)
     plt.subplot(221)
     plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['total_active_time'], 500)
     plt.title('Total Active Time [%]')
@@ -269,9 +270,16 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     plt.ylabel('Perigee Altitude [km]')
     plt.colorbar()
     plt.subplot(224)
+    plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['mean_power_received'], 500)
+    plt.title('Mean Power [W]')
+    plt.xlabel('Apogee Altitude [km]')
+    plt.colorbar()
+
+    plt.figure(2)
     plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['mean_link_efficiency'] * 100.0, 500)
     plt.title('Mean Link Efficiency [%]')
     plt.xlabel('Apogee Altitude [km]')
+    plt.ylabel('Perigee Altitude [km]')
     plt.colorbar()
     plt.scatter(best_apogee - r_moon, best_perigee - r_moon, marker='x')
     plt.show()

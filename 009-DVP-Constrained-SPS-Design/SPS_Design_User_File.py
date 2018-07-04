@@ -35,7 +35,7 @@ def main():
     rover = rover_metrics(rover_selection)
 
     # Minimum pointing error of SPS system in radians
-    constraints['point_error'] = 1.5e-6
+    constraints['point_error'] = 1e-6
     # Minimum reduction in overall blackout time in percent
     constraints['min_active_time'] = 20.0
     # Minimum power requirement at target in Watts
@@ -47,10 +47,10 @@ def main():
 
     # Specify which constraints are active
     # 1 = active, anything else = inactive
-    active_constraints['point_error'] = 0
-    active_constraints['min_active_time'] = 0
-    active_constraints['min_power'] = 0
-    active_constraints['max_blackout'] = 0
+    active_constraints['point_error'] = 1
+    active_constraints['min_active_time'] = 1
+    active_constraints['min_power'] = 1
+    active_constraints['max_blackout'] = 1
     active_constraints['max_arg_perigee_skew'] = 1
     ####################################################################################################################
 
