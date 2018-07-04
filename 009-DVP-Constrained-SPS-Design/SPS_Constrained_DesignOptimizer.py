@@ -137,6 +137,6 @@ def optimize_link_efficiency(trans_selection, rover_selection, constraints, acti
     from scipy.optimize import minimize_scalar
 
     args = [trans_selection, rover_selection, constraints, active_constraints, study_name]
-    optimum = minimize_scalar(calculate_link_eff, bounds=(0, 4.0), method='bounded', args=args)
+    optimum = minimize_scalar(calculate_link_eff, bounds=(0.0, 4.0), method='bounded', args=args)
 
     return optimum

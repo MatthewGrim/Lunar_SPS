@@ -54,8 +54,6 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     ####################################################################################################################
     data_set = {}
     data_set['total_active_time'] = read_data_from_file(stk_data_path, study_name, "TotalActive")
-    plt.plot(data_set['total_active_time'])
-    plt.show()
     data_set['total_blackout_time'] = read_data_from_file(stk_data_path, study_name, "TotalBlackout")
     data_set['max_active_time'] = read_data_from_file(stk_data_path, study_name, "MaxActive")
     data_set['max_blackout_time'] = read_data_from_file(stk_data_path, study_name, "MaxBlackout")
@@ -71,7 +69,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     # Orbital perturbations on argument of perigee [0], eccentricity [1], and inclination [2]
     perturbations = calculate_orbital_perturbations(study['semi-maj-axis'], study['eccentricity'], study_name)
     # Calculate skew in argument of perigee in degrees per year
-    data_set['arg_perigee_skew'] = [i * (365.0 * 24.0 * 3600.0) * 180.0 / np.pi for i in perturbations[0]]
+    data_set['arg_perigee_skew'] = [abs(i * (365.0 * 24.0 * 3600.0) * 180.0 / np.pi) for i in perturbations[0]]
     ####################################################################################################################
 
     # CALCULATE LINK EFFICIENCY, MEAN POWER, and TOTAL ENERGY DELIVERED
@@ -79,7 +77,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     ####################################################################################################################
     data_set['mean_link_efficiency'] = []
     data_set['mean_power_received'] = []
-    for i in range(len(data_set['mean_range'])):
+    for i in range(0, len(data_set['mean_range'])):
         # Minimum beam radius as defined by pointing error
         min_beam_radius = rover['rec_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)
         # Actual beam radius as defined by Gaussian beam divergence
@@ -131,7 +129,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
         pass
     # Remove data points for which the estimated skew in argument of perigee is too great
     if active_constraints['max_arg_perigee_skew'] == 1:
-        data_set = enforce_constraints(data_set, 'arg_perigee_skew', constraints, 'max_perigee_skew', 'max')
+        data_set = enforce_constraints(data_set, 'arg_perigee_skew', constraints, 'max_arg_perigee_skew', 'max')
     else:
         pass
     ####################################################################################################################
@@ -179,9 +177,6 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     # Reduce perigee and apogee to altitudes instead of radii
     perigee_altitudes = [i - r_moon for i in unique_perigees]
     apogee_altitudes = [i - r_moon for i in unique_apogees]
-
-    plt.plot(apogee_altitudes, sorted_data_set['total_active_time'][3])
-    plt.show()
     ####################################################################################################################
 
     # SELECT SOLUTION WITH HIGHEST LINK EFFICIENCY
@@ -277,7 +272,6 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['mean_link_efficiency'] * 100.0, 500)
     plt.title('Mean Link Efficiency [%]')
     plt.xlabel('Apogee Altitude [km]')
-    plt.ylabel('Perigee Altitude [km]')
     plt.colorbar()
     plt.scatter(best_apogee - r_moon, best_perigee - r_moon, marker='x')
     plt.show()
