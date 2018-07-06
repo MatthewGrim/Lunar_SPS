@@ -70,27 +70,35 @@ def parse_csv_to_array(file_name, sim_start):
     # This function can be used for target to satellite access times, or target/satellite illumination events
     # .csv file must be three columns, with start time, end time, duration in that order
     # The function outputs the start and end times of the event in seconds since the beginning of the simulation
-    for i, line in enumerate(the_file):
-        if i == 0:
-            continue
-        # Split line into table components, assuming comma delimited
-        components = line.split(",")
-        # Break once the final line is reached (which is a blank 'return')
-        if components[0] == '\n':
-            break
+    import os
+    # Check if any access periods occur
+    if os.stat(file_name).st_size == 0:
+        # If not, write nan
+        duration_array = np.nan
+        start_time_sec_from_simstart = np.nan
+        end_time_sec_from_simstart = np.nan
+    else:
+        for i, line in enumerate(the_file):
+            if i == 0:
+                continue
+            # Split line into table components, assuming comma delimited
+            components = line.split(",")
+            # Break once the final line is reached (which is a blank 'return')
+            if components[0] == '\n':
+                break
 
-        # Work out sunlit times and set new time t
-        start = components[0].split(":")
-        start_time = convert_string_to_datetime(start)
-        start_time_sec_from_simstart.append((start_time - sim_start).total_seconds())
+            # Work out sunlit times and set new time t
+            start = components[0].split(":")
+            start_time = convert_string_to_datetime(start)
+            start_time_sec_from_simstart.append((start_time - sim_start).total_seconds())
 
-        end = components[1].split(":")
-        end_time = convert_string_to_datetime(end)
-        end_time_sec_from_simstart.append((end_time - sim_start).total_seconds())
+            end = components[1].split(":")
+            end_time = convert_string_to_datetime(end)
+            end_time_sec_from_simstart.append((end_time - sim_start).total_seconds())
 
-        # Save power link duration
-        access_durations = float(components[2].split("\n")[0])
-        duration_array.append(access_durations)
+            # Save power link duration
+            access_durations = float(components[2].split("\n")[0])
+            duration_array.append(access_durations)
 
     parsed_data = [start_time_sec_from_simstart, end_time_sec_from_simstart, duration_array]
 
@@ -156,17 +164,25 @@ def import_range_data_statistics(file_name, stk_data_path):
     the_file.close()
     new_file.close()
 
-    last_file = open("{}/{}_Semi_Parsed.txt".format(stk_data_path, file_name), "r")
-    # Sort data into minimum maximum and mean arrays
-    for j, new_line in enumerate(last_file):
-        new_line_split = new_line.split(",")
-        if new_line_split[0][2:-1] == "Min Range":
-            min_range.append(float(new_line_split[2][2:-3]))
-        elif new_line_split[0][2:-1] == "Max Range":
-            max_range.append(float(new_line_split[2][2:-3]))
-        elif new_line_split[0][2:-1] == "Mean Range":
-            mean_range.append(float(new_line_split[1][2:-3]))
-    last_file.close()
+    # Check if any access events exist
+    if os.path.getsize("{}/{}_Semi_Parsed.txt".format(stk_data_path, file_name)) == 0:
+        # If not, write nan
+        min_range = np.nan
+        max_range = np.nan
+        mean_range = np.nan
+    # If there are access events, parse out mean, min and max range for each
+    else:
+        last_file = open("{}/{}_Semi_Parsed.txt".format(stk_data_path, file_name), "r")
+        # Sort data into minimum maximum and mean arrays
+        for j, new_line in enumerate(last_file):
+            new_line_split = new_line.split(",")
+            if new_line_split[0][2:-1] == "Min Range":
+                min_range.append(float(new_line_split[2][2:-3]))
+            elif new_line_split[0][2:-1] == "Max Range":
+                max_range.append(float(new_line_split[2][2:-3]))
+            elif new_line_split[0][2:-1] == "Mean Range":
+                mean_range.append(float(new_line_split[1][2:-3]))
+        last_file.close()
 
     range_stats = [min_range, max_range, mean_range]
 
@@ -184,55 +200,62 @@ def get_event_overlaps(access_times, event_times):
     overlap_end = list()
     overlap_duration = list()
 
-    access_size = len(access_times[0])
-    events_size = len(event_times[0])
+    # Check to see if a list of event is empty
+    if not hasattr(access_times[0], "__len__") or not hasattr(event_times[0], "__len__"):
+        overlap_start = 0.0
+        overlap_end = 0.0
+        overlap_duration = 0.0
+    # Else find overlap of events
+    else:
+        access_size = len(access_times[0])
+        events_size = len(event_times[0])
 
-    # Test all of the access periods for overlap with conditional events
-    for i in range(access_size):
-        # Get start and end of access periods
-        access_start = access_times[0][i]
-        access_end = access_times[1][i]
+        # Test all of the access periods for overlap with conditional events
+        for i in range(access_size):
+            # Get start and end of access periods
+            access_start = access_times[0][i]
+            access_end = access_times[1][i]
 
-        # Check each conditional event for overlap
-        for j in range(events_size):
-            event_start = event_times[0][j]
-            event_end = event_times[1][j]
+            # Check each conditional event for overlap
+            for j in range(events_size):
+                event_start = event_times[0][j]
+                event_end = event_times[1][j]
 
-            # Determine overlapping events
-            # Partial overlap, event period triggers overlap, access period ends it
-            if access_start <= event_start and access_end <= event_end and access_end >= event_start:
-                overlap_start.append(event_start)
-                overlap_end.append(access_end)
-                overlap_duration.append(access_end - event_start)
-                # i += 1
-            # Partial overlap, access period triggers overlap, event period ends it
-            elif event_start <= access_start and event_end <= access_end and event_end >= access_start:
-                overlap_start.append(access_start)
-                overlap_end.append(event_end)
-                overlap_duration.append(event_end - access_start)
-                # j += 1
-            # Full overlap, access period occurs within event period
-            elif event_start <= access_start and access_end <= event_end:
-                overlap_start.append(access_start)
-                overlap_end.append(access_end)
-                overlap_duration.append(access_end - access_start)
-                # i += 1
-            # Full overlap, event period occurs within access period
-            elif access_start <= event_start and event_end <= access_end:
-                overlap_start.append(event_start)
-                overlap_end.append(event_end)
-                overlap_duration.append(event_end - event_start)
-                # j += 1
-            # No overlap, access period ends before event
-            elif access_end < event_start:
-                # i += 1
-                pass
-            # No overlap, access period begins after event
-            elif event_end < access_start:
-                # j += 1
-                pass
-            else:
-                raise RuntimeError("Should not be possible to get here!")
+                # Determine overlapping events
+                # Partial overlap, event period triggers overlap, access period ends it
+                if access_start <= event_start and access_end <= event_end and access_end >= event_start:
+                    overlap_start.append(event_start)
+                    overlap_end.append(access_end)
+                    overlap_duration.append(access_end - event_start)
+                    # i += 1
+                # Partial overlap, access period triggers overlap, event period ends it
+                elif event_start <= access_start and event_end <= access_end and event_end >= access_start:
+                    overlap_start.append(access_start)
+                    overlap_end.append(event_end)
+                    overlap_duration.append(event_end - access_start)
+                    # j += 1
+                # Full overlap, access period occurs within event period
+                elif event_start <= access_start and access_end <= event_end:
+                    overlap_start.append(access_start)
+                    overlap_end.append(access_end)
+                    overlap_duration.append(access_end - access_start)
+                    # i += 1
+                # Full overlap, event period occurs within access period
+                elif access_start <= event_start and event_end <= access_end:
+                    overlap_start.append(event_start)
+                    overlap_end.append(event_end)
+                    overlap_duration.append(event_end - event_start)
+                    # j += 1
+                # No overlap, access period ends before event
+                elif access_end < event_start:
+                    # i += 1
+                    pass
+                # No overlap, access period begins after event
+                elif event_end < access_start:
+                    # j += 1
+                    pass
+                else:
+                    raise RuntimeError("Should not be possible to get here!")
 
     overlap_events = [overlap_start, overlap_end, overlap_duration]
 

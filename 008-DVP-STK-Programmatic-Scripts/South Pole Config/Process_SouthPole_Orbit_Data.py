@@ -53,6 +53,8 @@ def main():
     max_blackout_time = []
     mean_blackout_time = []
     mean_range = []
+    mean_max_range = []
+    mean_min_range = []
     total_stored_power_time = []
     mean_stored_power_time = []
     max_stored_power_time = []
@@ -75,20 +77,22 @@ def main():
         sps_access = parse_csv_to_array(sps_access_raw, start)
 
         # Determine the total and maximum SPS active durations
-        # sps_active = determine_SPS_active_time(sps_lighting, target_eclipse, sps_access)
-        # total_active_time.append(np.sum(sps_active[2]))
-        # max_active_time.append(max(sps_active[2]))
-        # mean_active_time.append(np.mean(sps_active[2]))
+        sps_active = determine_SPS_active_time(sps_lighting, target_eclipse, sps_access)
+        total_active_time.append(np.sum(sps_active[2]))
+        max_active_time.append(max(sps_active[2]))
+        mean_active_time.append(np.mean(sps_active[2]))
 
         # Determine the total and maximum target blackout durations
-        # target_blackout = determine_blackout_data(sps_active, target_eclipse, total_duration)
-        # total_blackout_time.append(np.sum(target_blackout[2]))
-        # max_blackout_time.append(max(target_blackout[2]))
-        # mean_blackout_time.append(np.mean(target_blackout[2]))
+        target_blackout = determine_blackout_data(sps_active, target_eclipse, total_duration)
+        total_blackout_time.append(np.sum(target_blackout[2]))
+        max_blackout_time.append(max(target_blackout[2]))
+        mean_blackout_time.append(np.mean(target_blackout[2]))
 
         # Determine the mean range, averaging mean range per access event in time
-        # sps_range = import_range_data_statistics('DVP_{}_{}perigee{}apogee_range'.format(study_name, orbit_data[i][0], orbit_data[i][1]), stk_data_path)
-        # mean_range.append(np.sum([(i * j) / np.sum(sps_access[2]) for i, j in zip(sps_range[2], sps_access[2])]))
+        sps_range = import_range_data_statistics('DVP_{}_{}perigee{}apogee_range'.format(study_name, orbit_data[i][0], orbit_data[i][1]), stk_data_path)
+        mean_range.append(np.sum([(i * j) / np.sum(sps_access[2]) for i, j in zip(sps_range[2], sps_access[2])]))
+        mean_min_range.append(np.sum([(i * j) / np.sum(sps_access[2]) for i, j in zip(sps_range[0], sps_access[2])]))
+        mean_max_range.append(np.sum([(i * j) / np.sum(sps_access[2]) for i, j in zip(sps_range[1], sps_access[2])]))
 
         # Determine events when SPS is in range but eclipsed
         sps_eclipse = invert_events_list(sps_lighting, total_duration)
@@ -104,21 +108,22 @@ def main():
     # data every time. This can help speed up debugging/analysis. But first, remove the file
     # if it already exists and create a new one.
 
-    # TOTAL ACTIVE TIME
-    # write_data_to_file(stk_data_path, study_name, total_active_time, 'TotalActive_Inertial_Extended')
-    # TOTAL BLACKOUT TIME
-    # write_data_to_file(stk_data_path, study_name, total_blackout_time, 'TotalBlackout_Inertial_Extended')
-    # MAX ACTIVE TIME
-    # write_data_to_file(stk_data_path, study_name, max_active_time, 'MaxActive_Inertial_Extended')
-    # MAX BLACKOUT TIME
-    # write_data_to_file(stk_data_path, study_name, max_blackout_time, 'MaxBlackout_Inertial_Extended')
-    # MEAN ACTIVE TIME
-    # write_data_to_file(stk_data_path, study_name, mean_active_time, 'MeanActive_Inertial_Extended')
-    # MEAN BLACKOUT TIME
-    # write_data_to_file(stk_data_path, study_name, mean_blackout_time, 'MeanBlackout_Inertial_Extended')
-    # MEAN RANGE
-    # write_data_to_file(stk_data_path, study_name, mean_range, "MeanRange_Inertial_Extended")
+    # ACTIVE TIME
+    write_data_to_file(stk_data_path, study_name, total_active_time, 'TotalActive_Inertial_Extended')
+    write_data_to_file(stk_data_path, study_name, max_active_time, 'MaxActive_Inertial_Extended')
+    write_data_to_file(stk_data_path, study_name, mean_active_time, 'MeanActive_Inertial_Extended')
 
+    # BLACKOUT TIME
+    write_data_to_file(stk_data_path, study_name, total_blackout_time, 'TotalBlackout_Inertial_Extended')
+    write_data_to_file(stk_data_path, study_name, max_blackout_time, 'MaxBlackout_Inertial_Extended')
+    write_data_to_file(stk_data_path, study_name, mean_blackout_time, 'MeanBlackout_Inertial_Extended')
+
+    # RANGE
+    write_data_to_file(stk_data_path, study_name, mean_range, "MeanRange_Inertial_Extended")
+    write_data_to_file(stk_data_path, study_name, mean_min_range, "MeanMinRange_Inertial_Extended")
+    write_data_to_file(stk_data_path, study_name, mean_max_range, "MeanMaxRange_Inertial_Extended")
+
+    # STORED POWER EVENTS
     write_data_to_file(stk_data_path, study_name, total_stored_power_time, "TotalStoredPowerEvent_Inertial_Extended")
     write_data_to_file(stk_data_path, study_name, mean_stored_power_time, "MeanStoredPowerEvent_Inertial_Extended")
     write_data_to_file(stk_data_path, study_name, max_stored_power_time, "MaxStoredPowerEvent_Inertial_Extended")
