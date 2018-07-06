@@ -98,7 +98,7 @@ def main():
     args = [sps_range[2], transmitter, rover]
     optimum = minimize_scalar(calculate_mean_link_eff, bounds=(0, 2.5), method='bounded', args=args)
     transmitter['radius'] = 10.0
-    print('Aperture radius: {} cm'.format(round(optimum.x * 100.0, 2)))
+    print('Optimal aperture radius: {} cm'.format(round(optimum.x * 100.0, 2)))
 
     # Calculate mean link efficiency and power
     mean_link_eff = []
@@ -116,8 +116,11 @@ def main():
                     np.pi * transmitter['radius'] ** 2)) ** 2) for i in sps_range[1]]
 
     pointing_error = [(i - rover['rec_radius']) / (j * 1000.0 * rover['rec_radius']) for i,j in zip(surf_beam_radius, sps_range[1])]
-    print('Pointing error: {} rad'.format(np.mean(pointing_error)))
+    print('Mean acceptable pointing error: {} rad'.format(round(np.mean(pointing_error), 10)))
     plt.plot([i * 1e6 for i in pointing_error])
+    plt.title('Acceptable pointing error for mean range of every access period.')
+    plt.ylabel('1e-6 rad')
+    plt.xlabel('Access event')
     plt.show()
 
     print('\n')
@@ -129,12 +132,15 @@ def main():
     plt.subplot(311)
     plt.bar([i / 86400.0 for i in single_sps_blackout[0]], [j / 3600.0 for j in single_sps_blackout[2]])
     plt.title('One SPS')
+    plt.ylabel('Blackout Duration [h]')
     plt.subplot(312)
     plt.bar([i / 86400.0 for i in double_sps_blackout[0]], [j / 3600.0 for j in double_sps_blackout[2]])
     plt.title('Two SPS')
+    plt.ylabel('Blackout Duration [h]')
     plt.subplot(313)
     plt.bar([i / 86400.0 for i in triple_sps_blackout[0]], [j / 3600.0 for j in triple_sps_blackout[2]])
     plt.title('Three SPS')
+    plt.ylabel('Blackout Duration [h]')
     plt.xlabel('Days')
     plt.show()
 
