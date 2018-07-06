@@ -90,14 +90,15 @@ def main():
     # DETERMINE ORBIT LINK PERFORMANCE
     ####################################################################################################################
     # Select transmitter and rover
-    transmitter = trans_metrics('15kW')
+    transmitter = trans_metrics('100kW')
     rover = rover_metrics('curiosity')
 
     # Optimize transmitter size
     from scipy.optimize import minimize_scalar
     args = [sps_range[2], transmitter, rover]
     optimum = minimize_scalar(calculate_mean_link_eff, bounds=(0, 2.5), method='bounded', args=args)
-    transmitter['radius'] = optimum.x
+    transmitter['radius'] = 10.0
+    print('Aperture radius: {} cm'.format(round(optimum.x * 100.0, 2)))
 
     # Calculate mean link efficiency and power
     mean_link_eff = []
@@ -106,6 +107,18 @@ def main():
         mean_link_eff.append((rover['rec_radius'] / surf_beam_radius) ** 2)
 
     mean_power = [i * rover['rec_efficiency'] * transmitter['power'] for i in mean_link_eff]
+
+    # Calculate surface beam size and assess required pointing accuracy
+    # Minimum beam radius as defined by pointing error
+    # Actual beam radius as defined by Gaussian beam divergence
+    surf_beam_radius = [transmitter['radius'] * np.sqrt(1 + (
+                transmitter['wavelength'] * (i * 1000.0) / (
+                    np.pi * transmitter['radius'] ** 2)) ** 2) for i in sps_range[1]]
+
+    pointing_error = [(i - rover['rec_radius']) / (j * 1000.0 * rover['rec_radius']) for i,j in zip(surf_beam_radius, sps_range[1])]
+    print('Pointing error: {} rad'.format(np.mean(pointing_error)))
+    plt.plot([i * 1e6 for i in pointing_error])
+    plt.show()
 
     print('\n')
     print('Optimum transmitter radius: {} cm'.format(round(100.0 * transmitter['radius'])))
