@@ -309,6 +309,8 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     print('Estimated argument of perigee drift rate --> {} deg/yr'.format(round(sorted_data_set['arg_perigee_skew'][best_orbit_idx], 2)))
     print('Estimated delta v available to correct drift with EP --> {} km/s per year'.format(round(delta_v / 1000.0, 2)))
     print('Estimated delta v required to negate drift --> {} km/s per year'.format(round(delta_v_to_maintain / 1000.0, 2)))
+    if best_apogee - best_perigee == 0.0:
+        print('NOTE: Circular orbit, correction of argument of perigee drift practically not necessary')
     print('-----------------------------------------------------------------------------------------------------------')
     print('Total active time (blackout reduction) --> {} %'.format(round(sorted_data_set['total_active_time'][best_orbit_idx], 2)))
     print('Total blackout time --> {} %'.format(round(100.0 * sorted_data_set['total_blackout_time'][best_orbit_idx] / study['duration'], 2)))

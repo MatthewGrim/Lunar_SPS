@@ -244,8 +244,7 @@ def calculate_orbital_perturbations(semi_maj_axis, eccentricity, inclination_ep,
 
         # Manage singularity for circular orbits
         if eccentricity[j] == 0.0:
-            # dwdt_oblate[j] = -0.75 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 2 * J2 * (1 - 5 * np.cos(inclination_ep) ** 2)
-            dwdt_oblate[j] = 0.0
+            dwdt_oblate[j] = -0.75 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 2 * J2 * (1 - 5 * np.cos(inclination_ep) ** 2)
         elif inclination_ep == 0.0:
             dwdt_oblate[j] = 0.0
         else:

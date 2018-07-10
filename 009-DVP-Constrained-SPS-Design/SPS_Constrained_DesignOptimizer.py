@@ -66,7 +66,7 @@ def calculate_link_eff(trans_radius, args):
     # ESTIMATE MAGNITUDE OF ORBITAL PERTURBATIONS
     ####################################################################################################################
     # Orbital perturbations on argument of perigee [0], eccentricity [1], and inclination [2]
-    perturbations = calculate_orbital_perturbations(study['semi-maj-axis'], study['eccentricity'], study_name)
+    perturbations = calculate_orbital_perturbations(study['semi-maj-axis'], study['eccentricity'], study['inclination'], study['arg_perigee'])
     arg_perigee_skew = [abs(i * study['duration'] * 180.0 / np.pi) for i in perturbations[0]]
     ####################################################################################################################
 
