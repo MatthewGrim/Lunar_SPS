@@ -72,7 +72,7 @@ def parse_csv_to_array(file_name, sim_start):
     # The function outputs the start and end times of the event in seconds since the beginning of the simulation
     import os
     # Check if any access periods occur
-    if os.stat(file_name).st_size == 0:
+    if os.stat(file_name).st_size == 1:
         # If not, write nan
         duration_array = np.nan
         start_time_sec_from_simstart = np.nan
@@ -166,10 +166,8 @@ def import_range_data_statistics(file_name, stk_data_path):
 
     # Check if any access events exist
     if os.path.getsize("{}/{}_Semi_Parsed.txt".format(stk_data_path, file_name)) == 0:
-        # If not, write nan
-        min_range = np.nan
-        max_range = np.nan
-        mean_range = np.nan
+        # if not, pass
+        pass
     # If there are access events, parse out mean, min and max range for each
     else:
         last_file = open("{}/{}_Semi_Parsed.txt".format(stk_data_path, file_name), "r")
@@ -196,15 +194,13 @@ def get_event_overlaps(access_times, event_times):
     # "Conditional events" should be times when the SPS would be active, if it can access the target
     # Therefore take satellite illumination and target eclipses as event_times.
     # Output is an array containing start, end and duration of overlap events.
-    overlap_start = list()
-    overlap_end = list()
-    overlap_duration = list()
+    overlap_start = []
+    overlap_end = []
+    overlap_duration = []
 
     # Check to see if a list of event is empty
     if not hasattr(access_times[0], "__len__") or not hasattr(event_times[0], "__len__"):
-        overlap_start = 0.0
-        overlap_end = 0.0
-        overlap_duration = 0.0
+        pass
     # Else find overlap of events
     else:
         access_size = len(access_times[0])
@@ -264,63 +260,66 @@ def get_event_overlaps(access_times, event_times):
 
 def invert_events_list(active_times, duration):
 
-    assert len(active_times[0]) == len(active_times[1])
-    final_idx = len(active_times[1]) - 1
-    nc_start = list()
-    nc_end = list()
-    nc_duration = list()
+    nc_start = []
+    nc_end = []
+    nc_duration = []
 
-    # For the case where no_coverage coincides with neither beginning nor end of simulation
-    # Iterate through access periods, and calculate leading no_coverage period
-    if active_times[0][0] != 0 and active_times[1][final_idx] != duration:
-        nc_start.append(0)
-        nc_end.append(active_times[0][0])
-        nc_duration.append(active_times[0][0])
-        for j in range(0, final_idx):
-            nc_start.append(active_times[1][j])
-            nc_end.append(active_times[0][j+1])
-            nc_duration.append(active_times[0][j+1] - active_times[1][j])
-        nc_start.append(active_times[1][final_idx])
-        nc_end.append(duration)
-        nc_duration.append(duration - active_times[1][final_idx])
+    if len(active_times[0]) == 0 and np.sum(active_times) == 0.0:
+        no_coverage = [nc_start, nc_end, nc_duration]
+        pass
+    else:
+        final_idx = len(active_times[1]) - 1
+        # For the case where no_coverage coincides with neither beginning nor end of simulation
+        # Iterate through access periods, and calculate leading no_coverage period
+        if active_times[0][0] != 0 and active_times[1][final_idx] != duration:
+            nc_start.append(0)
+            nc_end.append(active_times[0][0])
+            nc_duration.append(active_times[0][0])
+            for j in range(0, final_idx):
+                nc_start.append(active_times[1][j])
+                nc_end.append(active_times[0][j+1])
+                nc_duration.append(active_times[0][j+1] - active_times[1][j])
+            nc_start.append(active_times[1][final_idx])
+            nc_end.append(duration)
+            nc_duration.append(duration - active_times[1][final_idx])
 
-    # For the case where no_coverage coincides with beginning but not end of simulation
-    # Iterate through access periods and calculate leading no_coverage period
-    elif active_times[0][0] == 0 and active_times[1][final_idx] != duration:
-        for j in range(0, final_idx):
-            nc_start.append(active_times[1][j])
-            nc_end.append(active_times[0][j+1])
-            nc_duration.append(active_times[0][j+1] - active_times[1][j])
-        nc_start.append(active_times[1][final_idx])
-        nc_end.append(duration)
-        nc_duration.append(duration - active_times[1][final_idx])
+        # For the case where no_coverage coincides with beginning but not end of simulation
+        # Iterate through access periods and calculate leading no_coverage period
+        elif active_times[0][0] == 0 and active_times[1][final_idx] != duration:
+            for j in range(0, final_idx):
+                nc_start.append(active_times[1][j])
+                nc_end.append(active_times[0][j+1])
+                nc_duration.append(active_times[0][j+1] - active_times[1][j])
+            nc_start.append(active_times[1][final_idx])
+            nc_end.append(duration)
+            nc_duration.append(duration - active_times[1][final_idx])
 
-    # For the case where no_coverage coincides with end but not beginning of simulation
-    # Iterate through access periods and calculate leading no_coverage period
-    elif active_times[0][0] != 0 and active_times[1][final_idx] == duration:
-        nc_start.append(0)
-        nc_end.append(active_times[0][0])
-        nc_duration.append(active_times[0][0])
-        for j in range(0, final_idx):
-            nc_start.append(active_times[1][j])
-            nc_end.append(active_times[0][j + 1])
-            nc_duration.append(active_times[0][j + 1] - active_times[1][j])
+        # For the case where no_coverage coincides with end but not beginning of simulation
+        # Iterate through access periods and calculate leading no_coverage period
+        elif active_times[0][0] != 0 and active_times[1][final_idx] == duration:
+            nc_start.append(0)
+            nc_end.append(active_times[0][0])
+            nc_duration.append(active_times[0][0])
+            for j in range(0, final_idx):
+                nc_start.append(active_times[1][j])
+                nc_end.append(active_times[0][j + 1])
+                nc_duration.append(active_times[0][j + 1] - active_times[1][j])
 
-    # For the case where no_coverage coincides with beginning and end of simulation
-    # Iterate through access periods and calculate leading no_coverage period
-    elif active_times[0][0] == 0 and active_times[1][final_idx] == duration:
-        for j in range(0, final_idx):
-            nc_start.append(active_times[1][j])
-            nc_end.append(active_times[0][j + 1])
-            nc_duration.append(active_times[0][j + 1] - active_times[1][j])
+        # For the case where no_coverage coincides with beginning and end of simulation
+        # Iterate through access periods and calculate leading no_coverage period
+        elif active_times[0][0] == 0 and active_times[1][final_idx] == duration:
+            for j in range(0, final_idx):
+                nc_start.append(active_times[1][j])
+                nc_end.append(active_times[0][j + 1])
+                nc_duration.append(active_times[0][j + 1] - active_times[1][j])
 
-    no_coverage = [nc_start, nc_end, nc_duration]
+        no_coverage = [nc_start, nc_end, nc_duration]
 
-    check_sum(active_times, no_coverage, duration)
+        check_sum(active_times, no_coverage, duration)
 
-    dummy_check = get_event_overlaps(active_times, no_coverage)
-    if np.sum(dummy_check[2]) > 60:
-        print('Original and inverted events overlapping!')
+        dummy_check = get_event_overlaps(active_times, no_coverage)
+        if np.sum(dummy_check[2]) > 60:
+            print('Original and inverted events overlapping!')
 
     return no_coverage
 
@@ -440,27 +439,30 @@ def combine_events(events_1, events_2):
     return new_event_list
 
 
-
 def determine_SPS_active_time(sunlight_sps, eclipse_target, access_times):
     # The total active time for solar power satellite is assumed to be the total available access time, minus
     # the times when the satellite is in eclipse, and minus the times that the target is illuminated by the sun.
+
     # Get events which are intersection of SPS access periods, and SPS sunlit periods
     sps_available = get_event_overlaps(access_times, sunlight_sps)
+
     # Get events which are intersection of previously mentioned events with SPS sunlit periods
     sps_active = get_event_overlaps(sps_available, eclipse_target)
-    # Calculate total active time for SPS (sum of durations)
-    total_sps_time = np.sum(sps_active[2])
-    print("Total SPS active time: {} hrs".format(round(total_sps_time / 3600.0, 2)))
-    # print("Maximum active event duration: {} hrs".format(round(max(sps_active[2]) / 3600.0, 2)))
+
+    print("Total SPS active time: {} hrs".format(round(np.sum(sps_active[2]) / 3600.0, 2)))
+
     return sps_active
 
 
 def determine_SPS_storedpower_time(sps_eclipse, eclipse_target, sps_access):
+
     # The total active time for solar power satellite is assumed to be the total available access time, minus
     # the times when the satellite is in eclipse, and minus the times that the target is illuminated by the sun.
-    # Get events which are intersection of SPS access periods, and SPS eclipse periods
     sps_available = get_event_overlaps(sps_access, eclipse_target)
+
+    # Get events which are intersection of SPS access periods, and SPS eclipse periods
     sps_stored_power = get_event_overlaps(sps_available, sps_eclipse)
+
     return sps_stored_power
 
 
@@ -468,8 +470,10 @@ def determine_battery_chargeup_events(sps_sunlit, sps_access, duration):
 
     # Get times when SPS cannot access target - thus it will not be beaming power
     sps_no_access = invert_events_list(sps_access, duration)
+
     # Get times during this when the SPS is sunlit - thus it can charge a battery
     charge_events = get_event_overlaps(sps_sunlit, sps_no_access)
+
     return charge_events
 
 
@@ -482,18 +486,11 @@ def determine_blackout_data(active_times, eclipse_target,  duration):
     sps_no_coverage = invert_events_list(active_times, duration)
 
     # Get events where no coverage overlaps with target eclipses
-    dark_events = get_event_overlaps(sps_no_coverage, eclipse_target)
+    blackout_events = get_event_overlaps(sps_no_coverage, eclipse_target)
 
-    # Calculate number of eclipses exceeding 84 hours, and the maximum eclipse duration
-    dark_durations = np.array(dark_events[2])
-    long_eclipse_flag = (dark_durations / 3600.0) > 6.0
-    num_long_eclipse = np.sum(long_eclipse_flag)
-    max_eclipse_duration = round(max([i/3600.0 for i in dark_events[2]]), 2)
-    # print('Maximum black-out duration with SPS: {} hrs'.format(max_eclipse_duration))
-    print('Total target blackout time: {} hrs'.format(round(np.sum(dark_events[2]) / 3600.0, 2)))
-    # print("Number of times black-out duration exceeds six hours: {}".format(num_long_eclipse))
+    print('Total target blackout time: {} hrs'.format(round(np.sum(blackout_events[2]) / 3600.0, 2)))
 
-    return dark_events
+    return blackout_events
 
 
 def determine_field_of_view(altitude):

@@ -194,7 +194,7 @@ def make_contour_plot(X, Y, data, title, fig_num):
     plt.show()
 
 
-def calculate_orbital_perturbations(semi_maj_axis, eccentricity, study_name):
+def calculate_orbital_perturbations(semi_maj_axis, eccentricity, inclination_ep, arg_perigee_ep):
     import sympy
     from sympy import cos, sin
 
@@ -211,20 +211,12 @@ def calculate_orbital_perturbations(semi_maj_axis, eccentricity, study_name):
     seperation_earth_moon = 385000e3
     G = 6.67384e-11
 
-    # Relevant orbit data in lunar equatorial plane
-    if study_name == 'Brandhorst_1000.0kmRes':
-        inclination_ep = 0.0 * np.pi / 180.0
-    elif study_name == 'SouthPole_IncrementedRes_Inertial':
-        inclination_ep = 90.0 * np.pi / 180.0
-    arg_perigee_ep = 90.0 * np.pi / 180.0
-    RAAN_ep = 0.0
-
     # Apparent mean motion of Earth around moon
     mean_motion_earth = np.sqrt(G * (mass_earth + mass_moon) / seperation_earth_moon ** 3)
 
     # Transform into frame used in Ely paper (apparent orbital plane of Earth around moon)
     relative_inclination = 6.8 * np.pi / 180.0
-    RAAN_op = RAAN_ep
+    RAAN_op = 0.0
     arg_perigee_op = arg_perigee_ep
     i = sympy.Symbol('i')
     inclination_op = sympy.solve(cos(relative_inclination) * cos(i) - sin(relative_inclination) * cos(RAAN_op) * sin(i), i)
@@ -252,7 +244,8 @@ def calculate_orbital_perturbations(semi_maj_axis, eccentricity, study_name):
 
         # Manage singularity for circular orbits
         if eccentricity[j] == 0.0:
-            dwdt_oblate[j] = -0.75 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 2 * J2 * (1 - 5 * np.cos(inclination_ep) ** 2)
+            # dwdt_oblate[j] = -0.75 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 2 * J2 * (1 - 5 * np.cos(inclination_ep) ** 2)
+            dwdt_oblate[j] = 0.0
         elif inclination_ep == 0.0:
             dwdt_oblate[j] = 0.0
         else:
@@ -292,7 +285,7 @@ def determine_constellation_size(eccentricity):
     stk_data_path = r'{}\STK Data\{}'.format(main_directory, study_name)
 
     # Read in total active times
-    total_active_time = read_data_from_file(stk_data_path, study_name, "TotalActive_Inertial_Extended")
+    total_active_time = read_data_from_file(stk_data_path, study_name, "TotalActive")
     # Import target illumination events
     target_lighting_raw = '{}\DVP_{}_Target_Lighting.csv'.format(stk_data_path, study_name)
     target_lighting = parse_csv_to_array(target_lighting_raw, start)
