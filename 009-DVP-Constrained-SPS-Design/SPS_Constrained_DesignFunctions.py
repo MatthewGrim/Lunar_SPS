@@ -29,6 +29,8 @@ def study_initialization(study_name):
         study['semi-maj-axis'] = semi_maj_axis
         study['eccentricity'] = eccentricity
         study['orbits'] = orbit_data
+        study['inclination'] = 0.0
+        study['arg_perigee'] = 0.0
 
     elif study_name == 'SouthPole_IncrementedRes_Inertial':
         study['start'] = convert_string_to_datetime(['2018', '05', '17', '10', '0', '0.0'])
@@ -44,6 +46,25 @@ def study_initialization(study_name):
         study['semi-maj-axis'] = semi_maj_axis
         study['eccentricity'] = eccentricity
         study['orbits'] = orbit_data
+        study['inclination'] = 90.0
+        study['arg_perigee'] = 90.0
+
+    elif study_name == 'Equatorial_IncrementedRes':
+        study['start'] = convert_string_to_datetime(['2018', '05', '17', '10', '0', '0.0'])
+        study['end'] = convert_string_to_datetime(['2020', '05', '17', '10', '0', '0.0'])
+        study['duration'] = (study['end'] - study['start']).total_seconds()
+
+        # Set bounds on parametric scan
+        max_perigee = 5000.0
+        max_apogee = 5000.0
+
+        # Get orbit data set
+        semi_maj_axis, eccentricity, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee)
+        study['semi-maj-axis'] = semi_maj_axis
+        study['eccentricity'] = eccentricity
+        study['orbits'] = orbit_data
+        study['inclination'] = 0.0
+        study['arg_perigee'] = 0.0
 
     else:
         print('Invalid study name')
@@ -144,7 +165,7 @@ def sort_data_lists(data_set, orbit_data, study_name):
     if study_name == 'Brandhorst_1000.0kmRes':
         for j in data_set:
             data_set_sorted[j] = sort_data_list_into_array(orbit_data, 1000.0, data_set[j])
-    elif study_name == 'SouthPole_IncrementedRes_Inertial':
+    elif study_name == 'SouthPole_IncrementedRes_Inertial' or 'Equatorial_IncrementedRes':
         for j in data_set:
             data_set_sorted[j] = sort_incremented_resolution_data(orbit_data, data_set[j])
 

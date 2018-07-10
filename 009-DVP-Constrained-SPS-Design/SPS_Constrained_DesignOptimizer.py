@@ -48,16 +48,19 @@ def calculate_link_eff(trans_radius, args):
     mean_link_efficiency = []
     mean_power_received = []
     for i in range(len(mean_range)):
-        # Actual beam radius as defined by Gaussian beam divergence
-        surf_beam_radius = trans_radius * np.sqrt(
-            1 + (transmitter['wavelength'] * (mean_range[i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
-        # Calculate link efficiency
-        if surf_beam_radius <= rover['rec_radius']:
-            mean_link_efficiency.append(1.0)
+        if math.isnan(mean_range[i]):
+            mean_link_efficiency.append(0.0)
         else:
-            mean_link_efficiency.append((rover['rec_radius'] / surf_beam_radius) ** 2)
-        # Calculate mean power received at target
-        mean_power_received.append(mean_link_efficiency[i] * rover['rec_efficiency'] * transmitter['power'])
+            # Actual beam radius as defined by Gaussian beam divergence
+            surf_beam_radius = trans_radius * np.sqrt(
+                1 + (transmitter['wavelength'] * (mean_range[i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
+            # Calculate link efficiency
+            if surf_beam_radius <= rover['rec_radius']:
+                mean_link_efficiency.append(1.0)
+            else:
+                mean_link_efficiency.append((rover['rec_radius'] / surf_beam_radius) ** 2)
+            # Calculate mean power received at target
+            mean_power_received.append(mean_link_efficiency[i] * rover['rec_efficiency'] * transmitter['power'])
     ####################################################################################################################
 
     # ESTIMATE MAGNITUDE OF ORBITAL PERTURBATIONS
@@ -137,6 +140,6 @@ def optimize_link_efficiency(trans_selection, rover_selection, constraints, acti
     from scipy.optimize import minimize_scalar
 
     args = [trans_selection, rover_selection, constraints, active_constraints, study_name]
-    optimum = minimize_scalar(calculate_link_eff, bounds=(1e-3, 0.4), method='bounded', args=args)
+    optimum = minimize_scalar(calculate_link_eff, bounds=(1e-3, 0.75), method='bounded', args=args)
 
     return optimum
