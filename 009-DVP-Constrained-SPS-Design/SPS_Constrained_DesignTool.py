@@ -19,6 +19,7 @@ from DVP_general_SPS_functions import *
 from DVP_Programmatic_Functions import *
 from SPS_Constrained_DesignOptimizer import optimize_link_efficiency
 from SPS_Constrained_DesignFunctions import *
+from numpy import unravel_index
 
 
 def generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints):
@@ -64,15 +65,29 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     data_set['mean_blackout_time'] = read_data_from_file(stk_data_path, study_name, "MeanBlackout")
     data_set['max_stored_power_time'] = read_data_from_file(stk_data_path, study_name, 'MaxStoredPowerEvent')
     data_set['total_stored_power_time'] = read_data_from_file(stk_data_path, study_name, 'TotalStoredPowerEvent')
+    data_set['total_station_keeping'] = read_data_from_file(stk_data_path, study_name, 'TotalStationKeeping')
     ####################################################################################################################
 
-    # ESTIMATE MAGNITUDE OF ORBITAL PERTURBATIONS
+    # ESTIMATE MAGNITUDE OF ORBITAL PERTURBATIONS and STATION KEEPING
     ####################################################################################################################
     # Orbital perturbations on argument of perigee [0], eccentricity [1], and inclination [2]
     perturbations = calculate_orbital_perturbations(study['semi-maj-axis'], study['eccentricity'], study['inclination'], study['arg_perigee'])
     # Calculate skew in argument of perigee in degrees per year
-    data_set['arg_perigee_skew'] = [abs(i * (365.0 * 24.0 * 3600.0) * 180.0 / np.pi) for i in perturbations[0]]
+    data_set['arg_perigee_drift'] = [abs(i * (365.0 * 24.0 * 3600.0) * 180.0 / np.pi) for i in perturbations[0]]
     data_set['eccentricity_dt'] = perturbations[1]
+    data_set['inclination_dt'] = perturbations[2]
+    ####################################################################################################################
+
+    # ESTIMATE DELTA V MARGIN
+    ####################################################################################################################
+    mu_moon = 6.674e-11 * 7.347673e22
+    solar_array_spec_pwr = 300.0
+
+    # Metric which measures force applied by electric propulsion per unit power
+    electric_propulsion_specific_thrust = 1.0 / 20e3
+
+    # delta v required to adjust argument of perigee to negate approximate drift rate
+    data_set['delta_v_to_maintain'] = [2 * i * np.sqrt(mu_moon / (j * (1 - i ** 2))) * np.sin((k / 2) * (np.pi / 180.0)) for i, j, k in zip(study['eccentricity'], study['semi-maj-axis'], data_set['arg_perigee_drift'])]
     ####################################################################################################################
 
     # CALCULATE LINK EFFICIENCY AND POWER/ENERGY DELIVERED, APPLY POINTING CONSTRAINT
@@ -139,9 +154,17 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
 
     # ENFORCE CONSTRAINTS
     ####################################################################################################################
+    # Remove infeasible designs which do not have any active events
+    for i in data_set['total_active_time']:
+        if math.isnan(i):
+            idx = data_set['total_active_time'].index(i)
+            for j in data_set:
+                data_set[j][idx] = np.nan
+
     # Convert data to appropriate units for applying constraints
     data_set['max_blackout_time'] = [i / 3600.0 for i in data_set['max_blackout_time']]
     data_set['total_active_time'] = [100.0 * i / study['duration'] for i in data_set['total_active_time']]
+
     # Remove data points for which blackout durations exceed the limit
     if active_constraints['max_blackout'] == 1:
         data_set = enforce_constraints(data_set, 'max_blackout_time', constraints, 'max_blackout', 'max')
@@ -153,8 +176,8 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     else:
         pass
     # Remove data points for which the estimated skew in argument of perigee is too great
-    if active_constraints['max_arg_perigee_skew'] == 1:
-        data_set = enforce_constraints(data_set, 'arg_perigee_skew', constraints, 'max_arg_perigee_skew', 'max')
+    if active_constraints['max_arg_perigee_drift'] == 1:
+        data_set = enforce_constraints(data_set, 'arg_perigee_drift', constraints, 'max_arg_perigee_drift', 'max')
     else:
         pass
     # Remove data points for which not enough power is delivered on average
@@ -187,26 +210,39 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     # SELECT SOLUTION WITH HIGHEST LINK EFFICIENCY
     ####################################################################################################################
     # Find best orbit according to weighted objective function
-    from numpy import unravel_index
     best_orbit_idx = unravel_index(np.nanargmax(sorted_data_set['mean_link_efficiency']), sorted_data_set['mean_link_efficiency'].shape)
     best_perigee = unique_perigees[best_orbit_idx[0]]
     best_apogee = unique_apogees[best_orbit_idx[1]]
     eccentricity = (best_apogee - best_perigee)/(best_apogee + best_perigee)
     semi_maj_axis = best_perigee / (1 - eccentricity)
-    mu_moon = 6.674e-11 * 7.347673e22
     orbit_period = 2 * np.pi * np.sqrt((semi_maj_axis * 1000.0) ** 3 / mu_moon)
     ####################################################################################################################
 
-    # SELECT SMALLEST TRANSMITTER WHICH ACCOMMODATES POWER
+    # SELECT SMALLEST TRANSMITTER WHICH ACCOMMODATES POWER and ORBIT MAINTENANCE
     ####################################################################################################################
     max_surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * sorted_data_set['max_range'][best_orbit_idx] * 1000.0 / (np.pi * transmitter['radius'] ** 2)) ** 2)
     min_surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * sorted_data_set['min_range'][best_orbit_idx] * 1000.0 / (np.pi * transmitter['radius'] ** 2)) ** 2)
     mean_surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * sorted_data_set['mean_range'][best_orbit_idx] * 1000.0 / (np.pi * transmitter['radius'] ** 2)) ** 2)
 
-    # Determine minimum allowable transmitter power
-    min_allowable_transmitter_pwr = constraints['min_power'] * max_surf_beam_radius ** 2 / (rover['rec_efficiency'] * rover['rec_radius'] ** 2)
+    # Determine minimum allowable transmitter power based on rover requirements
+    min_allowable_transmitter_pwr_link = constraints['min_power'] * max_surf_beam_radius ** 2 / (rover['rec_efficiency'] * rover['rec_radius'] ** 2)
+
+    # Determine minimum allowable transmitter power based on ability to maintain orbit
+    transmitters = ['100kW', '15kW', '4kW']
+    min_allowable_transmitter_pwr_deltav = []
+    for j in range(len(transmitters)):
+        trans = trans_metrics(transmitters[j])
+        min_allowable_transmitter_pwr_deltav.append((trans['mass'] * transmitter['efficiency'] * sorted_data_set['delta_v_to_maintain'][best_orbit_idx]) / ((electric_propulsion_specific_thrust * sorted_data_set['total_station_keeping'][best_orbit_idx]) - (sorted_data_set['delta_v_to_maintain'][best_orbit_idx] / solar_array_spec_pwr)))
+
+    # List of possible minimum powers
+    min_allowable_transmitter_pwr_deltav.append(min_allowable_transmitter_pwr_link)
+
+    # Select highest minimum power
+    min_allowable_transmitter_pwr = np.max(min_allowable_transmitter_pwr_deltav)
+
     # Adjust mean power delivered according to the minimum allowable transmitter power
     sorted_data_set['mean_power_received'] = sorted_data_set['mean_power_received'] * (min_allowable_transmitter_pwr / transmitter['power'])
+
     # Switch to smallest transmitter which accommodates power
     if min_allowable_transmitter_pwr < 4000.0:
         transmitter = trans_metrics('4kW')
@@ -218,6 +254,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
 
     # Assume transmitter operates at minimum allowable power
     transmitter['power'] = min_allowable_transmitter_pwr
+    transmitter['power'] = 25e3
 
     # Calculate flux variations
     mean_surf_flux = min_allowable_transmitter_pwr / (np.pi * mean_surf_beam_radius ** 2)
@@ -234,6 +271,22 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     generator_pwr = transmitter['power'] / transmitter['efficiency']
     # Mass of generator
     generator_mass = generator_pwr / solar_array_spec_pwr
+    ####################################################################################################################
+
+    # ESTIMATE STATION KEEPING
+    ####################################################################################################################
+    # Available delta v integrated across all events, assuming 1N thrust for 20kW power
+    # Estimate delta v available based on t
+    data_set['delta_v_available'] = [(electric_propulsion_specific_thrust * generator_pwr * i) / (generator_mass + transmitter['mass']) for i in data_set['total_station_keeping']]
+    sorted_data_set['delta_v_available'] = sort_incremented_resolution_data(study['orbits'], data_set['delta_v_available'])
+
+    data_set['delta_v_margin'] = [(i - j) / 1000.0 for i, j in zip(data_set['delta_v_available'], data_set['delta_v_to_maintain'])]
+    sorted_data_set['delta_v_margin'] = sort_incremented_resolution_data(study['orbits'], data_set['delta_v_margin'])
+    for i in range(len(sorted_data_set['delta_v_margin'][0])):
+        for j in range(len(sorted_data_set['delta_v_margin'][1])):
+            if sorted_data_set['delta_v_margin'][i][j] < 0.0:
+                for k in sorted_data_set:
+                    sorted_data_set[k][i][j] = np.nan
     ####################################################################################################################
 
     # EVALUATE HEAT GENERATED AND STEADY STATE TEMPERATURE
@@ -268,22 +321,6 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     target_heat_load = target_flux * (1 - rover['rec_efficiency']) * np.pi * rover['rec_radius'] ** 2
     ####################################################################################################################
 
-    # ESTIMATE STATION KEEPING
-    ####################################################################################################################
-    # Find events when SPS could perform station keeping
-    sps_lighting_raw = '{}\DVP_{}_{}perigee{}apogee_lighting.csv'.format(stk_data_path, study_name, best_perigee, best_apogee)
-    sps_lighting = parse_csv_to_array(sps_lighting_raw, study['start'])
-    sps_access_raw = '{}\DVP_{}_{}perigee{}apogee_access.csv'.format(stk_data_path, study_name, best_perigee, best_apogee)
-    sps_access = parse_csv_to_array(sps_access_raw, study['start'])
-    sps_station_keeping_events = determine_battery_chargeup_events(sps_lighting, sps_access, study['duration'])
-
-    # Available delta v integrated across all events, assuming 1N thrust for 20kW power
-    delta_v = 1.0 * np.sum(sps_station_keeping_events[2]) / (generator_mass + transmitter['mass'])
-
-    # delta v required to adjust argument of perigee to negate slew rate
-    delta_v_to_maintain = 2 * eccentricity * np.sqrt(mu_moon / (semi_maj_axis * (1 - eccentricity ** 2))) * np.sin((sorted_data_set['arg_perigee_skew'][best_orbit_idx] / 2) * (np.pi / 180.0))
-    ####################################################################################################################
-
     # DISPLAY RESULTS
     ####################################################################################################################
     # Print out performance results for optimal orbit
@@ -306,9 +343,9 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     print('Combined heat load of generator and transmitter --> {} kW'.format(round(total_heat / 1000.0, 2)))
     print('Steady state temperature --> {} Celsius'.format(round(steady_state_temp - 273.15, 2)))
     print('-----------------------------------------------------------------------------------------------------------')
-    print('Estimated argument of perigee drift rate --> {} deg/yr'.format(round(sorted_data_set['arg_perigee_skew'][best_orbit_idx], 2)))
-    print('Estimated delta v available to correct drift with EP --> {} km/s per year'.format(round(delta_v / 1000.0, 2)))
-    print('Estimated delta v required to negate drift --> {} km/s per year'.format(round(delta_v_to_maintain / 1000.0, 2)))
+    print('Estimated argument of perigee drift rate --> {} deg/yr'.format(round(sorted_data_set['arg_perigee_drift'][best_orbit_idx], 2)))
+    print('Estimated delta v available to correct drift with EP --> {} km/s'.format(round(sorted_data_set['delta_v_available'][best_orbit_idx] / 1000.0, 2)))
+    print('Estimated delta v required to negate drift --> {} km/s'.format(round(sorted_data_set['delta_v_to_maintain'][best_orbit_idx] / 1000.0, 2)))
     if best_apogee - best_perigee == 0.0:
         print('NOTE: Circular orbit, correction of argument of perigee drift practically not necessary')
     print('-----------------------------------------------------------------------------------------------------------')
@@ -317,10 +354,13 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     print('Max active period duration --> {} hours'.format(round(sorted_data_set['max_active_time'][best_orbit_idx] / 3600.0, 2)))
     print('Max blackout period duration --> {} hours'.format(round(sorted_data_set['max_blackout_time'][best_orbit_idx], 2)))
     print('-----------------------------------------------------------------------------------------------------------')
-    print('Max event duration during which SPS requires stored power --> {} hours'.format(round(sorted_data_set['max_stored_power_time'][best_orbit_idx] / 3600.0, 2)))
-    print('Approximate battery mass required to eliminate max duration event --> {} kg'.format(round(sps_battery_mass, 2)))
-    print('Approximate fuel cell mass required to eliminate max duration event --> {} kg'.format(round(sps_fuel_cell_mass, 2)))
-    print('Total time blackout time which could be eliminated with battery --> {} %'.format(round(100.0 * sorted_data_set['total_stored_power_time'][best_orbit_idx] / study['duration'], 2)))
+    if math.isnan(sorted_data_set['max_stored_power_time'][best_orbit_idx]):
+        print('No events when SPS could use stored power for transmission link')
+    else:
+        print('Max event duration during which SPS requires stored power --> {} hours'.format(round(sorted_data_set['max_stored_power_time'][best_orbit_idx] / 3600.0, 2)))
+        print('Approximate battery mass required to eliminate max duration event --> {} kg'.format(round(sps_battery_mass, 2)))
+        print('Approximate fuel cell mass required to eliminate max duration event --> {} kg'.format(round(sps_fuel_cell_mass, 2)))
+        print('Total time blackout time which could be eliminated with battery --> {} %'.format(round(100.0 * sorted_data_set['total_stored_power_time'][best_orbit_idx] / study['duration'], 2)))
 
     # Plot constrained design variables
     plt.figure(1)
@@ -334,8 +374,8 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     plt.title('Max Blackout Time [hrs]')
     plt.colorbar()
     plt.subplot(223)
-    plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['arg_perigee_skew'], 500)
-    plt.title('Argument Perigee Skew Rate [deg/yr]')
+    plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['delta_v_margin'], 500)
+    plt.title('$\Delta v$ Margin [km/s]')
     plt.xlabel('Apogee Altitude [km]')
     plt.ylabel('Perigee Altitude [km]')
     plt.colorbar()
