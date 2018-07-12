@@ -83,7 +83,6 @@ def vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee):
 
     radius_moon = 1737.0
 
-    start_time = time.time()
     resolution = np.array((10.0, 25.0, 50.0, 100.0))
     thresholds = np.array((100.0, 250.0, 1000.0))
     orbit_data = [0, 0]
@@ -116,13 +115,13 @@ def vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee):
     for i in range(0, len(orbit_data) - 1):
         eccentricity[i] = ((orbit_data[i + 1][1] / orbit_data[i + 1][0]) - 1) / (1 + (orbit_data[i + 1][1] / orbit_data[i + 1][0]))
         semi_maj_axis[i] = orbit_data[i + 1][0] / (1 - eccentricity[i])
-    end_time = time.time()
 
     return semi_maj_axis, eccentricity, orbit_data
 
 
 def sort_incremented_resolution_data(orbit_data, data_list):
 
+    # Get list of unique perigee and apogee altitudes
     r_moon = 1737.0
     unique_perigees = [orbit_data[1][0]]
     unique_apogees = [orbit_data[1][1]]
@@ -135,10 +134,12 @@ def sort_incremented_resolution_data(orbit_data, data_list):
 
     data_array = np.zeros([len(unique_perigees), len(unique_apogees)])
 
+    # Define resolution and bounds for incremented resolution approach
     resolution = [10.0, 25.0, 50.0, 100.0]
     thresholds = [100.0 + r_moon, 250.0 + r_moon, 1000.0 + r_moon]
     num_apogees = np.zeros([len(unique_perigees)])
 
+    # Determine number of unique apogee steps between a given perigee value and max apogee value
     for j in range(len(unique_perigees)):
         if r_moon < unique_perigees[j] < thresholds[0]:
             num_apogees[j] = 1 + int((thresholds[0] - unique_perigees[j]) / resolution[0]) + int((thresholds[1] - thresholds[0]) / resolution[1]) + int((thresholds[2] - thresholds[1]) / resolution[2]) + int((max_apogee - thresholds[2]) / resolution[3])
@@ -149,6 +150,7 @@ def sort_incremented_resolution_data(orbit_data, data_list):
         elif thresholds[2] <= unique_perigees[j]:
             num_apogees[j] = 1 + int((max_apogee - unique_perigees[j]) / resolution[3])
 
+    # Sort data
     start = np.zeros([len(unique_perigees)])
     for j in range(len(unique_perigees)):
         start[j] = np.sum(num_apogees[0:j])
@@ -156,7 +158,11 @@ def sort_incremented_resolution_data(orbit_data, data_list):
             shift = int(len(unique_apogees) - num_apogees[j])
             data_array[j, shift + k] = data_list[k + int(start[j])]
 
-    data_array[data_array == 0.0] = np.nan
+    # Remove zeros for impossible orbit combos (with perigee altitude > apogee altitude)
+    for i in range(len(data_array[0])):
+        for j in range(len(data_array[1])):
+            if j < i:
+                data_array[i][j] = np.nan
 
     return data_array
 
@@ -292,7 +298,10 @@ def determine_constellation_size(eccentricity):
     total_target_eclipse = np.sum(target_eclipse[2])
 
     # Calculate SPS constellation size required
-    number_of_sps = [int(math.ceil(total_target_eclipse / i)) for i in total_active_time]
+    number_of_sps = [int(total_target_eclipse / i) for i in total_active_time]
+
+    plt.plot(number_of_sps)
+    plt.show()
 
     # Calculate distribution of SPS in true anomaly
     unique_num_sps = range(2, max(number_of_sps) + 1)

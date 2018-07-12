@@ -78,13 +78,9 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     data_set['inclination_dt'] = perturbations[2]
     ####################################################################################################################
 
-    # ESTIMATE DELTA V MARGIN
+    # ESTIMATE DELTA V REQUIRED TO MAINTAIN ORBIT
     ####################################################################################################################
     mu_moon = 6.674e-11 * 7.347673e22
-    solar_array_spec_pwr = 300.0
-
-    # Metric which measures force applied by electric propulsion per unit power
-    electric_propulsion_specific_thrust = 1.0 / 20e3
 
     # delta v required to adjust argument of perigee to negate approximate drift rate
     data_set['delta_v_to_maintain'] = [2 * i * np.sqrt(mu_moon / (j * (1 - i ** 2))) * np.sin((k / 2) * (np.pi / 180.0)) for i, j, k in zip(study['eccentricity'], study['semi-maj-axis'], data_set['arg_perigee_drift'])]
@@ -175,11 +171,6 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
         data_set = enforce_constraints(data_set, 'total_active_time', constraints, 'min_active_time', 'min')
     else:
         pass
-    # Remove data points for which the estimated skew in argument of perigee is too great
-    if active_constraints['max_arg_perigee_drift'] == 1:
-        data_set = enforce_constraints(data_set, 'arg_perigee_drift', constraints, 'max_arg_perigee_drift', 'max')
-    else:
-        pass
     # Remove data points for which not enough power is delivered on average
     if active_constraints['min_power'] == 1:
         data_set = enforce_constraints(data_set, 'min_power_received', constraints, 'min_power', 'min')
@@ -218,27 +209,14 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     orbit_period = 2 * np.pi * np.sqrt((semi_maj_axis * 1000.0) ** 3 / mu_moon)
     ####################################################################################################################
 
-    # SELECT SMALLEST TRANSMITTER WHICH ACCOMMODATES POWER and ORBIT MAINTENANCE
+    # OPTIMIZE TRANSMITTER POWER
     ####################################################################################################################
     max_surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * sorted_data_set['max_range'][best_orbit_idx] * 1000.0 / (np.pi * transmitter['radius'] ** 2)) ** 2)
     min_surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * sorted_data_set['min_range'][best_orbit_idx] * 1000.0 / (np.pi * transmitter['radius'] ** 2)) ** 2)
     mean_surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * sorted_data_set['mean_range'][best_orbit_idx] * 1000.0 / (np.pi * transmitter['radius'] ** 2)) ** 2)
 
     # Determine minimum allowable transmitter power based on rover requirements
-    min_allowable_transmitter_pwr_link = constraints['min_power'] * max_surf_beam_radius ** 2 / (rover['rec_efficiency'] * rover['rec_radius'] ** 2)
-
-    # Determine minimum allowable transmitter power based on ability to maintain orbit
-    transmitters = ['100kW', '15kW', '4kW']
-    min_allowable_transmitter_pwr_deltav = []
-    for j in range(len(transmitters)):
-        trans = trans_metrics(transmitters[j])
-        min_allowable_transmitter_pwr_deltav.append((trans['mass'] * transmitter['efficiency'] * sorted_data_set['delta_v_to_maintain'][best_orbit_idx]) / ((electric_propulsion_specific_thrust * sorted_data_set['total_station_keeping'][best_orbit_idx]) - (sorted_data_set['delta_v_to_maintain'][best_orbit_idx] / solar_array_spec_pwr)))
-
-    # List of possible minimum powers
-    min_allowable_transmitter_pwr_deltav.append(min_allowable_transmitter_pwr_link)
-
-    # Select highest minimum power
-    min_allowable_transmitter_pwr = np.max(min_allowable_transmitter_pwr_deltav)
+    min_allowable_transmitter_pwr = constraints['min_power'] * max_surf_beam_radius ** 2 / (rover['rec_efficiency'] * rover['rec_radius'] ** 2)
 
     # Adjust mean power delivered according to the minimum allowable transmitter power
     sorted_data_set['mean_power_received'] = sorted_data_set['mean_power_received'] * (min_allowable_transmitter_pwr / transmitter['power'])
@@ -254,7 +232,6 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
 
     # Assume transmitter operates at minimum allowable power
     transmitter['power'] = min_allowable_transmitter_pwr
-    transmitter['power'] = 25e3
 
     # Calculate flux variations
     mean_surf_flux = min_allowable_transmitter_pwr / (np.pi * mean_surf_beam_radius ** 2)
@@ -262,26 +239,39 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     max_surf_flux = min_allowable_transmitter_pwr / (np.pi * min_surf_beam_radius ** 2)
     ####################################################################################################################
 
-    # EVALUATE REQUIRED POWER GENERATOR METRICS
+    # OPTIMIZE SOLAR ARRAY (GENERATOR) SIZE
     ####################################################################################################################
     # Power generator parameters - Stretched lens array SquareRigger platform
     solar_array_eff = 0.3
     solar_array_spec_pwr = 300.0
-    # Power required from generator
-    generator_pwr = transmitter['power'] / transmitter['efficiency']
+    # Metric which measures force applied by electric propulsion per unit power
+    electric_propulsion_specific_thrust = 1.0 / 20e3
+    # Add desired delta-v margin if constraint is active
+    if active_constraints['min_delta_v_margin'] == 1:
+        delta_v_requirement = sorted_data_set['delta_v_to_maintain'][best_orbit_idx] + (constraints['min_delta_v_margin'] * 1e3)
+    else:
+        delta_v_requirement = sorted_data_set['delta_v_to_maintain'][best_orbit_idx]
+    # Determine minimum allowable transmitter power based on ability to maintain orbit with electric propulsion
+    min_allowable_generator_pwr_delta_v = (transmitter['mass'] * delta_v_requirement) / (electric_propulsion_specific_thrust * sorted_data_set['total_station_keeping'][best_orbit_idx] - (delta_v_requirement / solar_array_spec_pwr))
+    # Minimum allowable power required from generator to operate transmitter
+    min_allowable_generator_pwr_transmitter = transmitter['power'] / transmitter['efficiency']
+    # Select largest of two minimum generator sizes
+    generator_pwr = np.max([min_allowable_generator_pwr_delta_v, min_allowable_generator_pwr_transmitter])
     # Mass of generator
     generator_mass = generator_pwr / solar_array_spec_pwr
     ####################################################################################################################
 
-    # ESTIMATE STATION KEEPING
+    # DETERMINE DELTA V MARGIN FOR STATION KEEPING
     ####################################################################################################################
     # Available delta v integrated across all events, assuming 1N thrust for 20kW power
-    # Estimate delta v available based on t
+    # Estimate delta v available based on electric propulsion system, integrated across all station keeping events
     data_set['delta_v_available'] = [(electric_propulsion_specific_thrust * generator_pwr * i) / (generator_mass + transmitter['mass']) for i in data_set['total_station_keeping']]
     sorted_data_set['delta_v_available'] = sort_incremented_resolution_data(study['orbits'], data_set['delta_v_available'])
-
+    # Determine delta v margin between available delta v from electric propulsion and required delta v for orbit maintenance
     data_set['delta_v_margin'] = [(i - j) / 1000.0 for i, j in zip(data_set['delta_v_available'], data_set['delta_v_to_maintain'])]
     sorted_data_set['delta_v_margin'] = sort_incremented_resolution_data(study['orbits'], data_set['delta_v_margin'])
+
+    # Remove design points for which the margin is negative
     for i in range(len(sorted_data_set['delta_v_margin'][0])):
         for j in range(len(sorted_data_set['delta_v_margin'][1])):
             if sorted_data_set['delta_v_margin'][i][j] < 0.0:

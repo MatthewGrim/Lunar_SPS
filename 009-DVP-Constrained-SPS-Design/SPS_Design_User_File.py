@@ -15,8 +15,8 @@ def main():
     # INITIALIZATION
     ####################################################################################################################
     # Select scenario/configuration
-    # study_name = 'SouthPole_IncrementedRes_Inertial'
-    study_name = 'Equatorial_IncrementedRes'
+    study_name = 'SouthPole_IncrementedRes_Inertial'
+    # study_name = 'Equatorial_IncrementedRes'
 
     # Select transmitter
     transmitter_selection = '100kW'
@@ -37,14 +37,13 @@ def main():
     # Minimum pointing error of SPS system in radians
     constraints['point_error'] = 1e-6
     # Minimum reduction in overall blackout time in percent
-    constraints['min_active_time'] = 8.0
+    constraints['min_active_time'] = 27.0
     # Minimum power requirement at target in Watts
     constraints['min_power'] = rover['operation_pwr']
     # Maximum time rover can survive without recharging in hours
     constraints['max_blackout'] = rover['battery_capacity'] / rover['hibernation_pwr']
-    # Maximum allowable skew in argument of perigee, in degrees per year
-    constraints['max_arg_perigee_drift'] = 70.0
-    constraints['min_delta_v_margin'] = 100.0
+    # Minimum allowable delta v margin related to station keeping in km/s
+    constraints['min_delta_v_margin'] = 10.0
 
     # Specify which constraints are active
     # 1 = active, anything else = inactive
@@ -52,8 +51,7 @@ def main():
     active_constraints['min_active_time'] = 1
     active_constraints['min_power'] = 1
     active_constraints['max_blackout'] = 1
-    active_constraints['max_arg_perigee_drift'] = 0
-    active_constraints['min_delta_v_margin'] = 0
+    active_constraints['min_delta_v_margin'] = 1
     ####################################################################################################################
 
     generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints)

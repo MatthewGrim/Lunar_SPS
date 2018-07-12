@@ -126,17 +126,6 @@ def calculate_link_eff(trans_radius, args):
         pass
     ####################################################################################################################
 
-    # ENFORCE ORBITAL STABILITY CONSTRAINT
-    ####################################################################################################################
-    if active_constraints['max_arg_perigee_drift'] == 1:
-        # Remove data points for which the overall blackout time is not sufficiently reduced
-        for i in range(len(arg_perigee_drift)):
-            if abs(arg_perigee_drift[i]) / 2.0 > constraints['max_arg_perigee_drift']:
-                data_set['mean_link_efficiency'][i] = 0.0
-    else:
-        pass
-    ####################################################################################################################
-
     # Find best link efficiency
     best_orbit_idx = np.nanargmax(data_set['mean_link_efficiency'])
 
