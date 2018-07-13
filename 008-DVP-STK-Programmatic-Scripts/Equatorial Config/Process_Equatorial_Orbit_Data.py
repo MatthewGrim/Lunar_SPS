@@ -50,6 +50,7 @@ def main():
     total_stored_power_time = []
     mean_stored_power_time = []
     max_stored_power_time = []
+    total_station_keeping = []
 
     # Import target illumination events
     target_lighting_raw = '{}\DVP_{}_Target_Lighting.csv'.format(stk_data_path, study_name)
@@ -62,42 +63,88 @@ def main():
         print("Perigee altitude: {} km, Apogee altitude: {} km".format(orbit_data[i][0] - r_moon, orbit_data[i][1] - r_moon))
 
         # Import access and lighting for SPS
-        sps_lighting_raw = '{}/DVP_{}_{}perigee_{}apogee_lighting.csv'.format(stk_data_path, study_name, 1747.0, 1747.0)
-        sps_lighting = parse_csv_to_array(sps_lighting_raw, start)
-        sps_access_raw = '{}/DVP_{}_{}perigee_{}apogee_access.csv'.format(stk_data_path, study_name, 1747.0, 1747.0)
-        sps_access = parse_csv_to_array(sps_access_raw, start)
+        sps_lighting = parse_csv_to_array('{}/DVP_{}_{}perigee{}apogee_lighting.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1]), start)
+        sps_access = parse_csv_to_array('{}/DVP_{}_{}perigee{}apogee_access.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1]), start)
 
-        # Determine the total SPS active durations
-        sps_active = determine_SPS_active_time(sps_lighting, sps_access, target_lighting)
-        total_active_time.append(np.sum(sps_active[2]))
-        max_active_time.append(max(sps_active[2]))
-        mean_active_time.append(np.mean(sps_active[2]))
+        # If no access periods exist, insert nan into each list - infeasible orbit design
+        if not hasattr(sps_access[0], "__len__"):
+            total_active_time.append(np.nan)
+            max_active_time.append(np.nan)
+            mean_active_time.append(np.nan)
 
-        # Determine the total target blackout durations
-        target_blackout = determine_blackout_data(sps_active, target_eclipse, total_duration)
-        total_blackout_time.append(np.sum(target_blackout[2]))
-        max_blackout_time.append(max(target_blackout[2]))
-        mean_blackout_time.append(np.mean(target_blackout[2]))
+            total_blackout_time.append(np.sum(target_eclipse[2]))
+            max_blackout_time.append(max(target_eclipse[2]))
+            mean_blackout_time.append(np.mean(target_eclipse[2]))
 
-        # Import range statistics and store mean range
-        sps_range = import_range_data_statistics('{}/DVP_{}_{}perigee_{}apogee_range.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1]), start)
-        # Check if access/range events exist
-        if not hasattr(sps_range[0], "__len__"):
             mean_range.append(np.nan)
             mean_min_range.append(np.nan)
             mean_max_range.append(np.nan)
-        # Time average range measurements over all access periods
-        else:
-            mean_range.append(np.sum([(i * j) / np.sum(sps_access[2]) for i, j in zip(sps_range[2], sps_access[2])]))
-            mean_min_range.append(np.sum([(i * j) / np.sum(sps_access[2]) for i, j in zip(sps_range[0], sps_access[2])]))
-            mean_max_range.append(np.sum([(i * j) / np.sum(sps_access[2]) for i, j in zip(sps_range[1], sps_access[2])]))
 
-        # Determine events when SPS is in range but eclipsed
-        sps_eclipse = invert_events_list(sps_lighting, total_duration)
-        sps_use_stored_power = determine_SPS_storedpower_time(sps_eclipse, target_eclipse, sps_access)
-        total_stored_power_time.append(np.sum(sps_use_stored_power[2]))
-        max_stored_power_time.append(max(sps_use_stored_power[2]))
-        mean_stored_power_time.append(np.mean(sps_use_stored_power[2]))
+            total_stored_power_time.append(np.nan)
+            max_stored_power_time.append(np.nan)
+            mean_stored_power_time.append(np.nan)
+
+            total_station_keeping.append(np.nan)
+
+        # Otherwise insert results into list
+        else:
+            # Calculate active times
+            sps_active = determine_SPS_active_time(sps_lighting, target_eclipse, sps_access)
+            # Check if there is active times, if not insert nan
+            if np.sum(sps_active) == 0.0:
+                # Active times
+                total_active_time.append(np.nan)
+                max_active_time.append(np.nan)
+                mean_active_time.append(np.nan)
+
+                # Range
+                mean_range.append(np.nan)
+                mean_min_range.append(np.nan)
+                mean_max_range.append(np.nan)
+
+                # Blackout times
+                total_blackout_time.append(np.sum(target_eclipse[2]))
+                max_blackout_time.append(max(target_eclipse[2]))
+                mean_blackout_time.append(np.mean(target_eclipse[2]))
+
+                # Station-keeping/battery-charge times
+                total_station_keeping.append(np.nan)
+
+            # If active times, calculate blackouts and range data the insert statistics
+            else:
+                # Active times
+                total_active_time.append(np.sum(sps_active[2]))
+                max_active_time.append(max(sps_active[2]))
+                mean_active_time.append(np.mean(sps_active[2]))
+
+                # Range
+                sps_range = import_range_data_statistics('DVP_{}_{}perigee{}apogee_range'.format(study_name, orbit_data[i][0], orbit_data[i][1]), stk_data_path)
+                mean_range.append(np.sum([(i * j) / np.sum(sps_access[2]) for i, j in zip(sps_range[2], sps_access[2])]))
+                mean_min_range.append(np.sum([(i * j) / np.sum(sps_access[2]) for i, j in zip(sps_range[0], sps_access[2])]))
+                mean_max_range.append(np.sum([(i * j) / np.sum(sps_access[2]) for i, j in zip(sps_range[1], sps_access[2])]))
+
+                # Blackout times
+                target_blackout = determine_blackout_data(sps_active, target_eclipse, total_duration)
+                total_blackout_time.append(np.sum(target_blackout[2]))
+                max_blackout_time.append(max(target_blackout[2]))
+                mean_blackout_time.append(np.mean(target_blackout[2]))
+
+                # Determine station-keeping/battery-charging events
+                sps_station_keeping_events = determine_battery_chargeup_events(sps_lighting, sps_access, total_duration)
+                total_station_keeping.append(np.sum(sps_station_keeping_events[2]))
+
+            # Stored power events
+            sps_eclipse = invert_events_list(sps_lighting, total_duration)
+            sps_use_stored_power = determine_SPS_storedpower_time(sps_eclipse, target_eclipse, sps_access)
+            # Check if stored power events exist, if not insert nan
+            if np.sum(sps_use_stored_power) == 0.0:
+                total_stored_power_time.append(np.nan)
+                max_stored_power_time.append(np.nan)
+                mean_stored_power_time.append(np.nan)
+            else:
+                total_stored_power_time.append(np.sum(sps_use_stored_power[2]))
+                max_stored_power_time.append(max(sps_use_stored_power[2]))
+                mean_stored_power_time.append(np.mean(sps_use_stored_power[2]))
     ####################################################################################################################
 
     # WRITING DATA TO FILES
@@ -123,6 +170,9 @@ def main():
     write_data_to_file(stk_data_path, study_name, total_stored_power_time, "TotalStoredPowerEvent_Equatorial")
     write_data_to_file(stk_data_path, study_name, mean_stored_power_time, "MeanStoredPowerEvent_Equatorial")
     write_data_to_file(stk_data_path, study_name, max_stored_power_time, "MaxStoredPowerEvent_Equatorial")
+
+    # STATION KEEPING EVENTS
+    write_data_to_file(stk_data_path, study_name, total_station_keeping, "TotalStationKeeping")
     ####################################################################################################################
 
 

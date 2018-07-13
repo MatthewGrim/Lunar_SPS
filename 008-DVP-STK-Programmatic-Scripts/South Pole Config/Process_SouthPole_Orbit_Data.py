@@ -58,6 +58,7 @@ def main():
     total_stored_power_time = []
     mean_stored_power_time = []
     max_stored_power_time = []
+    total_station_keeping = []
 
     # Import target illumination events
     target_lighting_raw = '{}\DVP_{}_Target_Lighting.csv'.format(stk_data_path, study_name)
@@ -81,6 +82,10 @@ def main():
         total_active_time.append(np.sum(sps_active[2]))
         max_active_time.append(max(sps_active[2]))
         mean_active_time.append(np.mean(sps_active[2]))
+        
+        # Determine station-keeping/battery-charging events
+        sps_station_keeping_events = determine_battery_chargeup_events(sps_lighting, sps_access, total_duration)
+        total_station_keeping.append(np.sum(sps_station_keeping_events[2]))
 
         # Determine the total and maximum target blackout durations
         target_blackout = determine_blackout_data(sps_active, target_eclipse, total_duration)
@@ -109,24 +114,27 @@ def main():
     # if it already exists and create a new one.
 
     # ACTIVE TIME
-    write_data_to_file(stk_data_path, study_name, total_active_time, 'TotalActive_Inertial_Extended')
-    write_data_to_file(stk_data_path, study_name, max_active_time, 'MaxActive_Inertial_Extended')
-    write_data_to_file(stk_data_path, study_name, mean_active_time, 'MeanActive_Inertial_Extended')
+    write_data_to_file(stk_data_path, study_name, total_active_time, 'TotalActive')
+    write_data_to_file(stk_data_path, study_name, max_active_time, 'MaxActive')
+    write_data_to_file(stk_data_path, study_name, mean_active_time, 'MeanActive')
 
     # BLACKOUT TIME
-    write_data_to_file(stk_data_path, study_name, total_blackout_time, 'TotalBlackout_Inertial_Extended')
-    write_data_to_file(stk_data_path, study_name, max_blackout_time, 'MaxBlackout_Inertial_Extended')
-    write_data_to_file(stk_data_path, study_name, mean_blackout_time, 'MeanBlackout_Inertial_Extended')
+    write_data_to_file(stk_data_path, study_name, total_blackout_time, 'TotalBlackout')
+    write_data_to_file(stk_data_path, study_name, max_blackout_time, 'MaxBlackout')
+    write_data_to_file(stk_data_path, study_name, mean_blackout_time, 'MeanBlackout')
 
     # RANGE
-    write_data_to_file(stk_data_path, study_name, mean_range, "MeanRange_Inertial_Extended")
-    write_data_to_file(stk_data_path, study_name, mean_min_range, "MeanMinRange_Inertial_Extended")
-    write_data_to_file(stk_data_path, study_name, mean_max_range, "MeanMaxRange_Inertial_Extended")
+    write_data_to_file(stk_data_path, study_name, mean_range, "MeanRange")
+    write_data_to_file(stk_data_path, study_name, mean_min_range, "MeanMinRange")
+    write_data_to_file(stk_data_path, study_name, mean_max_range, "MeanMaxRange")
 
     # STORED POWER EVENTS
-    write_data_to_file(stk_data_path, study_name, total_stored_power_time, "TotalStoredPowerEvent_Inertial_Extended")
-    write_data_to_file(stk_data_path, study_name, mean_stored_power_time, "MeanStoredPowerEvent_Inertial_Extended")
-    write_data_to_file(stk_data_path, study_name, max_stored_power_time, "MaxStoredPowerEvent_Inertial_Extended")
+    write_data_to_file(stk_data_path, study_name, total_stored_power_time, "TotalStoredPowerEvent")
+    write_data_to_file(stk_data_path, study_name, mean_stored_power_time, "MeanStoredPowerEvent")
+    write_data_to_file(stk_data_path, study_name, max_stored_power_time, "MaxStoredPowerEvent")
+    
+    # STATION KEEPING EVENTS
+    write_data_to_file(stk_data_path, study_name, total_station_keeping, "TotalStationKeeping")
     ####################################################################################################################
 
 

@@ -19,7 +19,7 @@ to versions of the programmatic scripts which open STK and load the desired scen
 from DVP_Programmatic_Functions import *
 
 
-def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, number_of_sps, mean_anomalies, time_step, study_name, file_path):
+def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, number_of_sps, arg_perigee, time_step, study_name, file_path):
 
     # This function takes in the various data points which are going to be passed to STK,
     # and then it writes a series of Connect Commands for autonomously varying the satellite
@@ -32,42 +32,44 @@ def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, numbe
         for i in range(len(semi_maj_axis)):
             # loop through constellation sizes
             conditions1 = range(2, number_of_sps[i] + 1)
-            if len(conditions1) == 0:
+            if number_of_sps[i] == 0 or number_of_sps[i] == 1:
+                continue
+            elif number_of_sps[i] == 2:
                 j = 2
                 k = 180.0
                 # Connect commands for generating reports require a save location
                 # Generates new report of access time to target
-                fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Access_Modified" File "{}\DVP_{}_{}perigee{}apogee_{}sps_{}meananom_access.csv" AccessObject '
+                fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Access_Modified" File "{}\DVP_{}_{}perigee{}apogee_{}sps_{}argperi_access.csv" AccessObject '
                     '*/Target/Target1\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], j,
                                                 k))
                 # Generates new report of SPS-to-target range statistics during access periods
-                fh.write('ReportCreate */Satellite/SPS1 Type Save Style "Access_Range_Stats" File "{}\DVP_{}_{}perigee{}apogee_{}sps_{}meananom_range.txt" AccessObject '
+                fh.write('ReportCreate */Satellite/SPS1 Type Save Style "Access_Range_Stats" File "{}\DVP_{}_{}perigee{}apogee_{}sps_{}argperi_range.txt" AccessObject '
                     '*/Target/Target1\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], j,
                                                 k))
                 # Generates new report of lighting times
-                fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Lighting_Times" File "{}\DVP_{}_{}perigee{}apogee_{}sps_{}meananom_lighting.csv"\n'.format(
+                fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Lighting_Times" File "{}\DVP_{}_{}perigee{}apogee_{}sps_{}argperi_lighting.csv"\n'.format(
                         file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], j, k))
                 # Sets new orbit for satellite, varying semi major axis, eccentricity, and mean anomaly
                 fh.write('SetState */Satellite/SPS1 Classical J4Perturbation "17 May 2018 10:00:00.000" "17 May 2020 '
                          '10:00:00.000" {} Inertial "17 May 2018 10:00:00.000" {} {} '
-                         '90 90 0 {}\n'.format(time_step, semi_maj_axis[i] * 1000.0, eccentricity[i], k))
+                         '0 {} 0 0\n'.format(time_step, semi_maj_axis[i] * 1000.0, eccentricity[i], k))
             else:
-                for j in conditions1:
+                for j in range(2, number_of_sps[i] + 1):
                     # loop through mean anomalies of satellites in constellation
-                    for k in mean_anomalies['{}sps'.format(j)]:
+                    for k in arg_perigee['{}sps'.format(j)]:
                         # Connect commands for generating reports require a save location
                         # Generates new report of access time to target
-                        fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Access_Modified" File "{}\DVP_{}_{}perigee{}apogee_{}sps_{}meananom_access.csv" AccessObject '
+                        fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Access_Modified" File "{}\DVP_{}_{}perigee{}apogee_{}sps_{}argperi_access.csv" AccessObject '
                                  '*/Target/Target1\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], j, k))
                         # Generates new report of SPS-to-target range statistics during access periods
-                        fh.write('ReportCreate */Satellite/SPS1 Type Save Style "Access_Range_Stats" File "{}\DVP_{}_{}perigee{}apogee_{}sps_{}meananom_range.txt" AccessObject '
+                        fh.write('ReportCreate */Satellite/SPS1 Type Save Style "Access_Range_Stats" File "{}\DVP_{}_{}perigee{}apogee_{}sps_{}argperi_range.txt" AccessObject '
                                  '*/Target/Target1\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], j, k))
                         # Generates new report of lighting times
-                        fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Lighting_Times" File "{}\DVP_{}_{}perigee{}apogee_{}sps_{}meananom_lighting.csv"\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], j, k))
+                        fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Lighting_Times" File "{}\DVP_{}_{}perigee{}apogee_{}sps_{}argperi_lighting.csv"\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], j, k))
                         # Sets new orbit for satellite, varying semi major axis, eccentricity, and mean anomaly
                         fh.write('SetState */Satellite/SPS1 Classical J4Perturbation "17 May 2018 10:00:00.000" "17 May 2020 '
                                  '10:00:00.000" {} Inertial "17 May 2018 10:00:00.000" {} {} '
-                                 '90 90 0 {}\n'.format(time_step, semi_maj_axis[i]*1000.0, eccentricity[i], k))
+                                 '0 {} 0 0 \n'.format(time_step, semi_maj_axis[i]*1000.0, eccentricity[i], k))
     time_end = time.time()
     print('Time required to write connect commands: {} seconds'.format(time_end - time_start))
 
@@ -165,13 +167,13 @@ def main():
     main_directory = os.path.dirname(issue_folder)
 
     # Pathway to scenario for this study
-    scenario_path = '{}/STK-Scenarios/PolarOrbit/SouthPole_ManyToOne.sc'.format(main_directory)
+    scenario_path = '{}/STK-Scenarios/EquatorialOrbit/Equatorial_Orbit_45N_Target.sc'.format(main_directory)
 
     # Name of study - be descriptive
-    study_name = 'SouthPole_IncrementedRes_ManytoOne'
+    study_name = 'Equatorial_IncrementedRes_ManytoOne'
 
     # Name of reference study on which constellation sizes are based
-    reference_study = 'SouthPole_IncrementedRes_Inertial'
+    reference_study = 'Equatorial_IncrementedRes'
 
     # Create folder inside main directory for storing data sets
     print('Creating new folder to store reports...')
@@ -190,11 +192,11 @@ def main():
 
     # Get maximum size of constellation required
     print('Calculating constellation sizes...')
-    number_of_sps, mean_anomalies = determine_constellation_size(ecc, study_name)
+    number_of_sps, arg_perigee = determine_constellation_size(ecc, reference_study)
 
     # Generate connect commands for programmatically running STK simulations
     print('Writing connect commands....')
-    generate_stk_connect_commands(sma, ecc, orbit_data, number_of_sps, mean_anomalies, time_step, study_name, new_path)
+    generate_stk_connect_commands(sma, ecc, orbit_data, number_of_sps, arg_perigee, time_step, study_name, new_path)
 
     # Open STK, load scenario, and execute commands to create data set
     # run_stk_v2(scenario_path, study_name)
