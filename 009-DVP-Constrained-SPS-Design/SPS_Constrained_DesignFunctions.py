@@ -96,7 +96,7 @@ def rover_metrics(rover_name):
     if "amalia" in rover_name:
         # Team ITALIA AMALIA (intermediate)
         rover['rec_radius'] = 0.5
-        rover['fleet_radius'] = ((num_rovers_across_diameter - 1.0) * separation / 2.0) + (num_rovers_across_diameter * rover['rec_radius'])
+        rover['fleet_radius'] = np.sqrt(2.0) * ((2.0 * num_rovers_across_diameter * rover['rec_radius']) + (num_rovers_across_diameter - 1.0) * separation) / 2.0
         rover['rec_efficiency'] = 0.40
         rover['operation_pwr'] = 100.0
         rover['hibernation_pwr'] = 7.0
@@ -105,7 +105,7 @@ def rover_metrics(rover_name):
     elif "sorato" in rover_name:
         # ispace Sorato (miniature)
         rover['rec_radius'] = 0.1
-        rover['fleet_radius'] = ((num_rovers_across_diameter - 1.0) * separation / 2.0) + (num_rovers_across_diameter * rover['rec_radius'])
+        rover['fleet_radius'] = np.sqrt(2.0) * ((2.0 * num_rovers_across_diameter * rover['rec_radius']) + (num_rovers_across_diameter - 1.0) * separation) / 2.0
         rover['rec_efficiency'] = 0.40
         rover['operation_pwr'] = 21.5
         rover['hibernation_pwr'] = 4.5
@@ -114,7 +114,7 @@ def rover_metrics(rover_name):
     elif "curiosity" in rover_name:
         # NASA Curiosity (large)
         rover['rec_radius'] = 1.0
-        rover['fleet_radius'] = ((num_rovers_across_diameter - 1) * separation / 2.0) + (num_rovers_across_diameter * rover['rec_radius'])
+        rover['fleet_radius'] = np.sqrt(2.0) * ((2.0 * num_rovers_across_diameter * rover['rec_radius']) + (num_rovers_across_diameter - 1.0) * separation) / 2.0
         rover['rec_efficiency'] = 0.40
         rover['operation_pwr'] = 270.0
         rover['hibernation_pwr'] = 23.5
