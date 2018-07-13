@@ -44,7 +44,7 @@ def calculate_link_eff(trans_radius, args):
     data_set['mean_range'] = read_data_from_file(stk_data_path, study_name, "MeanRange")
     ####################################################################################################################
 
-    # CALCULATE LINK EFFICIENCY, MEAN POWER, and TOTAL ENERGY DELIVERED
+    # CALCULATE LINK EFFICIENCY, MEAN POWER
     ####################################################################################################################
     data_set['mean_link_efficiency'] = []
     data_set['mean_power_received'] = []
@@ -53,13 +53,24 @@ def calculate_link_eff(trans_radius, args):
             data_set['mean_link_efficiency'].append(0.0)
         else:
             # Actual beam radius as defined by Gaussian beam divergence
-            surf_beam_radius = trans_radius * np.sqrt(
-                1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
+            surf_beam_radius = trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
             # Calculate link efficiency
-            if surf_beam_radius <= rover['rec_radius']:
-                data_set['mean_link_efficiency'].append(1.0)
+
+            # If calculating for fleet, remove designs which give beam smaller than area covered by fleet, and calculate
+            # link efficiency to each individual rover
+            if "fleet" in args[1]:
+                if surf_beam_radius < rover['fleet_radius']:
+                    data_set['mean_link_efficiency'].append(0.0)
+                else:
+                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius) ** 2)
+
+            # If calculating for single rover, 100% efficiency if beam fits within receiver
             else:
-                data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius) ** 2)
+                if surf_beam_radius <= rover['rec_radius']:
+                    data_set['mean_link_efficiency'].append(1.0)
+                else:
+                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius) ** 2)
+
             # Calculate mean power received at target
             data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
     ####################################################################################################################
@@ -82,11 +93,16 @@ def calculate_link_eff(trans_radius, args):
     ####################################################################################################################
     if active_constraints['point_error'] == 1:
         for i in range(len(data_set['mean_link_efficiency'])):
+
             # Minimum beam radius as defined by pointing error
-            min_beam_radius = rover['rec_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)
+            if "fleet" in rover:
+                min_beam_radius = rover['fleet_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)
+            else:
+                min_beam_radius = rover['rec_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)
+
             # Actual beam radius as defined by Gaussian beam divergence
-            surf_beam_radius = trans_radius * np.sqrt(
-                1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
+            surf_beam_radius = trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
+
             # Check pointing error constraint
             if surf_beam_radius < min_beam_radius:
                 data_set['mean_link_efficiency'][i] = 0.0
@@ -136,7 +152,11 @@ def optimize_link_efficiency(trans_selection, rover_selection, constraints, acti
 
     from scipy.optimize import minimize_scalar
 
+    if "SouthPole" in study_name:
+        trans_radius_max = 0.5
+    elif "Equatorial" in study_name:
+        trans_radius_max = 0.7
     args = [trans_selection, rover_selection, constraints, active_constraints, study_name]
-    optimum = minimize_scalar(calculate_link_eff, bounds=(1e-3, 0.7), method='bounded', args=args)
+    optimum = minimize_scalar(calculate_link_eff, bounds=(1e-3, trans_radius_max), method='bounded', args=args)
 
     return optimum
