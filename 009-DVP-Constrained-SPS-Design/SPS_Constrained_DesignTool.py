@@ -72,7 +72,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     # Orbital perturbations on argument of perigee [0], eccentricity [1], and inclination [2]
     perturbations = calculate_orbital_perturbations(study['semi-maj-axis'], study['eccentricity'], study['inclination'], study['arg_perigee'])
     # Calculate skew in argument of perigee in degrees per year
-    data_set['arg_perigee_drift'] = [abs(i * (365.0 * 24.0 * 3600.0) * 180.0 / np.pi) for i in perturbations[0]]
+    data_set['arg_perigee_drift'] = [abs(i * study['duration']) for i in perturbations[0]]
     data_set['eccentricity_dt'] = perturbations[1]
     data_set['inclination_dt'] = perturbations[2]
     ####################################################################################################################
@@ -80,7 +80,6 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     # ESTIMATE DELTA V REQUIRED TO MAINTAIN ORBIT
     ####################################################################################################################
     mu_moon = 6.674e-11 * 7.347673e22
-
     # delta v required to adjust argument of perigee to negate approximate drift rate
     data_set['delta_v_to_maintain'] = [2 * i * np.sqrt(mu_moon / (j * (1 - i ** 2))) * np.sin((k / 2) * (np.pi / 180.0)) for i, j, k in zip(study['eccentricity'], study['semi-maj-axis'], data_set['arg_perigee_drift'])]
     ####################################################################################################################
@@ -166,14 +165,14 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     solar_array_eff = 0.3
     solar_array_spec_pwr = 300.0
     # Metric which measures force applied by electric propulsion per unit power
-    electric_propulsion_specific_thrust = 1.0 / 20e3
+    thrust_to_power_ratio = 1.0 / 20e3
     # Add desired delta-v margin if constraint is active
     if active_constraints['min_delta_v_margin'] == 1:
         delta_v_requirement = sorted_data_set['delta_v_to_maintain'][best_orbit_idx] + (constraints['min_delta_v_margin'] * 1e3)
     else:
         delta_v_requirement = sorted_data_set['delta_v_to_maintain'][best_orbit_idx]
     # Determine minimum allowable transmitter power based on ability to maintain orbit with electric propulsion
-    min_allowable_generator_pwr_delta_v = (transmitter['mass'] * delta_v_requirement) / (electric_propulsion_specific_thrust * sorted_data_set['total_station_keeping'][best_orbit_idx] - (delta_v_requirement / solar_array_spec_pwr))
+    min_allowable_generator_pwr_delta_v = (transmitter['mass'] * delta_v_requirement) / (thrust_to_power_ratio * sorted_data_set['total_station_keeping'][best_orbit_idx] - (delta_v_requirement / solar_array_spec_pwr))
     # Minimum allowable power required from generator to operate transmitter
     min_allowable_generator_pwr_transmitter = transmitter['power'] / transmitter['efficiency']
     # Select largest of two minimum generator sizes
@@ -186,11 +185,12 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     ####################################################################################################################
     # Available delta v integrated across all events, assuming 1N thrust for 20kW power
     # Estimate delta v available based on electric propulsion system, integrated across all station keeping events
-    data_set['delta_v_available'] = [(electric_propulsion_specific_thrust * generator_pwr * i) / (generator_mass + transmitter['mass']) for i in data_set['total_station_keeping']]
-    sorted_data_set['delta_v_available'] = sort_incremented_resolution_data(study['orbits'], data_set['delta_v_available'])
+    number_impulses = 2 * study['duration'] / orbit_period
+    duration_of_impulse = 5 * 60.0
+    delta_v_available = (number_impulses * duration_of_impulse * thrust_to_power_ratio * generator_pwr) / (generator_mass + transmitter['mass'])
 
     # Determine delta v margin between available and required delta v for orbit maintenance
-    data_set['delta_v_margin'] = [(i - j) / 1000.0 for i, j in zip(data_set['delta_v_available'], data_set['delta_v_to_maintain'])]
+    data_set['delta_v_margin'] = [(delta_v_available - j) / 1000.0 for j in data_set['delta_v_to_maintain']]
     sorted_data_set['delta_v_margin'] = sort_incremented_resolution_data(study['orbits'], data_set['delta_v_margin'])
 
     if active_constraints['min_delta_v_margin'] == 1:
@@ -262,8 +262,8 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     print('Combined heat load of generator and transmitter --> {} kW'.format(round(total_heat / 1000.0, 2)))
     print('Steady state temperature --> {} Celsius'.format(round(steady_state_temp - 273.15, 2)))
     print('-----------------------------------------------------------------------------------------------------------')
-    print('Estimated argument of perigee drift rate --> {} deg/yr'.format(round(sorted_data_set['arg_perigee_drift'][best_orbit_idx], 2)))
-    print('Estimated delta v available to correct drift with EP --> {} km/s'.format(round(sorted_data_set['delta_v_available'][best_orbit_idx] / 1000.0, 2)))
+    print('Estimated argument of perigee drift rate --> {} deg/yr'.format(round(sorted_data_set['arg_perigee_drift'][best_orbit_idx] * (180.0 / np.pi), 2)))
+    print('Estimated delta v available to correct drift with EP --> {} km/s'.format(round(delta_v_available / 1000.0, 2)))
     print('Estimated delta v required to negate drift --> {} km/s'.format(round(sorted_data_set['delta_v_to_maintain'][best_orbit_idx] / 1000.0, 2)))
     if best_apogee - best_perigee == 0.0:
         print('NOTE: Circular orbit, correction of argument of perigee drift practically not necessary')

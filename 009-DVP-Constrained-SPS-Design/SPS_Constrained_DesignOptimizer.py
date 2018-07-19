@@ -11,7 +11,7 @@ the transmitter aperture size is varied in order to optimize the link efficiency
 from DVP_general_SPS_functions import *
 from DVP_Programmatic_Functions import *
 from SPS_Constrained_DesignFunctions import *
-
+import sys
 
 def calculate_link_eff(trans_radius, args):
 
@@ -73,13 +73,6 @@ def calculate_link_eff(trans_radius, args):
 
             # Calculate mean power received at target
             data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
-    ####################################################################################################################
-
-    # ESTIMATE MAGNITUDE OF ORBITAL PERTURBATIONS
-    ####################################################################################################################
-    # Orbital perturbations on argument of perigee [0], eccentricity [1], and inclination [2]
-    perturbations = calculate_orbital_perturbations(study['semi-maj-axis'], study['eccentricity'], study['inclination'], study['arg_perigee'])
-    arg_perigee_drift = [abs(i * study['duration'] * 180.0 / np.pi) for i in perturbations[0]]
     ####################################################################################################################
 
     # Remove infeasible designs which do not have any active events

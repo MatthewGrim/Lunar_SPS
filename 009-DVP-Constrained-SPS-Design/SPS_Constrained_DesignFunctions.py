@@ -85,7 +85,7 @@ def rover_metrics(rover_name):
         num_rovers = [float(s) for s in rover_name.split() if s.isdigit()]
         num_rovers_across_diameter = math.ceil(np.sqrt(num_rovers[0]))
     else:
-        num_rovers = 1.0
+        num_rovers_across_diameter = 1.0
 
     if "separation" in rover_name:
         separation = [float(s) for s in re.findall("\d+\.\d+", rover_name)]
@@ -129,7 +129,7 @@ def trans_metrics(selection):
 
     transmitter = {}
 
-    if selection == '100kW':
+    if '100kW' in selection:
         # IPG YLS10000
         transmitter['wavelength'] = 1070e-9
         transmitter['power'] = 100e3
@@ -152,7 +152,7 @@ def trans_metrics(selection):
         transmitter['efficiency'] = 0.26
 
     else:
-        print('Select either \high power/ or \low power/')
+        print('Select either 100kW, 15kW, or 4kW')
 
     return transmitter
 
@@ -160,6 +160,7 @@ def trans_metrics(selection):
 def enforce_constraints(data_set, data_type, constraints, constraint_name, constraint_type):
 
     import numpy as np
+    import sys
 
     if constraint_type == 'max':
         for i in range(len(data_set[data_type])):
@@ -172,6 +173,10 @@ def enforce_constraints(data_set, data_type, constraints, constraint_name, const
             if data_set[data_type][i] < constraints[constraint_name]:
                 for j in data_set:
                     data_set[j][i] = np.nan
+
+    if np.isnan(data_set[data_type]).all():
+        print('No feasible designs remaining, {} constraint too restrictive.'.format(constraint_name))
+        sys.exit()
 
     return data_set
 
