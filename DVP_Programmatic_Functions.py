@@ -204,18 +204,25 @@ def calculate_orbital_perturbations(semi_maj_axis, eccentricity, inclination_ep,
     import sympy
     from sympy import cos, sin
 
-    semi_maj_axis = semi_maj_axis * 1000.0
+    semi_maj_axis = [i * 1000.0 for i in semi_maj_axis]
+    inclination_ep = inclination_ep * (np.pi / 180.0)
+    arg_perigee_ep = arg_perigee_ep * (np.pi / 180.0)
 
     # Initialize solar system data
     mass_moon = 7.34767309e22
-    r_moon = 1737e3
+    r_moon = 1737.63e3
+
     # Zonal harmonics of moon from GLGM-1 gravitational model
     J2 = 0.00020374485
-    J3 = 0.0000010262740
+    J3 = 0.000008476
     mass_earth = 5.972e24
     mass_fraction = mass_earth / (mass_earth + mass_moon)
     seperation_earth_moon = 385000e3
     G = 6.67384e-11
+
+    # Intermediate variables to simplify equations
+    Ra = [r_moon / i for i in semi_maj_axis]
+    e = [1.0 - j ** 2 for j in eccentricity]
 
     # Apparent mean motion of Earth around moon
     mean_motion_earth = np.sqrt(G * (mass_earth + mass_moon) / seperation_earth_moon ** 3)
@@ -239,23 +246,23 @@ def calculate_orbital_perturbations(semi_maj_axis, eccentricity, inclination_ep,
     # Calculate perturbations on initial orbits
     for j in range(len(eccentricity)):
         # Due to Earth's gravity
-        dwdt_earth[j] = 3 * (5 * math.cos(inclination_op) ** 2 - 1 + eccentricity[j] ** 2 + 5 * (1 - eccentricity[j] ** 2 - math.cos(inclination_op) ** 2) * math.cos(2 * arg_perigee_op)) * mass_fraction * mean_motion_earth ** 2 / (8 * math.sqrt(1 - eccentricity[j] ** 2) * math.sqrt(G * mass_moon / semi_maj_axis[j] ** 3))
-        dedt_earth[j] = 15 * mass_fraction * mean_motion_earth ** 2 * eccentricity[j] * np.sqrt(1 - eccentricity[j] ** 2) * math.sin(inclination_op) ** 2 * math.sin(2 * arg_perigee_op) / (8 * math.sqrt(G * mass_moon / semi_maj_axis[j] ** 3))
+        dwdt_earth[j] = 3.0 * (5.0 * math.cos(inclination_op) ** 2 - 1.0 + eccentricity[j] ** 2 + 5.0 * (1 - eccentricity[j] ** 2 - math.cos(inclination_op) ** 2) * math.cos(2 * arg_perigee_op)) * mass_fraction * mean_motion_earth ** 2 / (8 * math.sqrt(1 - eccentricity[j] ** 2) * math.sqrt(G * mass_moon / semi_maj_axis[j] ** 3))
+        dedt_earth[j] = 15.0 * mass_fraction * mean_motion_earth ** 2 * eccentricity[j] * np.sqrt(1 - eccentricity[j] ** 2) * math.sin(inclination_op) ** 2 * math.sin(2 * arg_perigee_op) / (8 * math.sqrt(G * mass_moon / semi_maj_axis[j] ** 3))
 
         # Due to oblateness of moon
         mean_motion_sat = np.sqrt(G * mass_moon / semi_maj_axis[j] ** 3)
 
-        didt_oblate[j] = - 1.5 * (r_moon / semi_maj_axis[j]) ** 3 * J3 * eccentricity[j] * np.cos(inclination_ep) * np.cos(arg_perigee_ep) * (1.25 * np.sin(inclination_ep) ** 2 - 1) / (1 - eccentricity[j] ** 2) ** 2
-        dedt_oblate[j] = 1.5 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 3 * J3 * np.sin(inclination_ep) * np.cos(arg_perigee_ep) * (np.sin(inclination_ep) ** 2 - 1) / (1 - eccentricity[j] ** 2) ** 2
+        didt_oblate[j] = - 1.5 * Ra[j] ** 3 * J3 * eccentricity[j] * np.cos(inclination_ep) * np.cos(arg_perigee_ep) * (1.25 * np.sin(inclination_ep) ** 2 - 1) / (e[j] ** 2)
+        dedt_oblate[j] = 1.5 * mean_motion_sat * Ra[j] ** 3 * J3 * np.sin(inclination_ep) * np.cos(arg_perigee_ep) * (np.sin(inclination_ep) ** 2 - 1) / (e[j] ** 2)
 
         # Manage singularity for circular orbits
         if eccentricity[j] == 0.0:
-            dwdt_oblate[j] = -0.75 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 2 * J2 * (1 - 5 * np.cos(inclination_ep) ** 2)
+            dwdt_oblate[j] = -0.75 * mean_motion_sat * Ra[j] ** 2 * J2 * (1 - 5 * np.cos(inclination_ep) ** 2)
         elif inclination_ep == 0.0:
             dwdt_oblate[j] = 0.0
         else:
-            dwdt_oblate[j] = (-0.75 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 2 * J2 * (1 - 5 * np.cos(inclination_ep) ** 2) / (1 - eccentricity[j] ** 2) ** 2) \
-            - 1.5 * mean_motion_sat * (r_moon / semi_maj_axis[j]) ** 3 * (J3 / (eccentricity[j] * (1 - eccentricity[j] ** 2) ** 3)) * (np.sin(arg_perigee_ep) / np.sin(inclination_ep)) * ((1.25 * np.sin(inclination_ep) ** 2 - 1) * np.sin(inclination_ep) ** 2 + eccentricity[j] ** 2 * (1 - (35.0 / 4.0) * np.sin(inclination_ep) ** 2 * np.cos(inclination_ep) ** 2))
+            dwdt_oblate[j] = - 0.75 * mean_motion_sat * Ra[j] ** 2 * J2 * (1 - 5.0 * np.cos(inclination_ep) ** 2) / e[j] ** 2 \
+            - 1.5 * mean_motion_sat * Ra[j] ** 3 * (J3 / (eccentricity[j] * e[j] ** 3)) * (np.sin(arg_perigee_ep) / np.sin(inclination_ep)) * ((1.25 * np.sin(inclination_ep) ** 2 - 1.0) * np.sin(inclination_ep) ** 2 + eccentricity[j] ** 2 * (1 - (35.0 / 4.0) * np.sin(inclination_ep) ** 2 * np.cos(inclination_ep) ** 2))
 
     # Combine effects of Earth and lunar oblateness
     dwdt_total = [i + j for i, j in zip(dwdt_oblate, dwdt_earth)]
@@ -266,7 +273,7 @@ def calculate_orbital_perturbations(semi_maj_axis, eccentricity, inclination_ep,
     return perturbations
 
 
-def determine_constellation_size(eccentricity):
+def determine_constellation_size(eccentricity, max_constellation_size, study_name):
 
     from DVP_general_SPS_functions import convert_string_to_datetime, parse_csv_to_array, invert_events_list
     import sympy
@@ -283,9 +290,6 @@ def determine_constellation_size(eccentricity):
     issue_folder = os.path.dirname(current_folder)
     main_directory = os.path.dirname(issue_folder)
 
-    # Name study
-    study_name = 'SouthPole_IncrementedRes_Inertial'
-
     # Set file path for data
     stk_data_path = r'{}\STK Data\{}'.format(main_directory, study_name)
 
@@ -298,7 +302,16 @@ def determine_constellation_size(eccentricity):
     total_target_eclipse = np.sum(target_eclipse[2])
 
     # Calculate SPS constellation size required
-    number_of_sps = [int(total_target_eclipse / i) for i in total_active_time]
+    number_of_sps = []
+    for i in range(len(total_active_time)):
+        if math.isnan(total_active_time[i]):
+            number_of_sps.append(0)
+        else:
+            sps_num = int(total_target_eclipse / total_active_time[i])
+            if sps_num > max_constellation_size:
+                number_of_sps.append(max_constellation_size)
+            else:
+                number_of_sps.append(int(total_target_eclipse / total_active_time[i]))
 
     plt.plot(number_of_sps)
     plt.show()
@@ -306,16 +319,26 @@ def determine_constellation_size(eccentricity):
     # Calculate distribution of SPS in true anomaly
     unique_num_sps = range(2, max(number_of_sps) + 1)
 
-    mean_anomalies = {}
-    for i in unique_num_sps:
-        mean_anomalies['{}sps'.format(i)] = []
-        for j in range(1, i):
-            true_anomaly = j * (2 * np.pi / i)
-            E = sympy.Symbol('E')
-            if j <= (i / 2):
-                eccentric_anomaly = float(min(sympy.solve(cos(true_anomaly) - (cos(E) - eccentricity[i])/(1 - eccentricity[i] * cos(E)), E)))
-            elif j > (i / 2):
-                eccentric_anomaly = float(max(sympy.solve(cos(true_anomaly) - (cos(E) - eccentricity[i])/(1 - eccentricity[i] * cos(E)), E)))
-            mean_anomalies['{}sps'.format(i)].append(round((180.0 / np.pi) * eccentric_anomaly - eccentricity[i] * np.sin(eccentric_anomaly), 4))
+    if 'SouthPole' in study_name:
+        angular_distribution = {}
+        for i in unique_num_sps:
+            angular_distribution['{}sps'.format(i)] = []
+            for j in range(1, i):
+                true_anomaly = j * (2 * np.pi / i)
+                E = sympy.Symbol('E')
+                if j <= (i / 2):
+                    eccentric_anomaly = float(min(sympy.solve(cos(true_anomaly) - (cos(E) - eccentricity[i])/(1 - eccentricity[i] * cos(E)), E)))
+                elif j > (i / 2):
+                    eccentric_anomaly = float(max(sympy.solve(cos(true_anomaly) - (cos(E) - eccentricity[i])/(1 - eccentricity[i] * cos(E)), E)))
+                angular_distribution['{}sps'.format(i)].append(round((180.0 / np.pi) * eccentric_anomaly - eccentricity[i] * np.sin(eccentric_anomaly), 4))
 
-    return number_of_sps, mean_anomalies
+    elif 'Equatorial' in study_name:
+        angular_distribution = {}
+        for i in unique_num_sps:
+            angular_distribution['{}sps'.format(i)] = []
+            for j in range(1, i):
+                arg_perigee = j * (2 * np.pi / i)
+                angular_distribution['{}sps'.format(i)].append(round(arg_perigee, 4))
+
+
+    return number_of_sps, angular_distribution
