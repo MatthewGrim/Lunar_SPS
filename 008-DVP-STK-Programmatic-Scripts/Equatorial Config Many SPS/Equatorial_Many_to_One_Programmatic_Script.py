@@ -31,7 +31,6 @@ def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, numbe
         # loop through orbits
         for i in range(len(semi_maj_axis)):
             # loop through constellation sizes
-            conditions1 = range(2, number_of_sps[i] + 1)
             if number_of_sps[i] == 0 or number_of_sps[i] == 1:
                 continue
             elif number_of_sps[i] == 2:
@@ -167,13 +166,15 @@ def main():
     main_directory = os.path.dirname(issue_folder)
 
     # Pathway to scenario for this study
-    scenario_path = '{}/STK-Scenarios/EquatorialOrbit/Equatorial_Orbit_45N_Target.sc'.format(main_directory)
+    scenario_path = '{}/STK-Scenarios/EquatorialOrbit/Equatorial_SPS_45N_Target.sc'.format(main_directory)
 
     # Name of study - be descriptive
     study_name = 'Equatorial_IncrementedRes_ManytoOne'
 
     # Name of reference study on which constellation sizes are based
     reference_study = 'Equatorial_IncrementedRes'
+    # Set maximum size of SPS constellations
+    max_constellation_size = 10
 
     # Create folder inside main directory for storing data sets
     print('Creating new folder to store reports...')
@@ -192,14 +193,14 @@ def main():
 
     # Get maximum size of constellation required
     print('Calculating constellation sizes...')
-    number_of_sps, arg_perigee = determine_constellation_size(ecc, reference_study)
+    number_of_sps, arg_perigee = determine_constellation_size(ecc, max_constellation_size, reference_study)
 
     # Generate connect commands for programmatically running STK simulations
     print('Writing connect commands....')
     generate_stk_connect_commands(sma, ecc, orbit_data, number_of_sps, arg_perigee, time_step, study_name, new_path)
 
     # Open STK, load scenario, and execute commands to create data set
-    # run_stk_v2(scenario_path, study_name)
+    run_stk_v2(scenario_path, study_name)
 
 
 main()

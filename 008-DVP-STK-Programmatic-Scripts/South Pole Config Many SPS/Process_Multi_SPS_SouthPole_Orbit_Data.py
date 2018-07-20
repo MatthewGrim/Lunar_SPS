@@ -14,7 +14,7 @@ already been written. Comment out one section or the other as necessary.
 
 from DVP_general_SPS_functions import *
 from DVP_Programmatic_Functions import *
-
+import sys
 
 
 def main():
@@ -46,19 +46,20 @@ def main():
     # READ AND PROCESS STK DATA REPORTS
     ####################################################################################################################
     # Initialize lists
-    total_active_time = []
-    total_blackout_time = []
-    max_active_time = []
-    mean_active_time = []
-    max_blackout_time = []
-    mean_blackout_time = []
-    mean_range = []
-    mean_max_range = []
-    mean_min_range = []
-    total_stored_power_time = []
-    mean_stored_power_time = []
-    max_stored_power_time = []
-    total_station_keeping = []
+    data = {}
+    data['total_active_time'] = []
+    data['max_active_time'] = []
+    data['mean_active_time'] = []
+    data['total_station_keeping'] = []
+    data['total_blackout_time'] = []
+    data['max_blackout_time'] = []
+    data['mean_blackout_time'] = []
+    data['mean_range'] = []
+    data['mean_min_range'] = []
+    data['mean_max_range'] = []
+    data['total_stored_power_time'] = []
+    data['mean_stored_power_time'] = []
+    data['max_stored_power_time'] = []
 
     # Import target illumination events
     target_lighting_raw = '{}\DVP_{}_Target_Lighting.csv'.format(stk_data_path, study_name)
@@ -72,43 +73,76 @@ def main():
         print("Perigee radius: {} km, Apogee radius: {} km".format(orbit_data[i][0], orbit_data[i][1]))
 
         # Import SPS illumination and access events
-        sps_lighting_one = parse_csv_to_array('{}\DVP_{}_{}perigee{}apogee_0.0meananom_lighting.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1]), start)
-        sps_access_one = parse_csv_to_array('{}\DVP_{}_{}perigee{}apogee_0.0meananom_access.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1]), start)
+        try:
+            sps_lighting_one = parse_csv_to_array('{}\DVP_{}_{}perigee{}apogee_0.0meananom_lighting.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1]), start)
+        except IOError:
+            print('{}\DVP_{}_{}perigee{}apogee_0.0meananom_lighting.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1]))
+            write_data_files(stk_data_path, study_name, data)
+            sys.exit()
 
-        sps_lighting_two = parse_csv_to_array('{}\DVP_{}_2SPS_{}perigee{}apogee_180.0meananom_lighting.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1]), start)
-        sps_access_two = parse_csv_to_array('{}\DVP_{}_2SPS_{}perigee{}apogee_180.0meananom_access.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1]), start)
+        try:
+            sps_access_one = parse_csv_to_array('{}\DVP_{}_{}perigee{}apogee_0.0meananom_access.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1]), start)
+        except IOError:
+            print('{}\DVP_{}_{}perigee{}apogee_0.0meananom_access.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1]))
+            write_data_files(stk_data_path, study_name, data)
+            sys.exit()
+
+        try:
+            sps_lighting_two = parse_csv_to_array('{}\DVP_{}_{}perigee{}apogee_180.0meananom_lighting.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1]), start)
+        except IOError:
+            print('{}\DVP_{}_{}perigee{}apogee_180.0meananom_access.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1]))
+            write_data_files(stk_data_path, study_name, data)
+            sys.exit()
+
+        try:
+            sps_access_two = parse_csv_to_array('{}\DVP_{}_{}perigee{}apogee_180.0meananom_access.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1]), start)
+        except IOError:
+            print('{}\DVP_{}_{}perigee{}apogee_180.0meananom_access.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1]))
+            write_data_files(stk_data_path, study_name, data)
+            sys.exit()
 
         # Determine the total and maximum SPS active durations
         sps_active_one = determine_SPS_active_time(sps_lighting_one, target_eclipse, sps_access_one)
         sps_active_two = determine_SPS_active_time(sps_lighting_two, target_eclipse, sps_access_two)
         sps_active = combine_events(sps_active_one, sps_active_two)
-        total_active_time.append(np.sum(sps_active[2]))
-        max_active_time.append(max(sps_active[2]))
-        mean_active_time.append(np.mean(sps_active[2]))
+        data['total_active_time'].append(np.sum(sps_active[2]))
+        data['max_active_time'].append(max(sps_active[2]))
+        data['mean_active_time'].append(np.mean(sps_active[2]))
         
         # Determine station-keeping/battery-charging events
         sps_station_keeping_events_two = determine_battery_chargeup_events(sps_lighting_two, sps_access_two, total_duration)
-        total_station_keeping.append(np.sum(sps_station_keeping_events_two[2]))
+        data['total_station_keeping'].append(np.sum(sps_station_keeping_events_two[2]))
 
         # Determine the total and maximum target blackout durations
         target_blackout = determine_blackout_data(sps_active, target_eclipse, total_duration)
-        total_blackout_time.append(np.sum(target_blackout[2]))
-        max_blackout_time.append(max(target_blackout[2]))
-        mean_blackout_time.append(np.mean(target_blackout[2]))
+        data['total_blackout_time'].append(np.sum(target_blackout[2]))
+        data['max_blackout_time'].append(max(target_blackout[2]))
+        data['mean_blackout_time'].append(np.mean(target_blackout[2]))
 
         # Determine the mean range, averaging mean range per access event in time
-        sps_range = import_range_data_statistics('DVP_{}_{}perigee{}apogee_180.0meananom_range'.format(study_name, orbit_data[i][0], orbit_data[i][1]), stk_data_path)
-        mean_range.append(np.sum([(i * j) / np.sum(sps_access_two[2]) for i, j in zip(sps_range[2], sps_access_two[2])]))
-        mean_min_range.append(np.sum([(i * j) / np.sum(sps_access_two[2]) for i, j in zip(sps_range[0], sps_access_two[2])]))
-        mean_max_range.append(np.sum([(i * j) / np.sum(sps_access_two[2]) for i, j in zip(sps_range[1], sps_access_two[2])]))
+        try:
+            sps_range = import_range_data_statistics('DVP_{}_{}perigee{}apogee_180.0meananom_range'.format(study_name, orbit_data[i][0], orbit_data[i][1]), stk_data_path)
+        except IOError:
+            print('{}\DVP_{}_{}perigee{}apogee_180.0meananom_range.txt'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1]))
+            write_data_files(stk_data_path, study_name, data)
+            sys.exit()
+
+        data['mean_range'].append(np.sum([(i * j) / np.sum(sps_access_two[2]) for i, j in zip(sps_range[2], sps_access_two[2])]))
+        data['mean_min_range'].append(np.sum([(i * j) / np.sum(sps_access_two[2]) for i, j in zip(sps_range[0], sps_access_two[2])]))
+        data['mean_max_range'].append(np.sum([(i * j) / np.sum(sps_access_two[2]) for i, j in zip(sps_range[1], sps_access_two[2])]))
 
         # Determine events when SPS is in range but eclipsed
         sps_eclipse = invert_events_list(sps_lighting_two, total_duration)
         sps_use_stored_power = determine_SPS_storedpower_time(sps_eclipse, target_eclipse, sps_access_two)
-        total_stored_power_time.append(np.sum(sps_use_stored_power[2]))
-        max_stored_power_time.append(max(sps_use_stored_power[2]))
-        mean_stored_power_time.append(np.mean(sps_use_stored_power[2]))
+        data['total_stored_power_time'].append(np.sum(sps_use_stored_power[2]))
+        data['max_stored_power_time'].append(max(sps_use_stored_power[2]))
+        data['mean_stored_power_time'].append(np.mean(sps_use_stored_power[2]))
+
+    write_data_files(stk_data_path, study_name, data)
     ####################################################################################################################
+
+
+def write_data_files(stk_data_path, study_name, data):
 
     # WRITE PROCESSED DATA TO FILE
     ####################################################################################################################
@@ -117,27 +151,27 @@ def main():
     # if it already exists and create a new one.
 
     # ACTIVE TIME
-    write_data_to_file(stk_data_path, study_name, total_active_time, 'TotalActive_2SPS')
-    write_data_to_file(stk_data_path, study_name, max_active_time, 'MaxActive_2SPS')
-    write_data_to_file(stk_data_path, study_name, mean_active_time, 'MeanActive_2SPS')
+    write_data_to_file(stk_data_path, study_name, data['total_active_time'], 'TotalActive_2SPS')
+    write_data_to_file(stk_data_path, study_name, data['max_active_time'], 'MaxActive_2SPS')
+    write_data_to_file(stk_data_path, study_name, data['mean_active_time'], 'MeanActive_2SPS')
 
     # BLACKOUT TIME
-    write_data_to_file(stk_data_path, study_name, total_blackout_time, 'TotalBlackout_2SPS')
-    write_data_to_file(stk_data_path, study_name, max_blackout_time, 'MaxBlackout_2SPS')
-    write_data_to_file(stk_data_path, study_name, mean_blackout_time, 'MeanBlackout_2SPS')
+    write_data_to_file(stk_data_path, study_name, data['total_blackout_time'], 'TotalBlackout_2SPS')
+    write_data_to_file(stk_data_path, study_name, data['max_blackout_time'], 'MaxBlackout_2SPS')
+    write_data_to_file(stk_data_path, study_name, data['mean_blackout_time'], 'MeanBlackout_2SPS')
 
     # RANGE
-    write_data_to_file(stk_data_path, study_name, mean_range, "MeanRange_180.0meananom")
-    write_data_to_file(stk_data_path, study_name, mean_min_range, "MeanMinRange_180.0meananom")
-    write_data_to_file(stk_data_path, study_name, mean_max_range, "MeanMaxRange_180.0meananom")
+    write_data_to_file(stk_data_path, study_name, data['mean_range'], "MeanRange_180.0meananom")
+    write_data_to_file(stk_data_path, study_name, data['mean_min_range'], "MeanMinRange_180.0meananom")
+    write_data_to_file(stk_data_path, study_name, data['mean_max_range'], "MeanMaxRange_180.0meananom")
 
     # STORED POWER EVENTS
-    write_data_to_file(stk_data_path, study_name, total_stored_power_time, "TotalStoredPowerEvent_180.0meananom")
-    write_data_to_file(stk_data_path, study_name, mean_stored_power_time, "MeanStoredPowerEvent_180.0meananom")
-    write_data_to_file(stk_data_path, study_name, max_stored_power_time, "MaxStoredPowerEvent_180.0meananom")
+    write_data_to_file(stk_data_path, study_name, data['total_stored_power_time'], "TotalStoredPowerEvent_180.0meananom")
+    write_data_to_file(stk_data_path, study_name, data['mean_stored_power_time'], "MeanStoredPowerEvent_180.0meananom")
+    write_data_to_file(stk_data_path, study_name, data['max_stored_power_time'], "MaxStoredPowerEvent_180.0meananom")
     
     # STATION KEEPING EVENTS
-    write_data_to_file(stk_data_path, study_name, total_station_keeping, "TotalStationKeeping_180.0meananom")
+    write_data_to_file(stk_data_path, study_name, data['total_station_keeping'], "TotalStationKeeping_180.0meananom")
     ####################################################################################################################
 
 

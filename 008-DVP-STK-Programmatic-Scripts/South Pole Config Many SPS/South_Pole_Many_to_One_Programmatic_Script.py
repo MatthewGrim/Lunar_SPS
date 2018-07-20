@@ -72,7 +72,7 @@ def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, numbe
     print('Time required to write connect commands: {} seconds'.format(time_end - time_start))
 
 
-def run_stk_v2(scenario_path, study_name):
+def run_stk_v2(scenario_path, study_name, stk_data_path, orbit_data):
 
     # This function opens an instance of STK, loads the desired scenario, and executes the
     # connect commands written by the previous functions
@@ -123,23 +123,36 @@ def run_stk_v2(scenario_path, study_name):
     j = 0
     for i in range(size):
         time_start = time.time()
-        root.ExecuteCommand(commands[i])
-        time_end = time.time()
         if j == 0:
             print('Adjusting Satellite orbit...')
+            root.ExecuteCommand(commands[i])
             j += 1
 
         elif j == 1:
             print('Generating SPS access report...')
+            if not os.path.exists('{}\DVP_{}_{}perigee{}apogee_{}meananom_access.csv'.format(stk_data_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], 180.0)):
+                root.ExecuteCommand(commands[i])
+            else:
+                print('Access report for {} x {} km orbit already exists'.format(orbit_data[i + 1][0], orbit_data[i + 1][1]))
             j += 1
 
         elif j == 2:
             print('Generating SPS range report...')
+            if not os.path.exists('{}\DVP_{}_{}perigee{}apogee_{}meananom_range.txt'.format(stk_data_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], 180.0)):
+                root.ExecuteCommand(commands[i])
+            else:
+                print('Range report for {} x {} km orbit already exists'.format(orbit_data[i + 1][0], orbit_data[i + 1][1]))
             j += 1
 
         elif j == 3:
             print('Generating SPS lighting report...')
+            if not os.path.exists('{}\DVP_{}_{}perigee{}apogee_{}meananom_lighting.csv'.format(stk_data_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], 180.0)):
+                root.ExecuteCommand(commands[i])
+            else:
+                print('Lighting for {} x {} km orbit already exists'.format(orbit_data[i + 1][0], orbit_data[i + 1][1]))
             j = 0
+
+        time_end = time.time()
         # Print progress update
         print('Progress: {}%, Execution Time: {} seconds'.format(round(i * 100.0 / (size - 1), 2), round(time_end - time_start, 5)))
         duration[i] = time_end - time_start
@@ -173,6 +186,9 @@ def main():
     # Name of reference study on which constellation sizes are based
     reference_study = 'SouthPole_IncrementedRes_Inertial'
 
+    # Maximum allowed size of constellation
+    max_constellation_size = 10
+
     # Create folder inside main directory for storing data sets
     print('Creating new folder to store reports...')
     stk_data_path = r'{}/STK Data'.format(main_directory)
@@ -190,14 +206,14 @@ def main():
 
     # Get maximum size of constellation required
     print('Calculating constellation sizes...')
-    number_of_sps, mean_anomalies = determine_constellation_size(ecc, study_name)
+    number_of_sps, mean_anomalies = determine_constellation_size(ecc, max_constellation_size, reference_study)
 
     # Generate connect commands for programmatically running STK simulations
     print('Writing connect commands....')
     generate_stk_connect_commands(sma, ecc, orbit_data, number_of_sps, mean_anomalies, time_step, study_name, new_path)
 
     # Open STK, load scenario, and execute commands to create data set
-    # run_stk_v2(scenario_path, study_name)
+    run_stk_v2(scenario_path, study_name, stk_data_path, orbit_data)
 
 
 main()

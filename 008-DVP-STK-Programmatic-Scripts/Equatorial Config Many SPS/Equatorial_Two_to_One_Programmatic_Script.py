@@ -77,15 +77,15 @@ def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, time_
             # Sets new orbit for satellite, varying semi major axis, eccentricity, and mean anomaly
             fh.write('SetState */Satellite/SPS1 Classical J4Perturbation "17 May 2018 10:00:00.000" "17 May 2020 '
                      '10:00:00.000" {} Inertial "17 May 2018 10:00:00.000" {} {} '
-                     '90 90 0 {}\n'.format(time_step, semi_maj_axis[i]*1000.0, eccentricity[i], k))
-            # Generates new report of access time to target
-            fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Access_Modified" File "{}\DVP_{}_{}perigee{}apogee_180.0meananom_access.csv" AccessObject '
-                     '*/Target/Target1\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1]))
+                     '0 {} 0 0 \n'.format(time_step, semi_maj_axis[i] * 1000.0, eccentricity[i], k))
+            fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Access_Modified" File "{}\DVP_{}_{}perigee{}apogee_180.0argperi_access.csv" AccessObject '
+                '*/Target/Target1\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1]))
             # Generates new report of SPS-to-target range statistics during access periods
-            fh.write('ReportCreate */Satellite/SPS1 Type Save Style "Access_Range_Stats" File "{}\DVP_{}_{}perigee{}apogee_180.0meananom_range.txt" AccessObject '
-                     '*/Target/Target1\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1]))
+            fh.write('ReportCreate */Satellite/SPS1 Type Save Style "Access_Range_Stats" File "{}\DVP_{}_{}perigee{}apogee_180.0argperi_range.txt" AccessObject '
+                '*/Target/Target1\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1]))
             # Generates new report of lighting times
-            fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Lighting_Times" File "{}\DVP_{}_{}perigee{}apogee_180.0meananom_lighting.csv"\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], j, k))
+            fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Lighting_Times" File "{}\DVP_{}_{}perigee{}apogee_180.0argperi_lighting.csv"\n'.format(
+                    file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1]))
 
     time_end = time.time()
     print('Time required to write connect commands: {} seconds'.format(time_end - time_start))
@@ -227,7 +227,7 @@ def main():
     generate_stk_connect_commands(sma, ecc, orbit_data, time_step, study_name, new_path)
 
     # Open STK, load scenario, and execute commands to create data set
-    run_stk_v2(scenario_path, study_name, orbit_data, stk_data_path)
+    # run_stk_v2(scenario_path, study_name, orbit_data, stk_data_path)
 
 
 main()

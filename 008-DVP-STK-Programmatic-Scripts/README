@@ -20,11 +20,11 @@ Python is used to integrate with Systems Tool Kit (STK), a free AGI software pro
 
 	CONFIGURATION		# of SPS		ORBIT				TARGET		
 	
-	Equatorial		N			[a, e, 0, 0, 0, M]			45 N, 0 W/E
+	Equatorial		N			[a, e, 0, w, 0, 0]			45 N, 0 W/E
 
 	South Pole		N			[a, e, 90, 0, 90, M]		-90 S, 0 W/E
 
-
+	The mean anomaly is varied to build a constellation in the polar orbit case, and the argument of perigee is varied for a constellation in the equatorial case (for each a, e).
 
 2. STK Integration/Pro License
 
@@ -36,9 +36,20 @@ Python is used to integrate with Systems Tool Kit (STK), a free AGI software pro
 
 	Operations in STK, such as adjusting the orbit of a satellite or generating a data report, can be performed using Connect Commands. These commands can be executed remotely via Python integration. The command syntax can be found here: http://help.agi.com/stk/index.htm#../Subsystems/connectCmds/Content/list_alpha.htm. By generating a list of commands and executing them sequentially, a variety of scenarios can be tested automatically.
 
-	b. Server Execution Failure
+	b. "Server Execution Failure" / "You Do Not Have This License"
 
-	Sometimes when you attempt to run STK programmatically very shortly after finishing or canceling an ongoing programmatic scan, Python will throw an error claiming that a server execution failed. Close all open STK windows and wait a minute before trying again.
+	Sometimes when you attempt to run STK programmatically very shortly after finishing or canceling an ongoing programmatic scan, Python will throw an error claiming that a server execution failed, or that you do not have the correct license. Close all open STK windows and wait a few minutes before trying again.
+	
+	
+3. STK Data Report Types
+
+	In order for the data to be parsable by the functions in this repository, some modifications have to be made to the standard STK data report types. The report types quoted in the Connect Commands written by the scripts in this directory are: "Access_Modified", "Access_Range_Stats" and "Lighting_Times". They refer to report types inside the STK scenario which is opened to simulate the SPS active periods. Your scenario must containt report types of these names otherwise the Connect Commands will fail. The importan properties of these custom report types are:
+	
+		a. Use date format YYYY:MM:DD:HH:MM:SS.sss in all data reports.
+		
+		b. "Lighting_Times" and "Access_Modified" contain only three columns: Start Time, End Time, Duration, all in seconds.
+		
+		c. "Access_Range_Stats" contains only statistical analysis of the AER range data. This is found under AER Data-Default Range -> Options when in the Report and Graph Manager. In this dialog box select "MIN", "MAX" and "MEAN", then "SUMMARY ONLY". This file is exported instead of saved (Connect Command syntax) so that the statistics can be extracted instead of simply the range samples. The units of range are kilometers.
 	
 
 
