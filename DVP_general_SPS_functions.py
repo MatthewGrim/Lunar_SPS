@@ -434,6 +434,10 @@ def combine_events(events_1, events_2):
 
     new_event_list = [new_start, new_end, new_dur]
 
+    if np.sum(new_event_list[2]) > np.sum(events_1[2]) + np.sum(events_2[2]):
+        print('More combined events than sum of individual events list!')
+        raise RuntimeError
+
     check_event_order_consistency(new_event_list)
 
     return new_event_list
