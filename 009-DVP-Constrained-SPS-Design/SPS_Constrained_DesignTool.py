@@ -84,14 +84,6 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     data_set['delta_v_to_maintain'] = [2 * i * np.sqrt(mu_moon / (j * (1 - i ** 2))) * np.sin((k / 2) * (np.pi / 180.0)) for i, j, k in zip(study['eccentricity'], study['semi-maj-axis'], data_set['arg_perigee_drift'])]
     ####################################################################################################################
 
-    # CALCULATE LINK EFFICIENCY AND POWER/ENERGY DELIVERED, APPLY POINTING CONSTRAINT
-    ####################################################################################################################
-    if "fleet" in rover_selection:
-        data_set = calculate_link_efficiency_and_power_delivered_for_fleet(rover, data_set, transmitter, constraints, active_constraints)
-    else:
-        data_set = calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_set, transmitter, constraints, active_constraints)
-    ####################################################################################################################
-
     # ENFORCE CONSTRAINTS
     ####################################################################################################################
     # Remove infeasible designs which do not have any active events
@@ -115,6 +107,13 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
         data_set = enforce_constraints(data_set, 'total_active_time', constraints, 'min_active_time', 'min')
     else:
         pass
+
+    # CALCULATE LINK EFFICIENCY AND POWER/ENERGY DELIVERED, APPLY POINTING CONSTRAINT
+    if "fleet" in rover_selection:
+        data_set = calculate_link_efficiency_and_power_delivered_for_fleet(rover, data_set, transmitter, constraints, active_constraints)
+    else:
+        data_set = calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_set, transmitter, constraints, active_constraints)
+
     # Remove data points for which not enough power is delivered on average
     if active_constraints['min_power'] == 1:
         data_set = enforce_constraints(data_set, 'min_power_received', constraints, 'min_power', 'min')
@@ -197,7 +196,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
         # Remove design points for which the margin is negative
         for i in range(len(sorted_data_set['delta_v_margin'][0])):
             for j in range(len(sorted_data_set['delta_v_margin'][1])):
-                if sorted_data_set['delta_v_margin'][i][j] < 0.0:
+                if sorted_data_set['delta_v_margin'][i][j] < constraints['min_delta_v_margin']:
                     for k in sorted_data_set:
                         sorted_data_set[k][i][j] = np.nan
     else:

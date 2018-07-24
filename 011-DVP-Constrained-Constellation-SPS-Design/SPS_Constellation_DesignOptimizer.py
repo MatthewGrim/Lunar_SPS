@@ -55,32 +55,41 @@ def calculate_link_eff(trans_radius, args):
     # CALCULATE LINK EFFICIENCY, MEAN POWER
     ####################################################################################################################
     data_set['mean_link_efficiency'] = []
-    data_set['mean_power_received'] = []
+    data_set['min_link_efficiency'] = []
+    data_set['min_power_received'] = []
     for i in range(len(data_set['mean_range'])):
         if math.isnan(data_set['mean_range'][i]):
             data_set['mean_link_efficiency'].append(0.0)
+            data_set['min_link_efficiency'].append(0.0)
+            data_set['min_power_received'].append(0.0)
         else:
             # Actual beam radius as defined by Gaussian beam divergence
-            surf_beam_radius = trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
+            mean_surf_beam_radius = trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
+            max_surf_beam_radius = trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['max_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
+
             # Calculate link efficiency
 
             # If calculating for fleet, remove designs which give beam smaller than area covered by fleet, and calculate
             # link efficiency to each individual rover
             if "fleet" in args[1]:
-                if surf_beam_radius < rover['fleet_radius']:
+                if max_surf_beam_radius < rover['fleet_radius']:
                     data_set['mean_link_efficiency'].append(0.0)
+                    data_set['min_link_efficiency'].append(0.0)
                 else:
-                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius) ** 2)
+                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / mean_surf_beam_radius) ** 2)
+                    data_set['min_link_efficiency'].append((rover['rec_radius'] / max_surf_beam_radius) ** 2)
 
             # If calculating for single rover, 100% efficiency if beam fits within receiver
             else:
-                if surf_beam_radius <= rover['rec_radius']:
+                if max_surf_beam_radius <= rover['rec_radius']:
                     data_set['mean_link_efficiency'].append(1.0)
+                    data_set['min_link_efficiency'].append(1.0)
                 else:
-                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius) ** 2)
+                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / mean_surf_beam_radius) ** 2)
+                    data_set['min_link_efficiency'].append((rover['rec_radius'] / max_surf_beam_radius) ** 2)
 
             # Calculate mean power received at target
-            data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
+            data_set['min_power_received'].append(data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
     ####################################################################################################################
 
     # ENFORCE ACTIVE DURATION CONSTRAINT
@@ -113,10 +122,10 @@ def calculate_link_eff(trans_radius, args):
                 min_beam_radius = rover['rec_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)
 
             # Actual beam radius as defined by Gaussian beam divergence
-            surf_beam_radius = trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
+            mean_surf_beam_radius = trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
 
             # Check pointing error constraint
-            if surf_beam_radius < min_beam_radius:
+            if mean_surf_beam_radius < min_beam_radius:
                 data_set['mean_link_efficiency'][i] = 0.0
     else:
         pass
@@ -125,8 +134,8 @@ def calculate_link_eff(trans_radius, args):
     # ENFORCE POWER CONSTRAINT
     ####################################################################################################################
     if active_constraints['min_power'] == 1:
-        for i in range(len(data_set['mean_power_received'])):
-            if data_set['mean_power_received'][i] < constraints['min_power']:
+        for i in range(len(data_set['min_power_received'])):
+            if data_set['min_power_received'][i] < constraints['min_power']:
                 data_set['mean_link_efficiency'][i] = 0.0
     else:
         pass

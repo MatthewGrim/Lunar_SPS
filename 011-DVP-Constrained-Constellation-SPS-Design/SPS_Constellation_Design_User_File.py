@@ -16,6 +16,7 @@ def main():
     ####################################################################################################################
     # Select scenario/configuration
     study_name = 'SouthPole_IncrementedRes_ManytoOne'
+    # study_name = 'Equatorial_IncrementedRes_ManytoOne'
 
     # Select transmitter
     transmitter_selection = '100kW'
@@ -38,7 +39,7 @@ def main():
     # Minimum pointing error of SPS system in radians
     constraints['point_error'] = 1e-6
     # Minimum reduction in overall blackout time in percent
-    constraints['min_active_time'] = 50.0
+    constraints['min_active_time'] = 52.0
     # Minimum power requirement at target in Watts
     constraints['min_power'] = rover['operation_pwr']
     # Maximum time rover can survive without recharging in hours

@@ -24,7 +24,7 @@ def main():
     # Select receiver
     # Fleet size must be integer, rover separation distance must be float (with decimal)
     # Fleet size comes first, then separation
-    rover_selection = 'sorato'
+    rover_selection = 'curiosity'
     ####################################################################################################################
 
     # DEFINE CONSTRAINTS
@@ -39,7 +39,7 @@ def main():
     # Minimum pointing error of SPS system in radians
     constraints['point_error'] = 1e-6
     # Minimum reduction in overall blackout time in percent
-    constraints['min_active_time'] = 20.0
+    constraints['min_active_time'] = 30.0
     # Minimum power requirement at target in Watts
     constraints['min_power'] = rover['operation_pwr']
     # Maximum time rover can survive without recharging in hours
@@ -51,9 +51,9 @@ def main():
     # 1 = active, anything else = inactive
     active_constraints['point_error'] = 1
     active_constraints['min_active_time'] = 1
-    active_constraints['min_power'] = 0
-    active_constraints['max_blackout'] = 0
-    active_constraints['min_delta_v_margin'] = 0
+    active_constraints['min_power'] = 1
+    active_constraints['max_blackout'] = 1
+    active_constraints['min_delta_v_margin'] = 1
 
     active_constraints['transmitter_pwr_optimization'] = 1
     ####################################################################################################################

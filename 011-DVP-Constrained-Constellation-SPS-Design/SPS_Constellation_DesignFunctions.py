@@ -16,27 +16,8 @@ def study_initialization(study_name):
     from DVP_Programmatic_Functions import vary_orbital_elements, vary_orbital_elements_incrementing_resolution
 
     study = {}
-    if study_name == 'Brandhorst_1000.0kmRes':
-        study['start'] = convert_string_to_datetime(['2008', '07', '01', '10', '0', '0.0'])
-        study['end'] = convert_string_to_datetime(['2010', '06', '30', '10', '0', '0.0'])
-        study['duration'] = (study['end'] - study['start']).total_seconds()
 
-        # Difference in subsequent apogee/perigee radii
-        resolution = 1000.0
-        max_perigee = 10000.0
-        min_perigee = 1000.0
-        max_apogee = 54000.0
-
-        # Get orbital data
-        semi_maj_axis, eccentricity, orbit_data = vary_orbital_elements(resolution, min_perigee, max_perigee, max_apogee)
-        study['semi-maj-axis'] = semi_maj_axis
-        study['eccentricity'] = eccentricity
-        study['orbits'] = orbit_data
-        study['inclination'] = 0.0
-        study['arg_perigee'] = 0.0
-        study['constellation_variable'] = 'argperi'
-
-    elif study_name == 'SouthPole_IncrementedRes_ManytoOne':
+    if study_name == 'SouthPole_IncrementedRes_ManytoOne':
         study['start'] = convert_string_to_datetime(['2018', '05', '17', '10', '0', '0.0'])
         study['end'] = convert_string_to_datetime(['2020', '05', '17', '10', '0', '0.0'])
         study['duration'] = (study['end'] - study['start']).total_seconds()
@@ -54,7 +35,7 @@ def study_initialization(study_name):
         study['arg_perigee'] = 90.0
         study['constellation_variable'] = 'meananom'
 
-    elif study_name == 'Equatorial_IncrementedRes':
+    elif study_name == 'Equatorial_IncrementedRes_ManytoOne':
         study['start'] = convert_string_to_datetime(['2018', '05', '17', '10', '0', '0.0'])
         study['end'] = convert_string_to_datetime(['2020', '05', '17', '10', '0', '0.0'])
         study['duration'] = (study['end'] - study['start']).total_seconds()
@@ -70,6 +51,7 @@ def study_initialization(study_name):
         study['orbits'] = orbit_data
         study['inclination'] = 0.0
         study['arg_perigee'] = 0.0
+        study['constellation_variable'] = 'argperi'
 
     else:
         print('Invalid study name')
@@ -294,7 +276,7 @@ def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_s
         # Otherwise calculate efficiency and power, apply pointing constraints
         else:
             # Minimum beam radius as defined by pointing error and minimum range of access period
-            min_beam_radius = rover['rec_radius'] + (constraints['point_error'] * data_set['min_range'][i] * 1000.0)
+            min_beam_radius = rover['rec_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)
 
             # Actual beam radius as defined by Gaussian beam divergence
             max_surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['max_range'][i] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2)
@@ -302,7 +284,7 @@ def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_s
 
             # IF constraint is active, remove data points which violate pointing constraint
             if active_constraints['point_error'] == 1:
-                if max_surf_beam_radius < min_beam_radius:
+                if mean_surf_beam_radius < min_beam_radius:
                     data_set['min_link_efficiency'].append(np.nan)
                     data_set['mean_link_efficiency'].append(np.nan)
                     data_set['min_power_received'].append(np.nan)
@@ -364,7 +346,7 @@ def calculate_link_efficiency_and_power_delivered_for_fleet(rover, data_set, tra
         # Otherwise calculate efficiency and power, apply pointing constraints
         else:
             # Minimum beam radius as defined by pointing error, minimum range of access period and area covered by fleet
-            min_beam_radius = rover['fleet_radius'] + (constraints['point_error'] * data_set['min_range'][i] * 1000.0)
+            min_beam_radius = rover['fleet_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)
 
             # Actual beam radius as defined by Gaussian beam divergence
             max_surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['max_range'][i] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2)
@@ -373,7 +355,7 @@ def calculate_link_efficiency_and_power_delivered_for_fleet(rover, data_set, tra
 
             # IF constraint is active, remove data points which violate pointing constraint
             if active_constraints['point_error'] == 1:
-                if max_surf_beam_radius < min_beam_radius:
+                if mean_surf_beam_radius < min_beam_radius:
                     data_set['min_link_efficiency'].append(np.nan)
                     data_set['mean_link_efficiency'].append(np.nan)
                     data_set['min_power_received'].append(np.nan)
@@ -393,15 +375,14 @@ def calculate_link_efficiency_and_power_delivered_for_fleet(rover, data_set, tra
                 if max_surf_beam_radius < rover['fleet_radius']:
                     data_set['min_link_efficiency'].append(np.nan)
                     data_set['min_power_received'].append(np.nan)
+                    data_set['mean_link_efficiency'].append(np.nan)
+                    data_set['mean_power_received'].append(np.nan)
+                    # Apply constraint all other data lists
+                    for j in data_set:
+                        data_set[j][i] = np.nan
                 else:
                     data_set['min_link_efficiency'].append((rover['rec_radius'] / max_surf_beam_radius) ** 2)
                     data_set['min_power_received'].append(data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
-
-                # Calculate mean efficiency based on mean surface beam size
-                if mean_surf_beam_radius < rover['fleet_radius']:
-                    data_set['mean_link_efficiency'].append(np.nan)
-                    data_set['mean_power_received'].append(np.nan)
-                else:
                     data_set['mean_link_efficiency'].append((rover['rec_radius'] / mean_surf_beam_radius) ** 2)
                     data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
 
