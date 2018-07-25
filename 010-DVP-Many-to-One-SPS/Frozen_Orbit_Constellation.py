@@ -52,16 +52,16 @@ def main():
     sps_lighting = {}
     sps_access = {}
     sps_active = {}
+    sps_range = {}
     target_blackout = {}
 
     target_lighting = parse_csv_to_array('{}/FrozenOrbit_Target_Lighting.csv'.format(stk_data_path), start)
     target_eclipse = invert_events_list(target_lighting, total_duration)
 
-    sps_range = import_range_data_statistics('FrozenOrbit_RangeStats_0deg', stk_data_path)
-
     for i in true_anomalies:
-        sps_lighting['{}deg'.format(i)] = parse_csv_to_array('{}/FrozenOrbit_SPS_Lighting_{}deg.csv'.format(stk_data_path, i), start)
-        sps_access['{}deg'.format(i)] = parse_csv_to_array('{}/FrozenOrbit_Access_{}deg.csv'.format(stk_data_path, i), start)
+        sps_lighting['{}deg'.format(i)] = parse_csv_to_array('{}/FrozenOrbit_4400sma_lighting_{}deg.csv'.format(stk_data_path, i), start)
+        sps_range['{}deg'.format(i)] = import_range_data_statistics('FrozenOrbit_4400sma_range_{}deg'.format(i), stk_data_path)
+        sps_access['{}deg'.format(i)] = parse_csv_to_array('{}/FrozenOrbit_4400sma_access_{}deg.csv'.format(stk_data_path, i), start)
         sps_active['{}deg'.format(i)] = determine_SPS_active_time(sps_lighting['{}deg'.format(i)], target_eclipse, sps_access['{}deg'.format(i)])
         target_blackout['{}deg'.format(i)] = determine_blackout_data(sps_active['{}deg'.format(i)], target_eclipse, total_duration)
     ####################################################################################################################
@@ -95,15 +95,15 @@ def main():
 
     # Optimize transmitter size
     from scipy.optimize import minimize_scalar
-    args = [sps_range[2], transmitter, rover]
+    args = [sps_range['0deg'][2], transmitter, rover]
     optimum = minimize_scalar(calculate_mean_link_eff, bounds=(0, 2.5), method='bounded', args=args)
-    transmitter['radius'] = 10.0
+    transmitter['radius'] = optimum.x
     print('Optimal aperture radius: {} cm'.format(round(optimum.x * 100.0, 2)))
 
     # Calculate mean link efficiency and power
     mean_link_eff = []
-    for i in range(len(sps_range[2])):
-        surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (sps_range[2][i] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2)
+    for i in range(len(sps_range['0deg'][2])):
+        surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (sps_range['0deg'][2][i] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2)
         mean_link_eff.append((rover['rec_radius'] / surf_beam_radius) ** 2)
 
     mean_power = [i * rover['rec_efficiency'] * transmitter['power'] for i in mean_link_eff]
@@ -113,9 +113,9 @@ def main():
     # Actual beam radius as defined by Gaussian beam divergence
     surf_beam_radius = [transmitter['radius'] * np.sqrt(1 + (
                 transmitter['wavelength'] * (i * 1000.0) / (
-                    np.pi * transmitter['radius'] ** 2)) ** 2) for i in sps_range[1]]
+                    np.pi * transmitter['radius'] ** 2)) ** 2) for i in sps_range['0deg'][1]]
 
-    pointing_error = [(i - rover['rec_radius']) / (j * 1000.0 * rover['rec_radius']) for i,j in zip(surf_beam_radius, sps_range[1])]
+    pointing_error = [(i - rover['rec_radius']) / (j * 1000.0) for i,j in zip(surf_beam_radius, sps_range['0deg'][1])]
     print('Mean acceptable pointing error: {} rad'.format(round(np.mean(pointing_error), 10)))
     plt.plot([i * 1e6 for i in pointing_error])
     plt.title('Acceptable pointing error for mean range of every access period.')
