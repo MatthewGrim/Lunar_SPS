@@ -15,8 +15,8 @@ def main():
     # INITIALIZATION
     ####################################################################################################################
     # Select scenario/configuration
-    study_name = 'SouthPole_IncrementedRes_ManytoOne'
-    # study_name = 'Equatorial_IncrementedRes_ManytoOne'
+    # study_name = 'SouthPole_IncrementedRes_ManytoOne'
+    study_name = 'Equatorial_IncrementedRes_ManytoOne'
 
     # Select transmitter
     transmitter_selection = '100kW'
@@ -24,7 +24,7 @@ def main():
     # Select receiver
     # Fleet size must be integer, rover separation distance must be float (with decimal)
     # Fleet size comes first, then separation
-    rover_selection = 'curiosity'
+    rover_selection = 'sorato'
     ####################################################################################################################
 
     # DEFINE CONSTRAINTS
@@ -39,7 +39,7 @@ def main():
     # Minimum pointing error of SPS system in radians
     constraints['point_error'] = 1e-6
     # Minimum reduction in overall blackout time in percent
-    constraints['min_active_time'] = 52.0
+    constraints['min_active_time'] = 10.0
     # Minimum power requirement at target in Watts
     constraints['min_power'] = rover['operation_pwr']
     # Maximum time rover can survive without recharging in hours
@@ -50,7 +50,7 @@ def main():
     # Specify which constraints are active
     # 1 = active, anything else = inactive
     active_constraints['point_error'] = 1
-    active_constraints['min_active_time'] = 1
+    active_constraints['min_active_time'] = 0
     active_constraints['min_power'] = 1
     active_constraints['max_blackout'] = 1
     active_constraints['min_delta_v_margin'] = 1

@@ -117,15 +117,21 @@ def calculate_link_eff(trans_radius, args):
 
             # Minimum beam radius as defined by pointing error
             if "fleet" in rover:
-                min_beam_radius = rover['fleet_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)
+                min_beam_radius = [rover['fleet_radius'] + (constraints['point_error'] * data_set['min_range'][i] * 1000.0),
+                                   rover['fleet_radius'] + (constraints['point_error'] * data_set['max_range'][i] * 1000.0),
+                                   rover['fleet_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)]
             else:
-                min_beam_radius = rover['rec_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)
+                min_beam_radius = [rover['rec_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0),
+                                   rover['rec_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0),
+                                   rover['rec_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)]
 
             # Actual beam radius as defined by Gaussian beam divergence
-            mean_surf_beam_radius = trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
+            surf_beam_radius = [trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2),
+                                trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2),
+                                trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)]
 
             # Check pointing error constraint
-            if mean_surf_beam_radius < min_beam_radius:
+            if surf_beam_radius[0] < min_beam_radius[0] or surf_beam_radius[1] < min_beam_radius[1] or surf_beam_radius[2] < min_beam_radius[2]:
                 data_set['mean_link_efficiency'][i] = 0.0
     else:
         pass

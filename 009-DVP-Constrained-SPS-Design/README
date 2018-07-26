@@ -1,0 +1,9 @@
+SPS Design Tool for Lunar Exploration.
+
+This directory contains the first version of the SPS design tool based on a wireless power transmission link to a rover on the lunar surface. The tool can be run via the SPS_Design_User_File. In this file the user can select from a small variety of transmitters and targets (rovers) on which to base the transmission link. The user can also specify (and activate/deactivate) various system constraints which reduce the orbital design space to only the feasible region.
+
+Transmitter options: '100kW', '15kW', '4kW'. RECOMMENDED: Start 100kW, and activate the 'transmitter_pwr_optimization' constraint. The program will automatically select the smallest transmitter which accomodates the design.
+
+Target options: 'sorato' (miniature), 'amalia' (intermediate), 'curiosity' (large). User can also specify the target as a small cluster of rovers using the following template as a rover selection: 'N (rover name) rover fleet with x meter separation' where N is an integer and x is a float (must include decimal)
+
+Advice! Begin by activating the pointing constraint, maximum blackout duration constraint, and minimum power constraint, as these represent the absolute bare minimum system constraints for a feasible design which suppourts rover exploration for at least two years on the Moon. Run the script and evaluate the feasible design space, then tune the remaining constraints (minimum active time, delta v margin) based on the outcome.

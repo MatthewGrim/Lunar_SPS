@@ -87,11 +87,12 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     # ENFORCE CONSTRAINTS
     ####################################################################################################################
     # Remove infeasible designs which do not have any active events
-    for i in data_set['total_active_time']:
-        if math.isnan(i):
-            idx = data_set['total_active_time'].index(i)
-            for j in data_set:
-                data_set[j][idx] = np.nan
+    if 'Equatorial' in study_name:
+        for i in data_set['total_active_time']:
+            if math.isnan(i):
+                idx = data_set['total_active_time'].index(i)
+                for j in data_set:
+                    data_set[j][idx] = np.nan
 
     # Convert data to appropriate units for applying constraints
     data_set['max_blackout_time'] = [i / 3600.0 for i in data_set['max_blackout_time']]
@@ -108,7 +109,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     else:
         pass
 
-    # CALCULATE LINK EFFICIENCY AND POWER/ENERGY DELIVERED, APPLY POINTING CONSTRAINT
+    # Calculate link efficiency and power delivered, applying pointing constraint
     if "fleet" in rover_selection:
         data_set = calculate_link_efficiency_and_power_delivered_for_fleet(rover, data_set, transmitter, constraints, active_constraints)
     else:
@@ -221,9 +222,9 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     ####################################################################################################################
     sps_battery_capacity = transmitter['power'] * sorted_data_set['max_stored_power_time'][best_orbit_idx] / 3600.0 * transmitter['efficiency']
     # Lithium polymer battery
-    lipo_specific_power = 270.0
+    lipo_specific_power = 950.0
     # Fuel cell generator
-    fuel_cell_specific_pwr = 500.0
+    fuel_cell_specific_pwr = 1500.0
     sps_battery_mass = sps_battery_capacity / lipo_specific_power
     sps_fuel_cell_mass = sps_battery_capacity / fuel_cell_specific_pwr
     ####################################################################################################################

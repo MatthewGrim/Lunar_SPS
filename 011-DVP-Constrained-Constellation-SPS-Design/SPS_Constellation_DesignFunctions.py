@@ -275,16 +275,20 @@ def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_s
             data_set['mean_power_received'].append(np.nan)
         # Otherwise calculate efficiency and power, apply pointing constraints
         else:
-            # Minimum beam radius as defined by pointing error and minimum range of access period
-            min_beam_radius = rover['rec_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)
+            # Minimum beam radius as defined by pointing error, at minimum [0] and maximum [1] and mean [2] ranges
+            min_beam_radius = [rover['rec_radius'] + (constraints['point_error'] * data_set['min_range'][i] * 1000.0),
+                               rover['rec_radius'] + (constraints['point_error'] * data_set['max_range'][i] * 1000.0),
+                               rover['rec_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)]
 
-            # Actual beam radius as defined by Gaussian beam divergence
-            max_surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['max_range'][i] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2)
-            mean_surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2)
+            # Actual beam radius as defined by Gaussian beam divergence. idx [0] = min, idx [1] = max, idx [2] = mean
+            surf_beam_radius = [transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['min_range'][i] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2),
+                                transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['max_range'][i] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2),
+                                transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2)]
 
             # IF constraint is active, remove data points which violate pointing constraint
+            # Checking pointing constraint at minimum mean and maximum ranges
             if active_constraints['point_error'] == 1:
-                if mean_surf_beam_radius < min_beam_radius:
+                if surf_beam_radius[0] < min_beam_radius[0] or surf_beam_radius[1] < min_beam_radius[1] or surf_beam_radius[2] < min_beam_radius[2]:
                     data_set['min_link_efficiency'].append(np.nan)
                     data_set['mean_link_efficiency'].append(np.nan)
                     data_set['min_power_received'].append(np.nan)
@@ -293,8 +297,8 @@ def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_s
                     for j in data_set:
                         data_set[j][i] = np.nan
                 else:
-                    data_set['min_link_efficiency'].append((rover['rec_radius'] / max_surf_beam_radius) ** 2)
-                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / mean_surf_beam_radius) ** 2)
+                    data_set['min_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[1]) ** 2)
+                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[2]) ** 2)
                     data_set['min_power_received'].append(
                         data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
                     data_set['mean_power_received'].append(
@@ -303,19 +307,19 @@ def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_s
             # ELSE calculate as normal
             else:
                 # Calculate min link efficiency based on maximum surface beam size
-                if max_surf_beam_radius <= rover['rec_radius']:
+                if surf_beam_radius[1] <= rover['rec_radius']:
                     data_set['min_link_efficiency'].append(1.0)
                     data_set['min_power_received'].append(rover['rec_efficiency'] * transmitter['power'])
                 else:
-                    data_set['min_link_efficiency'].append((rover['rec_radius'] / max_surf_beam_radius) ** 2)
+                    data_set['min_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[1]) ** 2)
                     data_set['min_power_received'].append(
                         data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
                 # Calculate mean efficiency based on mean surface beam size
-                if mean_surf_beam_radius <= rover['rec_radius']:
+                if surf_beam_radius[2] <= rover['rec_radius']:
                     data_set['mean_link_efficiency'].append(1.0)
                     data_set['mean_power_received'].append(rover['rec_efficiency'] * transmitter['power'])
                 else:
-                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / mean_surf_beam_radius) ** 2)
+                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[2]) ** 2)
                     data_set['mean_power_received'].append(
                         data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
 
@@ -345,17 +349,19 @@ def calculate_link_efficiency_and_power_delivered_for_fleet(rover, data_set, tra
 
         # Otherwise calculate efficiency and power, apply pointing constraints
         else:
-            # Minimum beam radius as defined by pointing error, minimum range of access period and area covered by fleet
-            min_beam_radius = rover['fleet_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)
+            # Minimum beam radius as defined by pointing error, at minimum [0] and maximum [1] and mean [2] ranges
+            min_beam_radius = [rover['fleet_radius'] + (constraints['point_error'] * data_set['min_range'][i] * 1000.0),
+                               rover['fleet_radius'] + (constraints['point_error'] * data_set['max_range'][i] * 1000.0),
+                               rover['fleet_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)]
 
-            # Actual beam radius as defined by Gaussian beam divergence
-            max_surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['max_range'][i] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2)
-
-            mean_surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2)
+            # Actual beam radius as defined by Gaussian beam divergence. idx [0] = min, idx [1] = max, idx [2] = mean
+            surf_beam_radius = [transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['min_range'][i] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2),
+                                transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['max_range'][i] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2),
+                                transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2)]
 
             # IF constraint is active, remove data points which violate pointing constraint
             if active_constraints['point_error'] == 1:
-                if mean_surf_beam_radius < min_beam_radius:
+                if surf_beam_radius[0] < min_beam_radius[0] or surf_beam_radius[1] < min_beam_radius[1] or surf_beam_radius[2] < min_beam_radius[2]:
                     data_set['min_link_efficiency'].append(np.nan)
                     data_set['mean_link_efficiency'].append(np.nan)
                     data_set['min_power_received'].append(np.nan)
@@ -364,15 +370,16 @@ def calculate_link_efficiency_and_power_delivered_for_fleet(rover, data_set, tra
                     for j in data_set:
                         data_set[j][i] = np.nan
                 else:
-                    data_set['min_link_efficiency'].append((rover['rec_radius'] / max_surf_beam_radius) ** 2)
-                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / mean_surf_beam_radius) ** 2)
+                    data_set['min_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[1]) ** 2)
+                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[2]) ** 2)
                     data_set['min_power_received'].append(data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
                     data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
 
             # ELSE calculate as normal
             else:
-                # Calculate min link efficiency based on maximum surface beam size
-                if max_surf_beam_radius < rover['fleet_radius']:
+                # Calculate min and mean link efficiency and power delivered
+                # IF minimum beam size is smaller than fleet remove design point
+                if surf_beam_radius[0] < rover['fleet_radius']:
                     data_set['min_link_efficiency'].append(np.nan)
                     data_set['min_power_received'].append(np.nan)
                     data_set['mean_link_efficiency'].append(np.nan)
@@ -381,9 +388,9 @@ def calculate_link_efficiency_and_power_delivered_for_fleet(rover, data_set, tra
                     for j in data_set:
                         data_set[j][i] = np.nan
                 else:
-                    data_set['min_link_efficiency'].append((rover['rec_radius'] / max_surf_beam_radius) ** 2)
+                    data_set['min_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[1]) ** 2)
                     data_set['min_power_received'].append(data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
-                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / mean_surf_beam_radius) ** 2)
+                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[2]) ** 2)
                     data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
 
     # Calculate total energy delivered to receiver based on mean power

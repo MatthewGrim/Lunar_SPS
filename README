@@ -29,5 +29,8 @@ This project is a study of lunar orbits for satellites used to power receivers w
 
 009-DVP-Constrained-SPS-Design: Contains main solar power satellite design tool which is used to optimize the link efficiency between discrete receiver and transmitter options within a constrained orbital design space.
 
-010-DVP-Many-to-One-SPS: Contains scripts related to the analysis of lunar solar power satellite constellations. 
+010-DVP-Many-to-One-SPS: Contains scripts related to the analysis of special cases for lunar solar power satellite constellations. 
+
+011-DVP-Constellation-SPS-Design: Contains version solar power satellite design tool which allows for solar power satellite constellation designs.
+
 
