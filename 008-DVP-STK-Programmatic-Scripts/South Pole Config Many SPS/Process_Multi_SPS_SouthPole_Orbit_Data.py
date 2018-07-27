@@ -60,6 +60,8 @@ def main():
     data['total_stored_power_time'] = []
     data['mean_stored_power_time'] = []
     data['max_stored_power_time'] = []
+    data['min_active_time_2sps'] = []
+    data['min_active_time_1sps'] = []
 
     # Import target illumination events
     target_lighting_raw = '{}\DVP_{}_Target_Lighting.csv'.format(stk_data_path, study_name)
@@ -108,7 +110,8 @@ def main():
         data['total_active_time'].append(np.sum(sps_active[2]))
         data['max_active_time'].append(max(sps_active[2]))
         data['mean_active_time'].append(np.mean(sps_active[2]))
-        
+        data['min_active_time'].append(min(sps_active[2]))
+
         # Determine station-keeping/battery-charging events
         sps_station_keeping_events_two = determine_battery_chargeup_events(sps_lighting_two, sps_access_two, total_duration)
         data['total_station_keeping'].append(np.sum(sps_station_keeping_events_two[2]))
@@ -153,6 +156,7 @@ def write_data_files(stk_data_path, study_name, data):
     # ACTIVE TIME
     write_data_to_file(stk_data_path, study_name, data['total_active_time'], 'TotalActive_2SPS')
     write_data_to_file(stk_data_path, study_name, data['max_active_time'], 'MaxActive_2SPS')
+    write_data_to_file(stk_data_path, study_name, data['min_active_time'], 'MinActive_2SPS')
     write_data_to_file(stk_data_path, study_name, data['mean_active_time'], 'MeanActive_2SPS')
 
     # BLACKOUT TIME
@@ -169,7 +173,7 @@ def write_data_files(stk_data_path, study_name, data):
     write_data_to_file(stk_data_path, study_name, data['total_stored_power_time'], "TotalStoredPowerEvent_180.0meananom")
     write_data_to_file(stk_data_path, study_name, data['mean_stored_power_time'], "MeanStoredPowerEvent_180.0meananom")
     write_data_to_file(stk_data_path, study_name, data['max_stored_power_time'], "MaxStoredPowerEvent_180.0meananom")
-    
+
     # STATION KEEPING EVENTS
     write_data_to_file(stk_data_path, study_name, data['total_station_keeping'], "TotalStationKeeping_180.0meananom")
     ####################################################################################################################

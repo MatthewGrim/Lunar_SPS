@@ -50,6 +50,7 @@ def main():
     total_blackout_time = []
     max_active_time = []
     mean_active_time = []
+    min_active_time = []
     max_blackout_time = []
     mean_blackout_time = []
     mean_range = []
@@ -82,6 +83,7 @@ def main():
         total_active_time.append(np.sum(sps_active[2]))
         max_active_time.append(max(sps_active[2]))
         mean_active_time.append(np.mean(sps_active[2]))
+        min_active_time.append(min(sps_active[2]))
         
         # Determine station-keeping/battery-charging events
         sps_station_keeping_events = determine_battery_chargeup_events(sps_lighting, sps_access, total_duration)
@@ -117,6 +119,7 @@ def main():
     write_data_to_file(stk_data_path, study_name, total_active_time, 'TotalActive')
     write_data_to_file(stk_data_path, study_name, max_active_time, 'MaxActive')
     write_data_to_file(stk_data_path, study_name, mean_active_time, 'MeanActive')
+    write_data_to_file(stk_data_path, study_name, min_active_time, 'MinActive')
 
     # BLACKOUT TIME
     write_data_to_file(stk_data_path, study_name, total_blackout_time, 'TotalBlackout')

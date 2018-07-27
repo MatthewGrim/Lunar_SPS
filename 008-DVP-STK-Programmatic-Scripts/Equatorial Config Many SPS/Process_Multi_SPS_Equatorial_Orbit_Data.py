@@ -60,6 +60,7 @@ def main():
     data['mean_stored_power_time'] = []
     data['max_stored_power_time'] = []
     data['total_station_keeping'] = []
+    data['min_active_time'] = []
 
     # Import target illumination events
     target_lighting_raw = '{}\DVP_{}_Target_Lighting.csv'.format(stk_data_path, study_name)
@@ -121,6 +122,7 @@ def main():
             data['mean_stored_power_time'].append(np.nan)
 
             data['total_station_keeping'].append(np.nan)
+            data['min_active_time'].append(np.nan)
 
         # Otherwise determine active periods
         else:
@@ -142,6 +144,8 @@ def main():
                 data['max_blackout_time'].append(max(target_eclipse[2]))
                 data['mean_blackout_time'].append(np.mean(target_eclipse[2]))
                 data['total_station_keeping'].append(np.nan)
+                data['min_active_time_2sps'].append(np.nan)
+                data['min_active_time_1sps'].append(np.nan)
 
             # Otherwise calculate blackout period
             else:
@@ -154,6 +158,7 @@ def main():
                 data['total_blackout_time'].append(np.sum(target_blackout[2]))
                 data['max_blackout_time'].append(max(target_blackout[2]))
                 data['mean_blackout_time'].append(np.mean(target_blackout[2]))
+                data['min_active_time'].append(min(sps_active[2]))
 
                 # Determine the mean range, averaging mean range per access event in time
                 try:
@@ -197,6 +202,7 @@ def write_data_files(stk_data_path, study_name, data):
     write_data_to_file(stk_data_path, study_name, data['total_active_time'], 'TotalActive_2SPS')
     write_data_to_file(stk_data_path, study_name, data['max_active_time'], 'MaxActive_2SPS')
     write_data_to_file(stk_data_path, study_name, data['mean_active_time'], 'MeanActive_2SPS')
+    write_data_to_file(stk_data_path, study_name, data['min_active_time'], 'MinActive_2SPS')
 
     # BLACKOUT TIME
     write_data_to_file(stk_data_path, study_name, data['total_blackout_time'], 'TotalBlackout_2SPS')

@@ -42,6 +42,7 @@ def main():
     total_blackout_time = []
     max_active_time = []
     mean_active_time = []
+    min_active_time = []
     max_blackout_time = []
     mean_blackout_time = []
     mean_range = []
@@ -71,6 +72,7 @@ def main():
             total_active_time.append(np.nan)
             max_active_time.append(np.nan)
             mean_active_time.append(np.nan)
+            min_active_time.append(np.nan)
 
             total_blackout_time.append(np.sum(target_eclipse[2]))
             max_blackout_time.append(max(target_eclipse[2]))
@@ -96,6 +98,7 @@ def main():
                 total_active_time.append(np.nan)
                 max_active_time.append(np.nan)
                 mean_active_time.append(np.nan)
+                min_active_time.append(np.nan)
 
                 # Range
                 mean_range.append(np.nan)
@@ -116,6 +119,7 @@ def main():
                 total_active_time.append(np.sum(sps_active[2]))
                 max_active_time.append(max(sps_active[2]))
                 mean_active_time.append(np.mean(sps_active[2]))
+                min_active_time.append(min(sps_active[2]))
 
                 # Range
                 sps_range = import_range_data_statistics('DVP_{}_{}perigee{}apogee_range'.format(study_name, orbit_data[i][0], orbit_data[i][1]), stk_data_path)
@@ -160,6 +164,7 @@ def main():
     write_data_to_file(stk_data_path, study_name, total_active_time, "TotalActive_Equatorial")
     write_data_to_file(stk_data_path, study_name, max_active_time, "MaxActive_Equatorial")
     write_data_to_file(stk_data_path, study_name, mean_active_time, "MeanActive_Equatorial")
+    write_data_to_file(stk_data_path, study_name, min_active_time, "MinActive_Equatorial")
 
     # BLACKOUT TIME DATA
     write_data_to_file(stk_data_path, study_name, total_blackout_time, "TotalBlackout_Equatorial")
