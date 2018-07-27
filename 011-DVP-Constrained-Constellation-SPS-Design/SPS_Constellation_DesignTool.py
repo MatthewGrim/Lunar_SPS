@@ -90,12 +90,13 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
                 data_set[j][idx] = np.nan
 
     # Convert data to appropriate units for applying constraints
-    data_set['max_blackout_time'] = [i / 3600.0 for i in data_set['max_blackout_time']]
+    data_set['max_blackout_duration'] = [i / 3600.0 for i in data_set['max_blackout_duration']]
+    data_set['min_active_duration'] = [i / 3600.0 for i in data_set['min_active_duration']]
     data_set['total_active_time'] = [100.0 * i / study['duration'] for i in data_set['total_active_time']]
 
     # Remove data points for which blackout durations exceed the limit
     if active_constraints['max_blackout'] == 1:
-        data_set = enforce_constraints(data_set, 'max_blackout_time', constraints, 'max_blackout', 'max')
+        data_set = enforce_constraints(data_set, 'max_blackout_duration', constraints, 'max_blackout', 'max')
     else:
         pass
     # Remove data points for which the overall blackout time is not sufficiently reduced
@@ -103,7 +104,11 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
         data_set = enforce_constraints(data_set, 'total_active_time', constraints, 'min_active_time', 'min')
     else:
         pass
-
+    # Remove data points for which the overall blackout time is not sufficiently reduced
+    if active_constraints['min_active_duration'] == 1:
+        data_set = enforce_constraints(data_set, 'min_active_duration', constraints, 'min_active_duration', 'min')
+    else:
+        pass
     # CALCULATE LINK EFFICIENCY AND POWER/ENERGY DELIVERED, APPLY POINTING CONSTRAINT
     if "fleet" in rover_selection:
         data_set = calculate_link_efficiency_and_power_delivered_for_fleet(rover, data_set, transmitter, constraints, active_constraints)
@@ -121,6 +126,8 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     ####################################################################################################################
     # Reorganize the data lists into 2D arrays
     sorted_data_set, perigee_altitudes, unique_perigees, apogee_altitudes, unique_apogees = sort_data_lists(data_set, study['orbits'], study_name)
+
+    make_contour_plot(apogee_altitudes, perigee_altitudes, sorted_data_set['min_active_duration'], 'Min Active Event Duration', 1)
     ####################################################################################################################
 
     # SELECT SOLUTION WITH HIGHEST LINK EFFICIENCY
@@ -255,7 +262,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     print('Total active time (blackout reduction) --> {} %'.format(round(sorted_data_set['total_active_time'][best_orbit_idx], 2)))
     print('Total blackout time --> {} %'.format(round(100.0 * sorted_data_set['total_blackout_time'][best_orbit_idx] / study['duration'], 2)))
     print('Max active period duration --> {} hours'.format(round(sorted_data_set['max_active_time'][best_orbit_idx] / 3600.0, 2)))
-    print('Max blackout period duration --> {} hours'.format(round(sorted_data_set['max_blackout_time'][best_orbit_idx], 2)))
+    print('Max blackout period duration --> {} hours'.format(round(sorted_data_set['max_blackout_duration'][best_orbit_idx], 2)))
     print('-----------------------------------------------------------------------------------------------------------')
     if math.isnan(sorted_data_set['max_stored_power_time'][best_orbit_idx]):
         print('No events when SPS could use stored power for transmission link')
@@ -273,7 +280,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     plt.ylabel('Perigee Altitude [km]')
     plt.colorbar()
     plt.subplot(222)
-    plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['max_blackout_time'], 500)
+    plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['max_blackout_duration'], 500)
     plt.title('Max Blackout Time [hrs]')
     plt.colorbar()
     plt.subplot(223)

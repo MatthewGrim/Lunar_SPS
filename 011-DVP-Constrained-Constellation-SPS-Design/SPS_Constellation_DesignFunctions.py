@@ -206,9 +206,10 @@ def read_in_processed_data_reports(stk_data_path, study_name, num_sps):
     data_set['total_active_time'] = read_data_from_file(stk_data_path, study_name, "TotalActive_{}SPS".format(num_sps))
     data_set['total_blackout_time'] = read_data_from_file(stk_data_path, study_name, "TotalBlackout_{}SPS".format(num_sps))
     data_set['max_active_time'] = read_data_from_file(stk_data_path, study_name, "MaxActive_{}SPS".format(num_sps))
-    data_set['max_blackout_time'] = read_data_from_file(stk_data_path, study_name, "MaxBlackout_{}SPS".format(num_sps))
+    data_set['max_blackout_duration'] = read_data_from_file(stk_data_path, study_name, "MaxBlackout_{}SPS".format(num_sps))
     data_set['mean_active_time'] = read_data_from_file(stk_data_path, study_name, "MeanActive_{}SPS".format(num_sps))
     data_set['mean_blackout_time'] = read_data_from_file(stk_data_path, study_name, "MeanBlackout_{}SPS".format(num_sps))
+    data_set['min_active_duration'] = read_data_from_file(stk_data_path, study_name, 'MinActive_{}SPS'.format(num_sps))
 
     if num_sps == 2:
         data_set['mean_range'] = [(i + j) / 2.0 for i, j in zip(read_data_from_file(stk_data_path, study_name, "MeanRange_0.0{}".format(constellation_design_variable)), read_data_from_file(stk_data_path, study_name, "MeanRange_180.0{}".format(constellation_design_variable)))]
@@ -378,8 +379,8 @@ def calculate_link_efficiency_and_power_delivered_for_fleet(rover, data_set, tra
             # ELSE calculate as normal
             else:
                 # Calculate min and mean link efficiency and power delivered
-                # IF minimum beam size is smaller than fleet remove design point
-                if surf_beam_radius[0] < rover['fleet_radius']:
+                # IF maximum beam size is smaller than fleet remove design point
+                if surf_beam_radius[1] < rover['fleet_radius']:
                     data_set['min_link_efficiency'].append(np.nan)
                     data_set['min_power_received'].append(np.nan)
                     data_set['mean_link_efficiency'].append(np.nan)

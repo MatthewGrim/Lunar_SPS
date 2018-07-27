@@ -15,8 +15,8 @@ def main():
     # INITIALIZATION
     ####################################################################################################################
     # Select scenario/configuration
-    # study_name = 'SouthPole_IncrementedRes_ManytoOne'
-    study_name = 'Equatorial_IncrementedRes_ManytoOne'
+    study_name = 'SouthPole_IncrementedRes_ManytoOne'
+    # study_name = 'Equatorial_IncrementedRes_ManytoOne'
 
     # Select transmitter
     transmitter_selection = '100kW'
@@ -40,6 +40,8 @@ def main():
     constraints['point_error'] = 1e-6
     # Minimum reduction in overall blackout time in percent
     constraints['min_active_time'] = 10.0
+    # Minimum allowable single active event duration in hours
+    constraints['min_active_duration'] = rover['battery_capacity'] / rover['operation_pwr']
     # Minimum power requirement at target in Watts
     constraints['min_power'] = rover['operation_pwr']
     # Maximum time rover can survive without recharging in hours
@@ -49,13 +51,14 @@ def main():
 
     # Specify which constraints are active
     # 1 = active, anything else = inactive
-    active_constraints['point_error'] = 1
+    active_constraints['point_error'] = 0
     active_constraints['min_active_time'] = 0
-    active_constraints['min_power'] = 1
-    active_constraints['max_blackout'] = 1
-    active_constraints['min_delta_v_margin'] = 1
+    active_constraints['min_active_duration'] = 0
+    active_constraints['min_power'] = 0
+    active_constraints['max_blackout'] = 0
+    active_constraints['min_delta_v_margin'] = 0
 
-    active_constraints['transmitter_pwr_optimization'] = 1
+    active_constraints['transmitter_pwr_optimization'] = 0
     ####################################################################################################################
 
     generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints)

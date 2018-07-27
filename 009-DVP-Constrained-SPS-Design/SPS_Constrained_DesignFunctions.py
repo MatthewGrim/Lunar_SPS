@@ -313,8 +313,8 @@ def calculate_link_efficiency_and_power_delivered_for_fleet(rover, data_set, tra
             # ELSE calculate as normal
             else:
                 # Calculate min and mean link efficiency and power delivered
-                # IF min beam size is smaller than fleet, remove design
-                if surf_beam_radius[0] < rover['fleet_radius']:
+                # IF max beam size is smaller than fleet, remove design
+                if surf_beam_radius[1] < rover['fleet_radius']:
                     data_set['min_link_efficiency'].append(np.nan)
                     data_set['min_power_received'].append(np.nan)
                     data_set['mean_link_efficiency'].append(np.nan)

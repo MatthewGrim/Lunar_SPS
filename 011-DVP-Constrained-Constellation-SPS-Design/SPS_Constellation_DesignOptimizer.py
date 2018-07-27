@@ -134,7 +134,10 @@ def calculate_link_eff(trans_radius, args):
             if surf_beam_radius[0] < min_beam_radius[0] or surf_beam_radius[1] < min_beam_radius[1] or surf_beam_radius[2] < min_beam_radius[2]:
                 data_set['mean_link_efficiency'][i] = 0.0
     else:
-        pass
+        if 'fleet' in rover:
+            max_surf_beam_radius = transmitter * np.sqrt(1 + (transmitter['wavelength'] * (data_set['max_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
+            if max_surf_beam_radius < rover['fleet_radius']:
+                data_set['mean_link_efficiency'][i] = 0.0
     ####################################################################################################################
 
     # ENFORCE POWER CONSTRAINT
