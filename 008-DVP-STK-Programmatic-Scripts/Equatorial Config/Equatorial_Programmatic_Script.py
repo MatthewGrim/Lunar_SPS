@@ -62,10 +62,13 @@ def run_stk_v2(scenario_path, study_name):
     import os
     import comtypes
     from comtypes.client import CreateObject
+    from comtypes.client import GetActiveObject
 
     print('Opening STK...')
     # Open new instance of STK
-    app = CreateObject("STK11.Application")
+    # app = CreateObject("STK11.Application")
+    # Pass open instance of STK
+    app = GetActiveObject('svchost.Application')
     app.Visible = True
     app.UserControl = True
     app.Top = 0
@@ -124,13 +127,14 @@ def run_stk_v2(scenario_path, study_name):
                                                                  round(time_end - time_start, 5)))
         duration[i] = time_end - time_start
     loop_end = time.time()
+
     print('Total time to generate data: {} minutes'.format((loop_end - loop_start) / 60.0))
     print('Average command execution time: {} seconds'.format(np.mean(duration)))
 
 
 def main():
 
-    # Step size between data points in km
+    # Set resolution of data points in km
     max_perigee = 5000.0
     max_apogee = 5000.0
 
