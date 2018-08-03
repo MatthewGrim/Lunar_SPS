@@ -211,47 +211,119 @@ def get_event_overlaps(access_times, event_times):
             # Get start and end of access periods
             access_start = access_times[0][i]
             access_end = access_times[1][i]
+            assert access_start < access_end
 
             # Check each conditional event for overlap
             for j in range(events_size):
                 event_start = event_times[0][j]
                 event_end = event_times[1][j]
+                assert event_start < event_end
 
                 # Determine overlapping events
                 # Partial overlap, event period triggers overlap, access period ends it
-                if access_start <= event_start and access_end <= event_end and access_end >= event_start:
+                if access_start <= event_start and access_end <= event_end and access_end > event_start:
                     overlap_start.append(event_start)
                     overlap_end.append(access_end)
                     overlap_duration.append(access_end - event_start)
-                    # i += 1
                 # Partial overlap, access period triggers overlap, event period ends it
-                elif event_start <= access_start and event_end <= access_end and event_end >= access_start:
+                elif event_start <= access_start and event_end <= access_end and event_end > access_start:
                     overlap_start.append(access_start)
                     overlap_end.append(event_end)
                     overlap_duration.append(event_end - access_start)
-                    # j += 1
                 # Full overlap, access period occurs within event period
                 elif event_start <= access_start and access_end <= event_end:
                     overlap_start.append(access_start)
                     overlap_end.append(access_end)
                     overlap_duration.append(access_end - access_start)
-                    # i += 1
                 # Full overlap, event period occurs within access period
                 elif access_start <= event_start and event_end <= access_end:
                     overlap_start.append(event_start)
                     overlap_end.append(event_end)
                     overlap_duration.append(event_end - event_start)
-                    # j += 1
                 # No overlap, access period ends before event
-                elif access_end < event_start:
-                    # i += 1
+                elif access_end <= event_start:
                     pass
                 # No overlap, access period begins after event
-                elif event_end < access_start:
-                    # j += 1
+                elif event_end <= access_start:
                     pass
                 else:
                     raise RuntimeError("Should not be possible to get here!")
+
+                if len(overlap_duration) > 0 and overlap_duration[-1] == 0.0:
+                    print("WARNING = This should NEVER happen!")
+                    overlap_start.remove(-1)
+                    overlap_end.remove(-1)
+                    overlap_duration.remove(-1)
+
+    overlap_events = [overlap_start, overlap_end, overlap_duration]
+
+    return overlap_events
+
+
+def get_event_overlaps_fast(access_times, event_times):
+    # This function finds overlap between events and access times between the SPS and the target.
+    # "Conditional events" should be times when the SPS would be active, if it can access the target
+    # Therefore take satellite illumination and target eclipses as event_times.
+    # Output is an array containing start, end and duration of overlap events.
+    assert len(access_times[0]) == len(access_times[1])
+    assert len(event_times[0]) == len(event_times[1])
+
+    overlap_start = []
+    overlap_end = []
+    overlap_duration = []
+
+    access_idx = 0
+    event_idx = 0
+    while access_idx < len(access_times[0]):
+        access_start = access_times[0][access_idx]
+        access_end = access_times[1][access_idx]
+
+        if event_idx >= len(event_times[0]):
+            # There are no more events
+            access_idx += 1
+
+            continue
+        else:
+            event_start = event_times[0][event_idx]
+            event_end = event_times[1][event_idx]
+
+        # Find event overlap
+        if event_end < access_start:
+            # No overlap - move to next event pair with the chance of overlap
+            event_idx += 1
+        elif event_start > access_end:
+            # No overlap guaranteed - move to next event pair with the chance of overlap
+            access_idx += 1
+        elif event_start <= access_start and event_end >= access_end:
+            # Complete overlap
+            overlap_start.append(access_start)
+            overlap_end.append(access_end)
+            overlap_duration.append(access_end - access_start)
+
+            access_idx += 1
+        elif event_start <= access_start and event_end < access_end:
+            # Partial overlap from start
+            overlap_start.append(access_start)
+            overlap_end.append(event_end)
+            overlap_duration.append(event_end - access_start)
+
+            event_idx += 1
+        elif event_start > access_start and event_end >= access_end:
+            # Partial overlap from end
+            overlap_start.append(event_start)
+            overlap_end.append(access_end)
+            overlap_duration.append(access_end - event_start)
+
+            access_idx += 1
+        elif event_start > access_start and event_end < access_end:
+            # Second event is within the first event
+            overlap_start.append(event_start)
+            overlap_end.append(event_end)
+            overlap_duration.append(event_end - event_start)
+
+            event_idx += 1
+        else:
+            raise NotImplementedError("Should not be possible to get here!")
 
     overlap_events = [overlap_start, overlap_end, overlap_duration]
 
@@ -317,7 +389,7 @@ def invert_events_list(active_times, duration):
 
         check_sum(active_times, no_coverage, duration)
 
-        dummy_check = get_event_overlaps(active_times, no_coverage)
+        dummy_check = get_event_overlaps_fast(active_times, no_coverage)
         if np.sum(dummy_check[2]) > 60:
             print('Original and inverted events overlapping!')
 
@@ -448,10 +520,10 @@ def determine_SPS_active_time(sunlight_sps, eclipse_target, access_times):
     # the times when the satellite is in eclipse, and minus the times that the target is illuminated by the sun.
 
     # Get events which are intersection of SPS access periods, and SPS sunlit periods
-    sps_available = get_event_overlaps(access_times, sunlight_sps)
+    sps_available = get_event_overlaps_fast(access_times, sunlight_sps)
 
     # Get events which are intersection of previously mentioned events with SPS sunlit periods
-    sps_active = get_event_overlaps(sps_available, eclipse_target)
+    sps_active = get_event_overlaps_fast(sps_available, eclipse_target)
 
     print("Total SPS active time: {} hrs".format(round(np.sum(sps_active[2]) / 3600.0, 2)))
 
@@ -462,10 +534,10 @@ def determine_SPS_storedpower_time(sps_eclipse, eclipse_target, sps_access):
 
     # The total active time for solar power satellite is assumed to be the total available access time, minus
     # the times when the satellite is in eclipse, and minus the times that the target is illuminated by the sun.
-    sps_available = get_event_overlaps(sps_access, eclipse_target)
+    sps_available = get_event_overlaps_fast(sps_access, eclipse_target)
 
     # Get events which are intersection of SPS access periods, and SPS eclipse periods
-    sps_stored_power = get_event_overlaps(sps_available, sps_eclipse)
+    sps_stored_power = get_event_overlaps_fast(sps_available, sps_eclipse)
 
     return sps_stored_power
 
@@ -476,7 +548,7 @@ def determine_battery_chargeup_events(sps_sunlit, sps_access, duration):
     sps_no_access = invert_events_list(sps_access, duration)
 
     # Get times during this when the SPS is sunlit - thus it can charge a battery
-    charge_events = get_event_overlaps(sps_sunlit, sps_no_access)
+    charge_events = get_event_overlaps_fast(sps_sunlit, sps_no_access)
 
     return charge_events
 
@@ -490,7 +562,7 @@ def determine_blackout_data(active_times, eclipse_target,  duration):
     sps_no_coverage = invert_events_list(active_times, duration)
 
     # Get events where no coverage overlaps with target eclipses
-    blackout_events = get_event_overlaps(sps_no_coverage, eclipse_target)
+    blackout_events = get_event_overlaps_fast(sps_no_coverage, eclipse_target)
 
     print('Total target blackout time: {} hrs'.format(round(np.sum(blackout_events[2]) / 3600.0, 2)))
 
