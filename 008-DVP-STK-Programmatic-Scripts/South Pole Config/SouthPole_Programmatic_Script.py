@@ -53,10 +53,13 @@ def run_stk_v2(scenario_path, study_name):
     import os
     import comtypes
     from comtypes.client import CreateObject
+    from comtypes.client import GetActiveObject
 
     print('Opening STK...')
     # Open new instance of STK
-    app = CreateObject("STK11.Application")
+    # app = CreateObject("STK11.Application")
+    # Pass open instance of STK
+    app = GetActiveObject('svchost.Application')
     app.Visible = True
     app.UserControl = True
     app.Top = 0
@@ -113,7 +116,8 @@ def run_stk_v2(scenario_path, study_name):
                 print('Generating SPS lighting report...')
                 j = 0
         # Print progress update
-        print('Progress: {}%, Execution Time: {} seconds'.format(round(i * 100.0 / (size - 1), 2), round(time_end - time_start, 5)))
+        print('Progress: {}%, Execution Time: {} seconds'.format(round(i * 100.0 / (size - 1), 2),
+                                                                 round(time_end - time_start, 5)))
         duration[i] = time_end - time_start
     loop_end = time.time()
 
@@ -154,9 +158,11 @@ def main():
         os.makedirs(new_path)
 
     # Get set of orbit data, varying apogee and perigee
+    print('Getting orbit data...')
     sma, ecc, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee)
 
     # Generate connect commands for programmatically running STK simulations
+    print('Writing connect commands...')
     generate_stk_connect_commands(sma, ecc, orbit_data, time_step, study_name, new_path)
 
     # Open STK, load scenario, and execute commands to create data set
