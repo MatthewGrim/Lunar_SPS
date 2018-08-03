@@ -76,38 +76,47 @@ def sort_data_list_into_array(orbit_data, resolution, data_list):
     return data_array
 
 
-def vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee):
-
+def vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_perigee=None,
+                                                  resolutions=np.array((10.0, 25.0, 50.0, 100.0)), thresholds=np.array((100.0, 250.0, 1000.0))):
     # This function generates a series of orbital data points, in terms of apogee/perigee which
     # is then converted into semi major axis/eccentricity for execution in STK
+    assert min_perigee < max_perigee
+    assert resolutions.shape == (4,)
+    assert thresholds.shape == (3,)
 
     radius_moon = 1737.0
-
-    resolution = np.array((10.0, 25.0, 50.0, 100.0))
-    thresholds = np.array((100.0, 250.0, 1000.0))
     orbit_data = [0, 0]
-    perigee = 0.0
+    if min_perigee is not None:
+        perigee = min_perigee
+        apogee = perigee    
+        orbit_data = np.vstack((orbit_data, [perigee + radius_moon, apogee + radius_moon]))
+    else:
+        perigee = 0.0
+    
     while perigee <= max_perigee:
+        # Set perigee step
         if 0.0 <= perigee < thresholds[0]:
-            peri_step = resolution[0]
+            peri_step = resolutions[0]
         elif thresholds[0] <= perigee < thresholds[1]:
-            peri_step = resolution[1]
+            peri_step = resolutions[1]
         elif thresholds[1] <= perigee < thresholds[2]:
-            peri_step = resolution[2]
+            peri_step = resolutions[2]
         elif thresholds[2] <= perigee:
-            peri_step = resolution[3]
+            peri_step = resolutions[3]
+                
+        # Add apogees for current perigee
         perigee = perigee + peri_step
         apogee = perigee
         while apogee <= max_apogee:
             orbit_data = np.vstack((orbit_data, [perigee + radius_moon, apogee + radius_moon]))
             if 0.0 <= apogee < thresholds[0]:
-                apo_step = resolution[0]
+                apo_step = resolutions[0]
             elif thresholds[0] <= apogee < thresholds[1]:
-                apo_step = resolution[1]
+                apo_step = resolutions[1]
             elif thresholds[1] <= apogee < thresholds[2]:
-                apo_step = resolution[2]
+                apo_step = resolutions[2]
             elif thresholds[2] <= apogee:
-                apo_step = resolution[3]
+                apo_step = resolutions[3]
             apogee += apo_step
 
     eccentricity = np.zeros(len(orbit_data) - 1)
@@ -319,7 +328,15 @@ def determine_constellation_size(eccentricity, max_constellation_size, study_nam
     plt.show()
 
     # Calculate distribution of SPS in true anomaly
-    unique_num_sps = range(2, max(number_of_sps) + 1)
+    num_sps = range(2, max(number_of_sps) + 1)
+
+    return set_constellation_size(eccentricity, num_sps, study_name)
+
+
+def set_constellation_size(eccentricity, num_sps, study_name):
+    # Calculate distribution of SPS in true anomaly
+    assert num_sps > 0
+    unique_num_sps = range(num_sps + 1)
 
     if 'SouthPole' in study_name:
         angular_distribution = {}
