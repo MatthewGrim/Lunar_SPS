@@ -234,6 +234,7 @@ def calculate_orbital_perturbations(semi_maj_axis, eccentricity, inclination_ep,
     i = sympy.Symbol('i')
     inclination_op = sympy.solve(cos(relative_inclination) * cos(i) - sin(relative_inclination) * cos(RAAN_op) * sin(i), i)
     # Select positive solution
+    inclination_op = np.asarray(inclination_op)
     inclination_op = inclination_op[inclination_op > 0]
 
     # initialize arrays
