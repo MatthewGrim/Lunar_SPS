@@ -17,17 +17,16 @@ def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, numbe
 
     # New file with this name is generated in the current directory
     time_start = time.time()
+    argument_of_perigees = list()
     with open('CC_{}_OrbitStudy.txt'.format(study_name), 'w') as fh:
         # loop through orbits
         for i in range(len(semi_maj_axis)):
             for j in range(1, number_of_sps + 1):
                 # loop through mean anomalies of satellites in constellation
-                print(j)
                 for k in arg_perigee['{}sps'.format(j)]:
-                    print(j, k)
+                    argument_of_perigees.append(k)
                     sim_file_name = "{}\DVP_{}_{}perigee{}apogee_{}argperi".format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], k)
-                    print(sim_file_name)
-
+                
                     # Generates reports
                     fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Access_Modified" File "{}_access.csv" AccessObject */Target/Target1\n'.format(sim_file_name))
                     fh.write('ReportCreate */Satellite/SPS1 Type Save Style "Access_Range_Stats" File "{}_range.txt" AccessObject */Target/Target1\n'.format(sim_file_name))
@@ -40,8 +39,10 @@ def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, numbe
 
     print('Time required to write connect commands: {} seconds'.format(time_end - time_start))
 
+    return argument_of_perigees
 
-def run_stk_v2(scenario_path, study_name):
+
+def run_stk_v2(scenario_path, study_name, argument_of_perigees):
 
     # This function opens an instance of STK, loads the desired scenario, and executes the
     # connect commands written by the previous functions
@@ -93,6 +94,8 @@ def run_stk_v2(scenario_path, study_name):
 
     j = 0
     for i in range(size):
+        sim_file_name = '{}\DVP_{}_{}perigee{}apogee_{}argperi'.format(stk_data_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], argument_of_perigees[i])
+        
         time_start = time.time()
         root.ExecuteCommand(commands[i])
         time_end = time.time()
@@ -102,14 +105,26 @@ def run_stk_v2(scenario_path, study_name):
 
         elif j == 1:
             print('Generating SPS access report...')
+            if not os.path.exists('{}_access.csv'.format(sim_file_name)):
+                root.ExecuteCommand(commands[i])
+            else:
+                print('Access report for {} x {} km orbit at {} argument of perigee already exists'.format(orbit_data[i + 1][0], orbit_data[i + 1][1], argument_of_perigees[i]))
             j += 1
 
         elif j == 2:
             print('Generating SPS range report...')
+            if not os.path.exists('{}_range.txt'.format(sim_file_name)):
+                root.ExecuteCommand(commands[i])
+            else:
+                print('Range report for {} x {} km orbit at {} argument of perigee already exists'.format(orbit_data[i + 1][0], orbit_data[i + 1][1], argument_of_perigees[i]))
             j += 1
 
         elif j == 3:
             print('Generating SPS lighting report...')
+            if not os.path.exists('{}_lighting.csv'.format(sim_file_name)):
+                root.ExecuteCommand(commands[i])
+            else:
+                print('Lighting for {} x {} km orbit at {} argument of perigee already exists'.format(orbit_data[i + 1][0], orbit_data[i + 1][1], argument_of_perigees[i]))
             j = 0
         # Print progress update
         print('Progress: {}%, Execution Time: {} seconds'.format(round(i * 100.0 / (size - 1), 2),
@@ -161,19 +176,19 @@ def main():
     # Get set of orbit data, varying apogee and perigee
     print('Calculating orbit data...')
     sma, ecc, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_perigee=800.0, 
-                                                                         resolutions=np.array((25.0, 50.0, 100.0, 250.0)), 
+                                                                         resolutions=np.array((100.0, 250.0, 500.0, 1250.0)), 
                                                                          thresholds=np.array((1000.0, 1500.0, 2500.0)))
-
+    
     # Get maximum size of constellation required
     print('Calculating constellation sizes...')
     number_of_sps, arg_perigee = set_constellation_size(ecc, max_constellation_size, reference_study)
 
     # Generate connect commands for programmatically running STK simulations
     print('Writing connect commands....')
-    generate_stk_connect_commands(sma, ecc, orbit_data, number_of_sps, arg_perigee, time_step, study_name, new_path)
+    argument_of_perigees = generate_stk_connect_commands(sma, ecc, orbit_data, number_of_sps, arg_perigee, time_step, study_name, new_path)
 
     # Open STK, load scenario, and execute commands to create data set
-    run_stk_v2(scenario_path, study_name)
+    run_stk_v2(scenario_path, study_name, argument_of_perigees)
 
 
 main()
