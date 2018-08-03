@@ -156,25 +156,25 @@ def main():
     # Writing processed data to files to save time in future analysis. Function will overwrite old data files.
 
     # MEAN RANGE
-    write_data_to_file(stk_data_path, study_name, mean_range, "MeanRange_Equatorial")
-    write_data_to_file(stk_data_path, study_name, mean_min_range, "MeanMinRange_Equatorial")
-    write_data_to_file(stk_data_path, study_name, mean_max_range, "MeanMaxRange_Equatorial")
+    write_data_to_file(stk_data_path, study_name, mean_range, "MeanRange")
+    write_data_to_file(stk_data_path, study_name, mean_min_range, "MeanMinRange")
+    write_data_to_file(stk_data_path, study_name, mean_max_range, "MeanMaxRange")
 
     # ACTIVE TIME DATA
-    write_data_to_file(stk_data_path, study_name, total_active_time, "TotalActive_Equatorial")
-    write_data_to_file(stk_data_path, study_name, max_active_time, "MaxActive_Equatorial")
-    write_data_to_file(stk_data_path, study_name, mean_active_time, "MeanActive_Equatorial")
-    write_data_to_file(stk_data_path, study_name, min_active_time, "MinActive_Equatorial")
+    write_data_to_file(stk_data_path, study_name, total_active_time, "TotalActive")
+    write_data_to_file(stk_data_path, study_name, max_active_time, "MaxActive")
+    write_data_to_file(stk_data_path, study_name, mean_active_time, "MeanActive")
+    write_data_to_file(stk_data_path, study_name, min_active_time, "MinActive")
 
     # BLACKOUT TIME DATA
-    write_data_to_file(stk_data_path, study_name, total_blackout_time, "TotalBlackout_Equatorial")
-    write_data_to_file(stk_data_path, study_name, max_blackout_time, "MaxBlackout_Equatorial")
-    write_data_to_file(stk_data_path, study_name, mean_blackout_time, "MeanBlackout_Equatorial")
+    write_data_to_file(stk_data_path, study_name, total_blackout_time, "TotalBlackout")
+    write_data_to_file(stk_data_path, study_name, max_blackout_time, "MaxBlackout")
+    write_data_to_file(stk_data_path, study_name, mean_blackout_time, "MeanBlackout")
 
     # STORED POWER EVENTS
-    write_data_to_file(stk_data_path, study_name, total_stored_power_time, "TotalStoredPowerEvent_Equatorial")
-    write_data_to_file(stk_data_path, study_name, mean_stored_power_time, "MeanStoredPowerEvent_Equatorial")
-    write_data_to_file(stk_data_path, study_name, max_stored_power_time, "MaxStoredPowerEvent_Equatorial")
+    write_data_to_file(stk_data_path, study_name, total_stored_power_time, "TotalStoredPowerEvent")
+    write_data_to_file(stk_data_path, study_name, mean_stored_power_time, "MeanStoredPowerEvent")
+    write_data_to_file(stk_data_path, study_name, max_stored_power_time, "MaxStoredPowerEvent")
 
     # STATION KEEPING EVENTS
     write_data_to_file(stk_data_path, study_name, total_station_keeping, "TotalStationKeeping")
