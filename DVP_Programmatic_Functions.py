@@ -355,9 +355,9 @@ def set_constellation_size(eccentricity, num_sps, study_name):
         angular_distribution = {}
         for i in unique_num_sps:
             angular_distribution['{}sps'.format(i)] = []
-            for j in range(1, i):
+            for j in range(0, i):
                 arg_perigee = j * (2 * np.pi / i)
                 angular_distribution['{}sps'.format(i)].append(round(arg_perigee, 4))
 
 
-    return number_of_sps, angular_distribution
+    return num_sps, angular_distribution

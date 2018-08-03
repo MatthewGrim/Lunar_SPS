@@ -20,46 +20,24 @@ def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, numbe
     with open('CC_{}_OrbitStudy.txt'.format(study_name), 'w') as fh:
         # loop through orbits
         for i in range(len(semi_maj_axis)):
-            # loop through constellation sizes
-            if number_of_sps[i] == 0 or number_of_sps[i] == 1:
-                continue
-            elif number_of_sps[i] == 2:
-                j = 2
-                k = 180.0
-                # Connect commands for generating reports require a save location
-                # Generates new report of access time to target
-                fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Access_Modified" File "{}\DVP_{}_{}perigee{}apogee_{}sps_{}argperi_access.csv" AccessObject '
-                    '*/Target/Target1\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], j,
-                                                k))
-                # Generates new report of SPS-to-target range statistics during access periods
-                fh.write('ReportCreate */Satellite/SPS1 Type Save Style "Access_Range_Stats" File "{}\DVP_{}_{}perigee{}apogee_{}sps_{}argperi_range.txt" AccessObject '
-                    '*/Target/Target1\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], j,
-                                                k))
-                # Generates new report of lighting times
-                fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Lighting_Times" File "{}\DVP_{}_{}perigee{}apogee_{}sps_{}argperi_lighting.csv"\n'.format(
-                        file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], j, k))
-                # Sets new orbit for satellite, varying semi major axis, eccentricity, and mean anomaly
-                fh.write('SetState */Satellite/SPS1 Classical J4Perturbation "17 May 2018 10:00:00.000" "17 May 2020 '
-                         '10:00:00.000" {} Inertial "17 May 2018 10:00:00.000" {} {} '
-                         '0 {} 0 0\n'.format(time_step, semi_maj_axis[i] * 1000.0, eccentricity[i], k))
-            else:
-                for j in range(2, number_of_sps[i] + 1):
-                    # loop through mean anomalies of satellites in constellation
-                    for k in arg_perigee['{}sps'.format(j)]:
-                        # Connect commands for generating reports require a save location
-                        # Generates new report of access time to target
-                        fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Access_Modified" File "{}\DVP_{}_{}perigee{}apogee_{}sps_{}argperi_access.csv" AccessObject '
-                                 '*/Target/Target1\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], j, k))
-                        # Generates new report of SPS-to-target range statistics during access periods
-                        fh.write('ReportCreate */Satellite/SPS1 Type Save Style "Access_Range_Stats" File "{}\DVP_{}_{}perigee{}apogee_{}sps_{}argperi_range.txt" AccessObject '
-                                 '*/Target/Target1\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], j, k))
-                        # Generates new report of lighting times
-                        fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Lighting_Times" File "{}\DVP_{}_{}perigee{}apogee_{}sps_{}argperi_lighting.csv"\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], j, k))
-                        # Sets new orbit for satellite, varying semi major axis, eccentricity, and mean anomaly
-                        fh.write('SetState */Satellite/SPS1 Classical J4Perturbation "17 May 2018 10:00:00.000" "17 May 2020 '
-                                 '10:00:00.000" {} Inertial "17 May 2018 10:00:00.000" {} {} '
-                                 '0 {} 0 0 \n'.format(time_step, semi_maj_axis[i]*1000.0, eccentricity[i], k))
+            for j in range(1, number_of_sps + 1):
+                # loop through mean anomalies of satellites in constellation
+                print(j)
+                for k in arg_perigee['{}sps'.format(j)]:
+                    print(j, k)
+                    sim_file_name = "{}\DVP_{}_{}perigee{}apogee_{}argperi".format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], k)
+                    print(sim_file_name)
+
+                    # Generates reports
+                    fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Access_Modified" File "{}_access.csv" AccessObject */Target/Target1\n'.format(sim_file_name))
+                    fh.write('ReportCreate */Satellite/SPS1 Type Save Style "Access_Range_Stats" File "{}_range.txt" AccessObject */Target/Target1\n'.format(sim_file_name))
+                    fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Lighting_Times" File "{}_lighting.csv"\n'.format(sim_file_name))
+
+                    # Sets new orbit for satellite, varying semi major axis, eccentricity, and mean anomaly
+                    fh.write('SetState */Satellite/SPS1 Classical J4Perturbation "17 May 2018 10:00:00.000" "17 May 2020 '
+                             '10:00:00.000" {} Inertial "17 May 2018 10:00:00.000" {} {} 0 {} 0 0 \n'.format(time_step, semi_maj_axis[i]*1000.0, eccentricity[i], k))
     time_end = time.time()
+
     print('Time required to write connect commands: {} seconds'.format(time_end - time_start))
 
 
@@ -167,7 +145,7 @@ def main():
     # Name of reference study on which constellation sizes are based
     reference_study = 'Equatorial_IncrementedRes'
     # Set maximum size of SPS constellations
-    max_constellation_size = 3
+    max_constellation_size = 2
 
     # Create folder inside main directory for storing data sets
     print('Creating new folder to store reports...')
@@ -182,7 +160,9 @@ def main():
 
     # Get set of orbit data, varying apogee and perigee
     print('Calculating orbit data...')
-    sma, ecc, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee)
+    sma, ecc, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_perigee=800.0, 
+                                                                         resolutions=np.array((25.0, 50.0, 100.0, 250.0)), 
+                                                                         thresholds=np.array((1000.0, 1500.0, 2500.0)))
 
     # Get maximum size of constellation required
     print('Calculating constellation sizes...')
