@@ -19,49 +19,6 @@ to versions of the programmatic scripts which open STK and load the desired scen
 from DVP_Programmatic_Functions import *
 
 
-def vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee):
-
-    # This function generates a series of orbital data points, in terms of apogee/perigee which
-    # is then converted into semi major axis/eccentricity for execution in STK
-
-    radius_moon = 1737.0
-
-    resolution = np.array((10.0, 25.0, 50.0, 100.0))
-    thresholds = np.array((100.0, 250.0, 1000.0))
-    orbit_data = [0, 0]
-    perigee = 0.0
-    while perigee <= max_perigee:
-        if 0.0 <= perigee < thresholds[0]:
-            peri_step = resolution[0]
-        elif thresholds[0] <= perigee < thresholds[1]:
-            peri_step = resolution[1]
-        elif thresholds[1] <= perigee < thresholds[2]:
-            peri_step = resolution[2]
-        elif thresholds[2] <= perigee:
-            peri_step = resolution[3]
-        perigee = perigee + peri_step
-        apogee = perigee
-        while apogee <= max_apogee:
-            orbit_data = np.vstack((orbit_data, [perigee + radius_moon, apogee + radius_moon]))
-            if 0.0 <= apogee < thresholds[0]:
-                apo_step = resolution[0]
-            elif thresholds[0] <= apogee < thresholds[1]:
-                apo_step = resolution[1]
-            elif thresholds[1] <= apogee < thresholds[2]:
-                apo_step = resolution[2]
-            elif thresholds[2] <= apogee:
-                apo_step = resolution[3]
-            apogee += apo_step
-
-    eccentricity = np.zeros(len(orbit_data) - 1)
-    semi_maj_axis = np.zeros(len(orbit_data) - 1)
-    for i in range(0, len(orbit_data) - 1):
-        eccentricity[i] = ((orbit_data[i + 1][1] / orbit_data[i + 1][0]) - 1) / (1 + (orbit_data[i + 1][1] / orbit_data[i + 1][0]))
-        semi_maj_axis[i] = orbit_data[i + 1][0] / (1 - eccentricity[i])
-
-    return semi_maj_axis, eccentricity, orbit_data
-
-
 def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, time_step, study_name, file_path):
 
     # This function takes in the various data points which are going to be passed to STK,
@@ -69,6 +26,7 @@ def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, time_
     # orbit parameters, and then printing the resulting illumination and access events in reports
 
     # New file with this name is generated in the current directory
+    print('Writing connect commands....')
     time_start = time.time()
     with open('CC_{}_OrbitStudy.txt'.format(study_name), 'w') as fh:
         # loop through orbits
@@ -76,8 +34,8 @@ def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, time_
             # Connect commands for generating reports require a save location
             # Sets new orbit for satellite, varying semi major axis, eccentricity, and mean anomaly
             fh.write('SetState */Satellite/SPS1 Classical J4Perturbation "17 May 2018 10:00:00.000" "17 May 2020 '
-                     '10:00:00.000" {} Inertial "17 May 2018 10:00:00.000" {} {} '
-                     '90 90 0 {}\n'.format(time_step, semi_maj_axis[i]*1000.0, eccentricity[i], k))
+                     '10:00:00.000" {} Inertial "17 May 2018 10:00:00.000" {} '
+                     '90 90 0 {}\n'.format(time_step, semi_maj_axis[i] * 1000.0, eccentricity[i]))
             # Generates new report of access time to target
             fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Access_Modified" File "{}\DVP_{}_{}perigee{}apogee_180.0meananom_access.csv" AccessObject '
                      '*/Target/Target1\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1]))
@@ -85,7 +43,8 @@ def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, time_
             fh.write('ReportCreate */Satellite/SPS1 Type Save Style "Access_Range_Stats" File "{}\DVP_{}_{}perigee{}apogee_180.0meananom_range.txt" AccessObject '
                      '*/Target/Target1\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1]))
             # Generates new report of lighting times
-            fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Lighting_Times" File "{}\DVP_{}_{}perigee{}apogee_180.0meananom_lighting.csv"\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], j, k))
+            fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Lighting_Times" File "{}\DVP_{}_{}perigee{}apogee_180.0meananom_lighting.csv"\n'.format(
+                     file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1]))
 
     time_end = time.time()
     print('Time required to write connect commands: {} seconds'.format(time_end - time_start))
@@ -134,6 +93,7 @@ def run_stk_v2(scenario_path, study_name, orbit_data, stk_data_path):
     root.LoadScenario(r'{}'.format(scenario_path))
     sc = root.CurrentScenario
     sc2 = sc.QueryInterface(STKObjects.IAgScenario)
+    # sc2.SetTimePeriod("1 Jul 2008 10:00:00", "30 Jun 2010 10:00:00")
 
     print('Executing commands...')
     # Open file with connect commands, and execute them sequentially
@@ -178,7 +138,8 @@ def run_stk_v2(scenario_path, study_name, orbit_data, stk_data_path):
 
         time_end = time.time()
         # Print progress update
-        print('Progress: {}%, Execution Time: {} seconds'.format(round(i * 100.0 / (size - 1), 2), round(time_end - time_start, 5)))
+        print('Progress: {}%, Execution Time: {} seconds'.format(round(i * 100.0 / (size - 1), 2),
+                                                                 round(time_end - time_start, 5)))
         duration[i] = time_end - time_start
     loop_end = time.time()
 
