@@ -26,6 +26,7 @@ def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, numbe
     # orbit parameters, and then printing the resulting illumination and access events in reports
 
     # New file with this name is generated in the current directory
+    print('Writing connect commands....')
     time_start = time.time()
     with open('CC_{}_OrbitStudy.txt'.format(study_name), 'w') as fh:
         # loop through orbits
@@ -110,6 +111,7 @@ def run_stk_v2(scenario_path, study_name, stk_data_path, orbit_data):
     root.LoadScenario(r'{}'.format(scenario_path))
     sc = root.CurrentScenario
     sc2 = sc.QueryInterface(STKObjects.IAgScenario)
+    # sc2.SetTimePeriod("1 Jul 2008 10:00:00", "30 Jun 2010 10:00:00")
 
     print('Executing commands...')
     # Open file with connect commands, and execute them sequentially
@@ -154,7 +156,8 @@ def run_stk_v2(scenario_path, study_name, stk_data_path, orbit_data):
 
         time_end = time.time()
         # Print progress update
-        print('Progress: {}%, Execution Time: {} seconds'.format(round(i * 100.0 / (size - 1), 2), round(time_end - time_start, 5)))
+        print('Progress: {}%, Execution Time: {} seconds'.format(round(i * 100.0 / (size - 1), 2),
+                                                                 round(time_end - time_start, 5)))
         duration[i] = time_end - time_start
     loop_end = time.time()
 

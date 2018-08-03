@@ -111,10 +111,12 @@ def run_stk_v2(scenario_path, study_name):
     root.LoadScenario(r'{}'.format(scenario_path))
     sc = root.CurrentScenario
     sc2 = sc.QueryInterface(STKObjects.IAgScenario)
+    # sc2.SetTimePeriod("1 Jul 2008 10:00:00", "30 Jun 2010 10:00:00")
 
-    print('Executing commands...')
+    print('Executing connect commands...')
     # Open file with connect commands, and execute them sequentially
-    with open('CC_{}_OrbitStudy.txt'.format(study_name), 'r') as fh:
+    connect_command_file = 'CC_{}_OrbitStudy.txt'.format(study_name)
+    with open(connect_command_file, 'r') as fh:
         commands = fh.readlines()
         size = len(commands)
     loop_start = time.time()
@@ -142,7 +144,8 @@ def run_stk_v2(scenario_path, study_name):
             print('Generating SPS lighting report...')
             j = 0
         # Print progress update
-        print('Progress: {}%, Execution Time: {} seconds'.format(round(i * 100.0 / (size - 1), 2), round(time_end - time_start, 5)))
+        print('Progress: {}%, Execution Time: {} seconds'.format(round(i * 100.0 / (size - 1), 2),
+                                                                 round(time_end - time_start, 5)))
         duration[i] = time_end - time_start
     loop_end = time.time()
 
