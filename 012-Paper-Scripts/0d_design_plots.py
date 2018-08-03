@@ -28,7 +28,7 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, rover_specs, las
 
     # Set the parameter space
     trans_radius = np.logspace(-3, 1, 1000)
-    altitudes = np.logspace(4, 6, 1001)
+    altitudes = np.logspace(4, 6.699, 1001)
     R, Z = np.meshgrid(trans_radius, altitudes, indexing="ij")
 
     fig, ax = plt.subplots(len(power_reqs), len(laser_powers), sharey=True, sharex=True, figsize=(12, 10))
@@ -55,7 +55,7 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, rover_specs, las
 
             im = ax[j, i].contourf(np.log10(R), Z / 1e3, receiver_power, 100)
             fig.colorbar(im, ax=ax[j, i])
-            ax[j, 0].set_ylabel('{} \n Altitude [km]'.format(rover_spec))
+            ax[j, 0].set_ylabel('{} \n Transmission distance [km]'.format(rover_spec))
         ax[0, i].set_title('Laser Power: {}kW'.format(laser_power / 1e3))
         ax[1, i].set_xlabel('Logarithm Radius [m]')
     plt.tight_layout()
@@ -65,7 +65,7 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, rover_specs, las
 
 
 def main():
-    trans_wavelength = 1e-4
+    trans_wavelength = 1e-6
     laser_power = [4e3, 15e3, 100e3]
     rover_specs = ["AMALIA in Hibernation", "Curiosity Rover in Operation"]
     rec_area = [0.5, 1.0]
