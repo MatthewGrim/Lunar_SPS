@@ -80,7 +80,8 @@ def vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_p
                                                   resolutions=np.array((10.0, 25.0, 50.0, 100.0)), thresholds=np.array((100.0, 250.0, 1000.0))):
     # This function generates a series of orbital data points, in terms of apogee/perigee which
     # is then converted into semi major axis/eccentricity for execution in STK
-    assert min_perigee < max_perigee
+    if min_perigee is not None:
+        assert min_perigee < max_perigee
     assert resolutions.shape == (4,)
     assert thresholds.shape == (3,)
 
