@@ -217,7 +217,7 @@ def get_event_overlaps(access_times, event_times):
             for j in range(events_size):
                 event_start = event_times[0][j]
                 event_end = event_times[1][j]
-                assert event_start < event_end
+                assert event_start <= event_end
 
                 # Determine overlapping events
                 # Partial overlap, event period triggers overlap, access period ends it
