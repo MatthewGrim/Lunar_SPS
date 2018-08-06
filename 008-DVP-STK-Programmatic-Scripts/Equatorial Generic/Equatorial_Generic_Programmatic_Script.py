@@ -102,10 +102,8 @@ def run_stk_v2(stk_data_path, scenario_path, study_name, orbit_data, argument_of
                 time_start = time.time()
                 if j == 0:
                     print('Adjusting Satellite orbit...')
-                    if not os.path.exists('{}_access.csv'.format(sim_file_name)):
-                        if not os.path.exists('{}_range.txt'.format(sim_file_name)):
-                            if not os.path.exists('{}_lighting.csv'.format(sim_file_name)):
-                                root.ExecuteCommand(commands[commands_idx])
+                    if not os.path.exists('{}_access.csv'.format(sim_file_name)) or not os.path.exists('{}_range.txt'.format(sim_file_name)) or not os.path.exists('{}_lighting.csv'.format(sim_file_name)):
+                        root.ExecuteCommand(commands[commands_idx])
 
                 elif j == 1:
                     print('Generating SPS access report...')
