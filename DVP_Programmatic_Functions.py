@@ -210,6 +210,55 @@ def make_contour_plot(X, Y, data, title, fig_num):
     plt.show()
 
 
+def get_event_statistics(X, Y, data, rover, title):
+    fig, ax = plt.subplots(2, 4, sharex=True, sharey=True, figsize=(15, 8))
+
+    num_contours = 100
+    im = ax[0, 0].contourf(X, Y, data["min_active_time"], num_contours)
+    fig.colorbar(im, ax=ax[0, 0])
+    im = ax[0, 1].contourf(X, Y, data["max_active_time"], num_contours)
+    fig.colorbar(im, ax=ax[0, 1])
+    im = ax[0, 2].contourf(X, Y, data["mean_active_time"], num_contours)
+    fig.colorbar(im, ax=ax[0, 2])
+    im = ax[0, 3].contourf(X, Y, data["std_active_time"], num_contours)
+    fig.colorbar(im, ax=ax[0, 3])
+
+    im = ax[1, 0].contourf(X, Y, data["min_blackout_time"], num_contours)
+    fig.colorbar(im, ax=ax[1, 0])
+    ax[1, 0].set_ylabel("Apogee Altitude [km]")
+    im = ax[1, 1].contourf(X, Y, data["max_blackout_time"], num_contours)
+    fig.colorbar(im, ax=ax[1, 1])
+    ax[1, 1].set_ylabel("Apogee Altitude [km]")
+    im = ax[1, 2].contourf(X, Y, data["mean_blackout_time"], num_contours)
+    fig.colorbar(im, ax=ax[1, 2])
+    ax[1, 2].set_ylabel("Apogee Altitude [km]")
+    im = ax[1, 3].contourf(X, Y, data["std_blackout_time"], num_contours)
+    fig.colorbar(im, ax=ax[1, 3])
+    ax[1, 3].set_ylabel("Apogee Altitude [km]")
+
+    ax[0, 0].set_title("Min Duration [hrs]")
+    ax[0, 1].set_title("Max Duration [hrs]")
+    ax[0, 2].set_title("Mean Duration [hrs]")
+    ax[0, 3].set_title("Standard Deviation in Duration [hrs]")
+
+    ax[0, 0].set_ylabel("Active Events\n Perigee Altitude [km]")
+    ax[1, 0].set_ylabel("Blackout Events\n Perigee Altitude [km]")
+    fig.suptitle(title)
+    fig.tight_layout()
+    plt.show()
+
+    plt.figure()
+
+    power_balance = data["mean_active_time"] / data["mean_blackout_time"] * (rover["operation_pwr"] - rover["hibernation_pwr"]) / rover["hibernation_pwr"]
+    plt.contourf(X, Y, power_balance, num_contours)
+    plt.colorbar()
+
+    plt.xlabel("Apogee Altitude [km]")
+    plt.ylabel("Perigee Altitude [km]")
+    plt.title("Ratio of Power Available to Power Consumed")
+    plt.show()
+
+
 def calculate_orbital_perturbations(semi_maj_axis, eccentricity, inclination_ep, arg_perigee_ep):
     import sympy
     from sympy import cos, sin
