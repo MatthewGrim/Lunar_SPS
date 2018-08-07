@@ -110,22 +110,22 @@ def run_stk_v2(stk_data_path, scenario_path, study_name, orbit_data, argument_of
                     if not os.path.exists('{}_access.csv'.format(sim_file_name)):
                         root.ExecuteCommand(commands[commands_idx])
                     else:
-                        print('Access report for {} x {} km orbit at {} argument of perigee already exists'.format(orbit_data[i + 1][0], orbit_data[i + 1][1], argument_of_perigees[i]))
+                        print('Access report for {} x {} km orbit at {} argument of perigee already exists'.format(orbit_data[i + 1][0], orbit_data[i + 1][1], arg_perigee))
 
                 elif j == 2:
                     print('Generating SPS range report...')
                     if not os.path.exists('{}_range.txt'.format(sim_file_name)):
                         root.ExecuteCommand(commands[commands_idx])
                     else:
-                        print('Range report for {} x {} km orbit at {} argument of perigee already exists'.format(orbit_data[i + 1][0], orbit_data[i + 1][1], argument_of_perigees[i]))
+                        print('Range report for {} x {} km orbit at {} argument of perigee already exists'.format(orbit_data[i + 1][0], orbit_data[i + 1][1], arg_perigee))
 
                 elif j == 3:
                     print('Generating SPS lighting report...')
                     if not os.path.exists('{}_lighting.csv'.format(sim_file_name)):
                         root.ExecuteCommand(commands[commands_idx])
                     else:
-                        print('Lighting for {} x {} km orbit at {} argument of perigee already exists'.format(orbit_data[i + 1][0], orbit_data[i + 1][1], argument_of_perigees[i]))
-
+                        print('Lighting for {} x {} km orbit at {} argument of perigee already exists'.format(orbit_data[i + 1][0], orbit_data[i + 1][1], arg_perigee))
+				
                 # Print progress update
                 time_end = time.time()
                 commands_idx += 1
