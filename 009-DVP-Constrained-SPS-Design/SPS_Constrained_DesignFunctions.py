@@ -96,31 +96,27 @@ def rover_metrics(rover_name):
     if "amalia" in rover_name:
         # Team ITALIA AMALIA (intermediate)
         rover['rec_radius'] = 0.5
-        rover['fleet_radius'] = np.sqrt(2.0) * ((2.0 * num_rovers_across_diameter * rover['rec_radius']) + (num_rovers_across_diameter - 1.0) * separation) / 2.0
         rover['rec_efficiency'] = 0.40
         rover['operation_pwr'] = 100.0
         rover['hibernation_pwr'] = 7.0
         rover['battery_capacity'] = 100.0
-
     elif "sorato" in rover_name:
         # ispace Sorato (miniature)
         rover['rec_radius'] = 0.1
-        rover['fleet_radius'] = np.sqrt(2.0) * ((2.0 * num_rovers_across_diameter * rover['rec_radius']) + (num_rovers_across_diameter - 1.0) * separation) / 2.0
         rover['rec_efficiency'] = 0.40
         rover['operation_pwr'] = 21.5
         rover['hibernation_pwr'] = 4.5
         rover['battery_capacity'] = 38.0
-
     elif "curiosity" in rover_name:
         # NASA Curiosity (large)
         rover['rec_radius'] = 1.0
-        rover['fleet_radius'] = np.sqrt(2.0) * ((2.0 * num_rovers_across_diameter * rover['rec_radius']) + (num_rovers_across_diameter - 1.0) * separation) / 2.0
         rover['rec_efficiency'] = 0.40
         rover['operation_pwr'] = 270.0
         rover['hibernation_pwr'] = 23.5
         rover['battery_capacity'] = 1600.0
     else:
         print('Invalid rover name. Valid names: amalia, sorato, curiosity')
+    rover['fleet_radius'] = np.sqrt(2.0) * ((2.0 * num_rovers_across_diameter * rover['rec_radius']) + (num_rovers_across_diameter - 1.0) * separation) / 2.0
 
     return rover
 
@@ -205,9 +201,9 @@ def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_s
     data_set['mean_link_efficiency'] = []
     data_set['mean_power_received'] = []
     # Cycle through all access events
-    for i in range(0, len(data_set['mean_range'])):
+    for i in range(0, len(data_set['max_range'])):
         # If range is "np.nan", no access periods exist for that orbit, therefore treat orbit as infeasible design
-        if data_set['mean_range'][i] == np.nan:
+        if data_set['max_range'] == np.nan:
             data_set['min_link_efficiency'].append(np.nan)
             data_set['mean_link_efficiency'].append(np.nan)
             data_set['min_power_received'].append(np.nan)
@@ -250,7 +246,7 @@ def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_s
                 else:
                     data_set['min_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[1]) ** 2)
                     data_set['min_power_received'].append(data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
-                # # Calculate mean link efficiency, as well as power delivered based on mean surface beam size
+                # Calculate mean link efficiency, as well as power delivered based on mean surface beam size
                 if surf_beam_radius[2] <= rover['rec_radius']:
                     data_set['mean_link_efficiency'].append(1.0)
                     data_set['mean_power_received'].append(rover['rec_efficiency'] * transmitter['power'])
@@ -261,7 +257,7 @@ def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_s
     # Calculate total energy delivered to receiver based on mean power
     data_set['total_energy'] = []
     data_set['total_energy'] = [i * j for i, j in zip(data_set['mean_power_received'], data_set['total_active_time'])]
-    
+
     return data_set
 
 
