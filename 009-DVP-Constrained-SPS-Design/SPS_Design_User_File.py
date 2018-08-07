@@ -6,7 +6,7 @@ This script serves for simplified user interaction with the SPS constrained desi
 
 """
 
-from SPS_Constrained_DesignTool import generate_design_space
+from SPS_Constrained_DesignTool import generate_design_space, default_design_plots
 from SPS_Constrained_DesignFunctions import rover_metrics
 
 
@@ -15,16 +15,17 @@ def main():
     # INITIALIZATION
     ####################################################################################################################
     # Select scenario/configuration
-    study_name = 'SouthPole_IncrementedRes_Inertial'
+    study_name = 'Equatorial_IncrementedRes'
     # study_name = 'Equatorial_IncrementedRes'
 
     # Select transmitter
     transmitter_selection = '100kW'
 
     # Select receiver
+    rover_selection = "amalia"
+
     # Fleet size must be integer, rover separation distance must be float (with decimal)
     # Fleet size comes first, then separation
-    rover_selection = 'sorato'
     ####################################################################################################################
 
     # DEFINE CONSTRAINTS
@@ -39,7 +40,7 @@ def main():
     # Minimum pointing error of SPS system in radians
     constraints['point_error'] = 1e-6
     # Minimum reduction in overall blackout time in percent
-    constraints['min_active_time'] = 20.0
+    constraints['min_active_time'] = 10.0
     # Minimum allowable single active event duration in hours
     constraints['min_active_duration'] = rover['battery_capacity'] / rover['operation_pwr']
     # Minimum power requirement at target in Watts
@@ -61,7 +62,7 @@ def main():
     active_constraints['transmitter_pwr_optimization'] = 0
     ####################################################################################################################
 
-    generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints)
-
+    apogees, perigees, data, best_orbit = generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints)
+    default_design_plots(apogees, perigees, data, best_orbit)
 
 main()
