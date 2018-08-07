@@ -162,7 +162,7 @@ def main():
     # Name of reference study on which constellation sizes are based
     reference_study = 'Equatorial_IncrementedRes'
     # Set maximum size of SPS constellations
-    max_constellation_size = 2
+    max_constellation_size = 3
 
     # Create folder inside main directory for storing data sets
     print('Creating new folder to store reports...')
@@ -178,7 +178,7 @@ def main():
     # Get set of orbit data, varying apogee and perigee
     print('Calculating orbit data...')
     sma, ecc, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_perigee=800.0, 
-                                                                         resolutions=np.array((200.0, 250.0, 500.0, 1250.0)),
+                                                                         resolutions=np.array((25.0, 50.0, 100.0, 250.0)),
                                                                          thresholds=np.array((1000.0, 1500.0, 2500.0)))
     
     # Get maximum size of constellation required
