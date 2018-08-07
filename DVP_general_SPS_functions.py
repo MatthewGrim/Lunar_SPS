@@ -96,6 +96,14 @@ def parse_csv_to_array(file_name, sim_start):
             end_time = convert_string_to_datetime(end)
             end_time_sec_from_simstart.append((end_time - sim_start).total_seconds())
 
+            if start == end:
+                raise RuntimeError("No event should have zero time")
+            if end_time_sec_from_simstart[-1] == start_time_sec_from_simstart[-1]:
+                # Remove events that are shorter than a second long
+                end_time_sec_from_simstart.pop()
+                start_time_sec_from_simstart.pop()
+                continue
+
             # Save power link duration
             access_durations = float(components[2].split("\n")[0])
             duration_array.append(access_durations)
@@ -251,9 +259,9 @@ def get_event_overlaps(access_times, event_times):
 
                 if len(overlap_duration) > 0 and overlap_duration[-1] == 0.0:
                     print("WARNING = This should NEVER happen!")
-                    overlap_start.remove(-1)
-                    overlap_end.remove(-1)
-                    overlap_duration.remove(-1)
+                    overlap_start.pop()
+                    overlap_end.pop()
+                    overlap_duration.pop()
 
     overlap_events = [overlap_start, overlap_end, overlap_duration]
 
@@ -277,6 +285,8 @@ def get_event_overlaps_fast(access_times, event_times):
     while access_idx < len(access_times[0]):
         access_start = access_times[0][access_idx]
         access_end = access_times[1][access_idx]
+        if access_start >= access_end:
+            raise RuntimeError("It should not be possible to get here!")
 
         if event_idx >= len(event_times[0]):
             # There are no more events
@@ -286,44 +296,58 @@ def get_event_overlaps_fast(access_times, event_times):
         else:
             event_start = event_times[0][event_idx]
             event_end = event_times[1][event_idx]
+            if event_start >= event_end:
+                raise RuntimeError("It should not be possible to get here")
+
+        # Look for no overlap cases - move to next event pair with the chance of overlap
+        if event_end < access_start:
+            event_idx += 1
+            continue
+        elif event_start > access_end:
+            access_idx += 1
+            continue
 
         # Find event overlap
-        if event_end < access_start:
-            # No overlap - move to next event pair with the chance of overlap
-            event_idx += 1
-        elif event_start > access_end:
-            # No overlap guaranteed - move to next event pair with the chance of overlap
-            access_idx += 1
-        elif event_start <= access_start and event_end >= access_end:
+        start = None
+        end = None
+        if event_start <= access_start and event_end >= access_end:
             # Complete overlap
-            overlap_start.append(access_start)
-            overlap_end.append(access_end)
-            overlap_duration.append(access_end - access_start)
+            start = access_start
+            end = access_end
 
             access_idx += 1
         elif event_start <= access_start and event_end < access_end:
             # Partial overlap from start
-            overlap_start.append(access_start)
-            overlap_end.append(event_end)
-            overlap_duration.append(event_end - access_start)
+            start = access_start
+            end = event_end
 
             event_idx += 1
         elif event_start > access_start and event_end >= access_end:
             # Partial overlap from end
-            overlap_start.append(event_start)
-            overlap_end.append(access_end)
-            overlap_duration.append(access_end - event_start)
+            start = event_start
+            end = access_end
 
             access_idx += 1
         elif event_start > access_start and event_end < access_end:
             # Second event is within the first event
-            overlap_start.append(event_start)
-            overlap_end.append(event_end)
-            overlap_duration.append(event_end - event_start)
+            start = event_start
+            end = event_end
 
             event_idx += 1
         else:
             raise NotImplementedError("Should not be possible to get here!")
+
+        assert start is not None and end is not None
+        # Don't add events with zero overall time
+        if end == start:
+            continue
+        # Throw error if there's an inconsistent event
+        if end < start:
+            raise RuntimeError("Should not get here!")
+
+        overlap_start.append(start)
+        overlap_end.append(end)
+        overlap_duration.append(end - start)
 
     overlap_events = [overlap_start, overlap_end, overlap_duration]
 
