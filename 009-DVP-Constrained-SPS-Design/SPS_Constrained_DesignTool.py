@@ -304,6 +304,11 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
         print('Approximate fuel cell mass required to eliminate max duration event --> {} kg'.format(round(sps_fuel_cell_mass, 2)))
         print('Total time blackout time which could be eliminated with battery --> {} %'.format(round(100.0 * sorted_data_set['total_stored_power_time'][best_orbit_idx] / study['duration'], 2)))
 
+    best_orbit = [best_apogee - r_moon, best_perigee - r_moon]
+    return apogee_altitudes, perigee_altitudes, sorted_data_set, best_orbit
+
+
+def default_design_plots(apogee_altitudes, perigee_altitudes, sorted_data_set, best_orbit):
     # Plot constrained design variables
     plt.figure(1)
     plt.subplot(221)
@@ -334,6 +339,6 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     plt.xlabel('Apogee Altitude [km]')
     plt.ylabel('Perigee Altitude [km]')
     plt.colorbar()
-    plt.scatter(best_apogee - r_moon, best_perigee - r_moon, marker='x')
+    plt.scatter(best_orbit[0], best_orbit[1], marker='x')
     plt.show()
 
