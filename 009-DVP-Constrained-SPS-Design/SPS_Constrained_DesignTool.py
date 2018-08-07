@@ -126,7 +126,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
         pass
     # Remove data points for which the the battery could not be charged sufficiently
     if active_constraints['min_active_duration'] == 1:
-        data_set = enforce_constraints(data_set, 'min_active_time', constraints, 'min_active_time', 'min')
+        data_set = enforce_constraints(data_set, 'min_active_time', constraints, 'min_active_duration', 'min')
     else:
         pass
     # Calculate link efficiency and power delivered, applying pointing constraint
