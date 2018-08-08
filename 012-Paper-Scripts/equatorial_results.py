@@ -11,12 +11,12 @@ from SPS_Constrained_DesignFunctions import rover_metrics
 from matplotlib import pyplot as plt
 
 
-def plot_results(apogee_altitudes, perigee_altitudes, sorted_data_set, best_orbit):
+def plot_results(apogee_altitudes, perigee_altitudes, sorted_data_set, best_orbit, rover_metric):
     # Plot constrained design variables
     num_contours = 100
-    fig, ax = plt.subplots(2, 4)
+    fig, ax = plt.subplots(2, 4, figsize=(15, 8))
 
-    rovers = ["sorato", "amalia"]
+    rovers = ["Sorato", "AMALIA"]
     for i, rover in enumerate(rovers):
         im = ax[i, 0].contourf(apogee_altitudes[rover], perigee_altitudes[rover], sorted_data_set[rover]['total_active_time'], num_contours)
         ax[i, 0].set_title('Total Active Time [%]')
@@ -37,7 +37,19 @@ def plot_results(apogee_altitudes, perigee_altitudes, sorted_data_set, best_orbi
         fig.colorbar(im, ax=ax[i, 3])
     for i in range(4):
         ax[1, i].set_xlabel("Apogee Altitude [km]")
+    fig.tight_layout()
+    plt.show()
 
+    fig, ax = plt.subplots(2, sharex=True)
+    for i, rover in enumerate(rovers):
+        power_delivered_to_consumed = (rover_metric[rover]["operation_pwr"] - rover_metric[rover]["hibernation_pwr"]) / rover_metric[rover]["hibernation_pwr"]
+        active_to_eclipsed_ratio = sorted_data_set[rover]["mean_active_time"] / sorted_data_set[rover]["mean_blackout_time"]
+        power_balance = active_to_eclipsed_ratio * power_delivered_to_consumed
+        im = ax[i].contourf(apogee_altitudes[rover], perigee_altitudes[rover], power_balance, num_contours)
+        fig.colorbar(im, ax=ax[i])
+
+        ax[i].set_ylabel("{}\n Perigee Altitude [km]".format(rover))
+    ax[1].set_xlabel("Apogee Altitude [km]")
     plt.show()
 
 
@@ -59,7 +71,8 @@ def main():
     rover_perigees = dict()
     rover_data = dict()
     rover_orbit = dict()
-    rovers = ['sorato', 'amalia']
+    rover_metric = dict()
+    rovers = ['Sorato', 'AMALIA']
     for rover_selection in rovers:
         ####################################################################################################################
 
@@ -70,7 +83,9 @@ def main():
         active_constraints = {}
 
         # Retrieve rover metrics for constraint formulation
-        rover = rover_metrics(rover_selection)
+        rover_name = 'sorato' if rover_selection is 'Sorato' else 'amalia'
+        rover = rover_metrics(rover_name)
+        rover_metric[rover_selection] = rover
 
         # Minimum pointing error of SPS system in radians
         constraints['point_error'] = 1e-6
@@ -97,12 +112,13 @@ def main():
         active_constraints['transmitter_pwr_optimization'] = 0
         ####################################################################################################################
 
-        apogees, perigees, sorted_data, best_orbit = generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints)
+        apogees, perigees, sorted_data, best_orbit = generate_design_space(study_name, rover_name, transmitter_selection, constraints, active_constraints)
         rover_apogees[rover_selection] = apogees
         rover_perigees[rover_selection] = perigees
         rover_data[rover_selection] = sorted_data
         rover_orbit[rover_selection] = best_orbit
 
-    plot_results(rover_apogees, rover_perigees, rover_data, rover_orbit)
+    plot_results(rover_apogees, rover_perigees, rover_data, rover_orbit, rover_metric)
 
 main()
+
