@@ -115,7 +115,7 @@ def rover_metrics(rover_name):
         rover['hibernation_pwr'] = 23.5
         rover['battery_capacity'] = 1600.0
     else:
-        print('Invalid rover name. Valid names: amalia, sorato, curiosity')
+        print('Invalid rover name: {}. Valid names: amalia, sorato, curiosity'.format(rover_name))
     rover['fleet_radius'] = np.sqrt(2.0) * ((2.0 * num_rovers_across_diameter * rover['rec_radius']) + (num_rovers_across_diameter - 1.0) * separation) / 2.0
 
     return rover
