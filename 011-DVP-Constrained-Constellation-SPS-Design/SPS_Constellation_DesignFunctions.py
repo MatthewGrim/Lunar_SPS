@@ -17,7 +17,7 @@ def study_initialization(study_name):
 
     study = {}
 
-    if study_name == 'SouthPole_IncrementedRes_ManytoOne':
+    if 'SouthPole' in study_name:
         study['start'] = convert_string_to_datetime(['2018', '05', '17', '10', '0', '0.0'])
         study['end'] = convert_string_to_datetime(['2020', '05', '17', '10', '0', '0.0'])
         study['duration'] = (study['end'] - study['start']).total_seconds()
@@ -33,9 +33,10 @@ def study_initialization(study_name):
         study['orbits'] = orbit_data
         study['inclination'] = 90.0
         study['arg_perigee'] = 90.0
-        study['constellation_variable'] = 'meananom'
+        if 'ManyToOne' in study_name:
+            study['constellation_variable'] = 'meananom'
 
-    elif study_name == 'Equatorial_IncrementedRes_ManytoOne':
+    elif 'Equatorial' in study_name:
         study['start'] = convert_string_to_datetime(['2018', '05', '17', '10', '0', '0.0'])
         study['end'] = convert_string_to_datetime(['2020', '05', '17', '10', '0', '0.0'])
         study['duration'] = (study['end'] - study['start']).total_seconds()
@@ -51,7 +52,8 @@ def study_initialization(study_name):
         study['orbits'] = orbit_data
         study['inclination'] = 0.0
         study['arg_perigee'] = 0.0
-        study['constellation_variable'] = 'argperi'
+        if 'ManyToOne' in study_name:
+            study['constellation_variable'] = 'argperi'
 
     else:
         print('Invalid study name')
@@ -80,31 +82,27 @@ def rover_metrics(rover_name):
     if "amalia" in rover_name:
         # Team ITALIA AMALIA (intermediate)
         rover['rec_radius'] = 0.5
-        rover['fleet_radius'] = np.sqrt(2.0) * ((2.0 * num_rovers_across_diameter * rover['rec_radius']) + (num_rovers_across_diameter - 1.0) * separation) / 2.0
         rover['rec_efficiency'] = 0.40
         rover['operation_pwr'] = 100.0
         rover['hibernation_pwr'] = 7.0
         rover['battery_capacity'] = 100.0
-
     elif "sorato" in rover_name:
         # ispace Sorato (miniature)
         rover['rec_radius'] = 0.1
-        rover['fleet_radius'] = np.sqrt(2.0) * ((2.0 * num_rovers_across_diameter * rover['rec_radius']) + (num_rovers_across_diameter - 1.0) * separation) / 2.0
         rover['rec_efficiency'] = 0.40
         rover['operation_pwr'] = 21.5
         rover['hibernation_pwr'] = 4.5
         rover['battery_capacity'] = 38.0
-
     elif "curiosity" in rover_name:
         # NASA Curiosity (large)
         rover['rec_radius'] = 1.0
-        rover['fleet_radius'] = np.sqrt(2.0) * ((2.0 * num_rovers_across_diameter * rover['rec_radius']) + (num_rovers_across_diameter - 1.0) * separation) / 2.0
         rover['rec_efficiency'] = 0.40
         rover['operation_pwr'] = 270.0
         rover['hibernation_pwr'] = 23.5
         rover['battery_capacity'] = 1600.0
     else:
         print('Invalid rover name. Valid names: amalia, sorato, curiosity')
+    rover['fleet_radius'] = np.sqrt(2.0) * ((2.0 * num_rovers_across_diameter * rover['rec_radius']) + (num_rovers_across_diameter - 1.0) * separation) / 2.0
 
     return rover
 
@@ -300,29 +298,25 @@ def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_s
                 else:
                     data_set['min_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[1]) ** 2)
                     data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[2]) ** 2)
-                    data_set['min_power_received'].append(
-                        data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
-                    data_set['mean_power_received'].append(
-                        data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
+                    data_set['min_power_received'].append(data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
+                    data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
 
             # ELSE calculate as normal
             else:
-                # Calculate min link efficiency based on maximum surface beam size
+                # Calculate minimum link efficiency, as well as power delivered based on max surface beam size
                 if surf_beam_radius[1] <= rover['rec_radius']:
                     data_set['min_link_efficiency'].append(1.0)
                     data_set['min_power_received'].append(rover['rec_efficiency'] * transmitter['power'])
                 else:
                     data_set['min_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[1]) ** 2)
-                    data_set['min_power_received'].append(
-                        data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
-                # Calculate mean efficiency based on mean surface beam size
+                    data_set['min_power_received'].append(data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
+                # Calculate mean link efficiency, as well as power delivered based on mean surface beam size
                 if surf_beam_radius[2] <= rover['rec_radius']:
                     data_set['mean_link_efficiency'].append(1.0)
                     data_set['mean_power_received'].append(rover['rec_efficiency'] * transmitter['power'])
                 else:
                     data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[2]) ** 2)
-                    data_set['mean_power_received'].append(
-                        data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
+                    data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
 
     # Calculate total energy delivered to receiver based on mean power
     data_set['total_energy'] = []
@@ -342,7 +336,7 @@ def calculate_link_efficiency_and_power_delivered_for_fleet(rover, data_set, tra
     # Cycle through all access events
     for i in range(0, len(data_set['max_range'])):
         # If range is "np.nan", no access periods exist for that orbit, therefore treat orbit as infeasible design
-        if data_set['max_range'] == np.nan:
+        if data_set['max_range'][i] == np.nan:
             data_set['min_link_efficiency'].append(np.nan)
             data_set['mean_link_efficiency'].append(np.nan)
             data_set['min_power_received'].append(np.nan)

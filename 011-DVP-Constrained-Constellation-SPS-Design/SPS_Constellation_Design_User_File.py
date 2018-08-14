@@ -6,7 +6,7 @@ This script serves for simplified user interaction with the SPS constrained desi
 
 """
 
-from SPS_Constellation_DesignTool import generate_design_space
+from SPS_Constellation_DesignTool import generate_design_space, default_design_plots
 from SPS_Constellation_DesignFunctions import rover_metrics
 
 
@@ -61,7 +61,7 @@ def main():
     active_constraints['transmitter_pwr_optimization'] = 0
     ####################################################################################################################
 
-    generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints)
-
+    apogees, perigees, sorted_data, best_orbit = generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints)
+    default_design_plots(apogees, perigees, sorted_data, best_orbit)
 
 main()

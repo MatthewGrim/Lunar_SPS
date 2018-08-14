@@ -92,8 +92,6 @@ def calculate_link_eff(trans_radius, args):
             data_set['min_power_received'].append(data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
     ####################################################################################################################
 
-    # ENFORCE ACTIVE DURATION CONSTRAINT
-    ################################################################################################################
     # Remove infeasible designs which do not have any active events
     for i in data_set['total_active_time']:
         if math.isnan(i):
@@ -101,10 +99,33 @@ def calculate_link_eff(trans_radius, args):
             for j in data_set:
                 data_set[j][idx] = np.nan
 
+    # ENFORCING BLACKOUT DURATION CONSTRAINTS
+    ####################################################################################################################
+    if active_constraints['max_blackout'] == 1:
+        # Remove data points for which blackout durations exceed the limit
+        for i in range(len(data_set['max_blackout_time'])):
+            if data_set['max_blackout_time'][i] > constraints['max_blackout'] * 3600.0:
+                data_set['mean_link_efficiency'][i] = 0.0
+    else:
+        pass
+    ####################################################################################################################
+
+    # ENFORCE ACTIVE DURATION CONSTRAINT
+    ####################################################################################################################
     if active_constraints['min_active_time'] == 1:
         # Remove data points for which the overall blackout time is not sufficiently reduced
         for i in range(len(data_set['total_active_time'])):
             if (100.0 * data_set['total_active_time'][i] / study['duration']) < constraints['min_active_time']:
+                data_set['mean_link_efficiency'][i] = 0.0
+    else:
+        pass
+    ####################################################################################################################
+
+    # ENFORCE POWER CONSTRAINT
+    ####################################################################################################################
+    if active_constraints['min_power'] == 1:
+        for i in range(len(data_set['min_power_received'])):
+            if data_set['min_power_received'][i] < constraints['min_power']:
                 data_set['mean_link_efficiency'][i] = 0.0
     else:
         pass
@@ -121,13 +142,13 @@ def calculate_link_eff(trans_radius, args):
                                    rover['fleet_radius'] + (constraints['point_error'] * data_set['max_range'][i] * 1000.0),
                                    rover['fleet_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)]
             else:
-                min_beam_radius = [rover['rec_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0),
-                                   rover['rec_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0),
+                min_beam_radius = [rover['rec_radius'] + (constraints['point_error'] * data_set['min_range'][i] * 1000.0),
+                                   rover['rec_radius'] + (constraints['point_error'] * data_set['max_range'][i] * 1000.0),
                                    rover['rec_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)]
 
             # Actual beam radius as defined by Gaussian beam divergence
-            surf_beam_radius = [trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2),
-                                trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2),
+            surf_beam_radius = [trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['min_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2),
+                                trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['max_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2),
                                 trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)]
 
             # Check pointing error constraint
@@ -138,27 +159,6 @@ def calculate_link_eff(trans_radius, args):
             max_surf_beam_radius = transmitter * np.sqrt(1 + (transmitter['wavelength'] * (data_set['max_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
             if max_surf_beam_radius < rover['fleet_radius']:
                 data_set['mean_link_efficiency'][i] = 0.0
-    ####################################################################################################################
-
-    # ENFORCE POWER CONSTRAINT
-    ####################################################################################################################
-    if active_constraints['min_power'] == 1:
-        for i in range(len(data_set['min_power_received'])):
-            if data_set['min_power_received'][i] < constraints['min_power']:
-                data_set['mean_link_efficiency'][i] = 0.0
-    else:
-        pass
-    ####################################################################################################################
-
-    # ENFORCING BLACKOUT DURATION CONSTRAINTS
-    ####################################################################################################################
-    if active_constraints['max_blackout'] == 1:
-        # Remove data points for which blackout durations exceed the limit
-        for i in range(len(data_set['max_blackout_time'])):
-            if data_set['max_blackout_time'][i] > constraints['max_blackout'] * 3600.0:
-                data_set['mean_link_efficiency'][i] = 0.0
-    else:
-        pass
     ####################################################################################################################
 
     # Find best link efficiency
