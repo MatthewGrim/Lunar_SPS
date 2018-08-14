@@ -18,6 +18,10 @@ def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, numbe
     # New file with this name is generated in the current directory
     time_start = time.time()
     with open('CC_{}_OrbitStudy.txt'.format(study_name), 'w') as fh:
+        # Generates new report of lighting events at target
+        fh.write('ReportCreate */Target/Target1 Type Export Style "Lighting_Times" File '
+                 '"{}\DVP_{}_Target_Lighting.csv"\n'.format(file_path, study_name))
+
         # loop through orbits
         for i in range(len(semi_maj_axis)):
             argument_of_perigees = list()
