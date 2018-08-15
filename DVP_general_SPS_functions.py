@@ -190,6 +190,9 @@ def import_range_data_statistics(file_name, stk_data_path):
                 mean_range.append(float(new_line_split[1][2:-3]))
         last_file.close()
 
+    # The number of each range stat should be the same
+    assert len(min_range) == len(max_range)
+    assert len(max_range) == len(mean_range)
     range_stats = [min_range, max_range, mean_range]
 
     os.remove("{}/{}_Semi_Parsed.txt".format(stk_data_path, file_name))
