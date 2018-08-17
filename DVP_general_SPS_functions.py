@@ -190,6 +190,11 @@ def import_range_data_statistics(file_name, stk_data_path):
                 mean_range.append(float(new_line_split[1][2:-3]))
         last_file.close()
 
+    # The last statistic is a section statistic. This is the average value over the whole simulation
+    min_range.pop()
+    max_range.pop()
+    mean_range.pop()
+
     # The number of each range stat should be the same
     assert len(min_range) == len(max_range)
     assert len(max_range) == len(mean_range)

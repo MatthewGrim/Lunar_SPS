@@ -133,6 +133,7 @@ def main():
 
                 # Range
                 sps_range = import_range_data_statistics('DVP_{}_{}perigee{}apogee_range'.format(study_name, orbit_data[i][0], orbit_data[i][1]), stk_data_path)
+                assert (len(sps_range[0]) == len(sps_access[0]))
                 mean_range.append(np.sum([(i * j) / np.sum(sps_access[2]) for i, j in zip(sps_range[2], sps_access[2])]))
                 mean_min_range.append(np.sum([(i * j) / np.sum(sps_access[2]) for i, j in zip(sps_range[0], sps_access[2])]))
                 mean_max_range.append(np.sum([(i * j) / np.sum(sps_access[2]) for i, j in zip(sps_range[1], sps_access[2])]))
