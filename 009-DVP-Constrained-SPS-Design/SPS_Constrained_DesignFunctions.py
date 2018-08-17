@@ -113,9 +113,10 @@ def rover_metrics(rover_name):
         rover['battery_capacity'] = 1600.0
     else:
         print('Invalid rover name: {}. Valid names: amalia, sorato, curiosity'.format(rover_name))
+
     # Approximate rover receiver radius
     solar_intensity = 1367.0
-    receiver_efficiency = 0.3
+    receiver_efficiency = 0.1
     receiver_area = rover['operation_pwr'] / (solar_intensity * receiver_efficiency)
     rover['rec_radius'] = np.sqrt(receiver_area / np.pi)
     rover['fleet_radius'] = np.sqrt(2.0) * ((2.0 * num_rovers_across_diameter * rover['rec_radius']) + (num_rovers_across_diameter - 1.0) * separation) / 2.0
