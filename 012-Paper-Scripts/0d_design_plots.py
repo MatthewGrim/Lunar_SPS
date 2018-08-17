@@ -42,8 +42,12 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, rover_specs, las
             # Get the beam radius
             beam_radius = R * np.sqrt(1.0 + (Z * wavelength / (np.pi * R ** 2)) ** 2)
             receiver_radius = np.sqrt(receiver_area / np.pi)
-            radius_constraint = pointing_error * Z + receiver_radius
-            beam_radius[beam_radius < radius_constraint] = np.nan
+            radius_constraint_one = pointing_error * Z + receiver_radius
+            radius_constraint_two = pointing_error * Z + beam_radius
+            mask_one = beam_radius < radius_constraint_one
+            mask_two = receiver_radius > radius_constraint_two
+            final_mask = np.logical_and(mask_one, np.logical_not(mask_two))
+            beam_radius[final_mask] = np.nan
 
             # Calculate the resulting surface flux
             receiver_power = laser_power / (np.pi * beam_radius ** 2) * receiver_area
@@ -52,12 +56,9 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, rover_specs, las
 
             # Normalise result by input power to get total efficiency
             receiver_power /= laser_power
-            # receiver_power[receiver_power < 0.01] = np.nan
+            # receiver_power[receiver_power < 0.001] = np.nan
 
-            m = ax[j, i].contourf(np.log10(R), Z / 1e3, receiver_power * 100, 100)
-            # m = plt.cm.ScalarMappable(cmap=cm.viridis)
-            # m.set_array(np.log10(receiver_power * 100))
-            # m.set_clim(-1.0, 2.0)
+            m = ax[j, i].contourf(np.log10(R), Z / 1e3, np.log10(receiver_power * 100), 100)
             fig.colorbar(m, ax=ax[j, i])
             ax[j, 0].set_ylabel('{} \n Transmission distance [km]'.format(rover_spec))
         ax[0, i].set_title('Laser Power: {}kW'.format(laser_power / 1e3))
@@ -72,8 +73,8 @@ def main():
     trans_wavelength = 1e-6
     laser_power = [4e3, 15e3, 100e3]
     rover_specs = ["AMALIA in Hibernation", "AMALIA in Operation"]
-    rec_area = [0.25, 4.0]
-    power_req = [21.0, 1e3]
+    rec_area = [0.731, 0.731]
+    power_req = [21.0, 300.0]
     _, _ = get_surfaceflux_from_wavelength_and_laser_power(trans_wavelength, rover_specs, laser_power, rec_area, power_req)
 
 
