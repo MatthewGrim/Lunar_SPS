@@ -24,7 +24,7 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, laser_powers, re
     """
     # Set the parameter space
     trans_radius = np.logspace(-3, 1, 1000)
-    altitudes = np.logspace(4, 6.699, 1001)
+    altitudes = np.logspace(4, 6.67, 1001)
     R, Z = np.meshgrid(trans_radius, altitudes, indexing="ij")
 
     fig, ax = plt.subplots(1, len(laser_powers), sharey=True)
@@ -32,12 +32,16 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, laser_powers, re
         # Get the beam radius
         beam_radius = R * np.sqrt(1.0 + (Z * wavelength / (np.pi * R ** 2)) ** 2)
         receiver_radius = np.sqrt(receiver_area / np.pi)
-        radius_constraint = pointing_error * Z + receiver_radius
-        beam_radius[beam_radius < radius_constraint] = np.nan
+        radius_constraint_one = pointing_error * Z + receiver_radius
+        radius_constraint_two = pointing_error * Z + beam_radius
+        mask_one = beam_radius < radius_constraint_one
+        mask_two = receiver_radius > radius_constraint_two
+        final_mask = np.logical_and(mask_one, np.logical_not(mask_two))
+        beam_radius[final_mask] = np.nan
 
         # Calculate the resulting surface flux
         receiver_power = laser_power / (np.pi * beam_radius ** 2) * receiver_area
-        receiver_power[np.pi * beam_radius ** 2  < receiver_area] = laser_power
+        receiver_power[np.pi * beam_radius ** 2 < receiver_area] = laser_power
         receiver_power[receiver_power < power_req] = np.nan
 
         # Normalise result by input power to get total efficiency
@@ -56,10 +60,10 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, laser_powers, re
 
 
 def main():
-    trans_wavelength = 1070e-9
+    trans_wavelength = 850e-9
     laser_power = [4e3, 15e3, 100e3]
-    rec_area = 1.0
-    power_req = 270.0
+    rec_area = 2.19
+    power_req = 300.0
     _, _ = get_surfaceflux_from_wavelength_and_laser_power(trans_wavelength, laser_power, rec_area, power_req)
 
 
