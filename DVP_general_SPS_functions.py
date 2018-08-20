@@ -287,7 +287,11 @@ def get_event_overlaps_fast(access_times, event_times):
     overlap_start = []
     overlap_end = []
     overlap_duration = []
+    overlap_original_idx = []
 
+    original_exists = len(access_times) == 4
+    if not original_exists:
+        assert len(access_times) == 3
     access_idx = 0
     event_idx = 0
     while access_idx < len(access_times[0]):
@@ -323,24 +327,40 @@ def get_event_overlaps_fast(access_times, event_times):
             start = access_start
             end = access_end
 
+            if original_exists:
+                overlap_original_idx.append(access_times[3][access_idx])
+            else:
+                overlap_original_idx.append(access_idx)
             access_idx += 1
         elif event_start <= access_start and event_end < access_end:
             # Partial overlap from start
             start = access_start
             end = event_end
 
+            if original_exists:
+                overlap_original_idx.append(access_times[3][access_idx])
+            else:
+                overlap_original_idx.append(access_idx)
             event_idx += 1
         elif event_start > access_start and event_end >= access_end:
             # Partial overlap from end
             start = event_start
             end = access_end
 
+            if original_exists:
+                overlap_original_idx.append(access_times[3][access_idx])
+            else:
+                overlap_original_idx.append(access_idx)
             access_idx += 1
         elif event_start > access_start and event_end < access_end:
             # Second event is within the first event
             start = event_start
             end = event_end
 
+            if original_exists:
+                overlap_original_idx.append(access_times[3][access_idx])
+            else:
+                overlap_original_idx.append(access_idx)
             event_idx += 1
         else:
             raise NotImplementedError("Should not be possible to get here!")
@@ -357,7 +377,7 @@ def get_event_overlaps_fast(access_times, event_times):
         overlap_end.append(end)
         overlap_duration.append(end - start)
 
-    overlap_events = [overlap_start, overlap_end, overlap_duration]
+    overlap_events = [overlap_start, overlap_end, overlap_duration, overlap_original_idx]
 
     return overlap_events
 
@@ -611,3 +631,53 @@ def determine_field_of_view(altitude):
     theta_max = np.cos(R_moon / (R_moon + altitude))
 
     return theta_max
+
+
+def determine_sps_power_balance(sps_active, eclipse_times, rover_battery_capacity, rover_operation_power, rover_hibernation_power):
+    """
+    This function is used to carry out a power balance on the energy provided by the SPS compared to that consumed during
+    the lunar night. The rover is assumed to have a full battery at the beginning of the first blackout.
+
+    sps_active: List of SPS active events. 0: Start time, 1: End time, 2: Duration
+    eclipse_times: List of target eclipses. 0: Start time, 1: End time, 2: Duration
+    rover_battery_capacity: in Joules
+    rover_operation_power: in Watts
+    rover_hibernation_power: in Watts
+    """
+    assert rover_operation_power > rover_hibernation_power
+
+    access_idx = 0
+    eclipse_idx = 0
+    battery_energy = []
+    prev_energy_battery = rover_battery_capacity
+    battery_energy.append(prev_energy_battery)
+    # Loop through all access and blackout events in temporal order
+    while access_idx < len(sps_active[0]):
+        while eclipse_idx < len(eclipse_times[0]):
+            if access_idx < len(sps_active[0]):
+                if eclipse_times[0][eclipse_idx] < sps_active[0][access_idx]:
+                    energy_diff = eclipse_times[2][eclipse_idx] * rover_hibernation_power
+                    prev_energy_battery -= energy_diff
+                    eclipse_idx += 1
+                else:
+                    energy_diff = sps_active[2][access_idx] * (rover_operation_power - rover_hibernation_power)
+                    prev_energy_battery += energy_diff
+                    access_idx += 1
+            else:
+                energy_diff = eclipse_times[2][eclipse_idx] * rover_hibernation_power
+                prev_energy_battery -= energy_diff
+                eclipse_idx += 1
+
+            prev_energy_battery = min(prev_energy_battery, rover_battery_capacity)
+            battery_energy.append(prev_energy_battery)
+
+        if access_idx < len(sps_active[0]):
+            energy_diff = sps_active[2][access_idx] * (rover_operation_power - rover_hibernation_power)
+            prev_energy_battery += energy_diff
+            access_idx += 1
+
+            prev_energy_battery = min(prev_energy_battery, rover_battery_capacity)
+            battery_energy.append(prev_energy_battery)
+
+    return battery_energy
+
