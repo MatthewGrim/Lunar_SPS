@@ -109,6 +109,8 @@ def run_stk_v2(stk_data_path, scenario_path, study_name, orbit_data, mean_anomal
     duration = np.zeros(size)
 
     commands_idx = 0
+    root.ExecuteCommand(commands[commands_idx])
+    commands_idx += 1
     for i in range(orbit_data.shape[0] - 1):
         for k, mean_anomaly in enumerate(mean_anomalies):
             sim_file_name = '{}\{}\DVP_{}_{}perigee{}apogee_{}meananom'.format(stk_data_path, study_name, study_name,
@@ -175,13 +177,13 @@ def main():
     main_directory = os.path.dirname(issue_folder)
 
     # Pathway to scenario for this study
-    scenario_path = '{}/STK-Scenarios/EquatorialOrbit/equatorial_moon_sim.sc'.format(main_directory)
+    scenario_path = '{}/STK-Scenarios/SouthPoleOrbit/southpole_moon_sim.sc'.format(main_directory)
 
     # Name of study - be descriptive
-    study_name = 'Equatorial_IncrementedRes_Generic'
+    study_name = 'SouthPole_IncrementedRes_Generic'
 
     # Name of reference study on which constellation sizes are based
-    reference_study = 'Equatorial_IncrementedRes'
+    reference_study = 'SouthPole_IncrementedRes'
     # Set maximum size of SPS constellations
     max_constellation_size = 3
 
@@ -214,7 +216,7 @@ def main():
                                                          study_name, new_path)
 
     # Open STK, load scenario, and execute commands to create data set
-    # run_stk_v2(stk_data_path, scenario_path, study_name, orbit_data, mean_anomalies)
+    run_stk_v2(stk_data_path, scenario_path, study_name, orbit_data, mean_anomalies)
 
 
 main()
