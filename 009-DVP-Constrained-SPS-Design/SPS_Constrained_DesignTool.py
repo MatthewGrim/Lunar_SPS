@@ -113,6 +113,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     data_set['std_active_time'] = [i / 3600.0 for i in data_set['std_active_time']]
 
     data_set['total_active_time'] = [100.0 * i / study['duration'] for i in data_set['total_active_time']]
+    data_set['total_blackout_time'] = [100.0 * i / study['duration'] for i in data_set['total_blackout_time']]
 
     # Remove data points for which blackout durations exceed the limit
     if active_constraints['max_blackout'] == 1:
@@ -162,9 +163,9 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     apogee_altitudes = [i - r_moon for i in unique_apogees]
 
     # Plot Event statistics
-    get_event_statistics(apogee_altitudes, perigee_altitudes, sorted_data_set, rover, 'Event Statistics')
+    # get_event_statistics(apogee_altitudes, perigee_altitudes, sorted_data_set, rover, "Event Statistics")
     ####################################################################################################################
-
+    #
     # SELECT SOLUTION WITH HIGHEST LINK EFFICIENCY
     ####################################################################################################################
     # Find best orbit according to weighted objective function
@@ -292,7 +293,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
         print('NOTE: Circular orbit, correction of argument of perigee drift practically not necessary')
     print('-----------------------------------------------------------------------------------------------------------')
     print('Total active time (blackout reduction) --> {} %'.format(round(sorted_data_set['total_active_time'][best_orbit_idx], 2)))
-    print('Total blackout time --> {} %'.format(round(100.0 * sorted_data_set['total_blackout_time'][best_orbit_idx] / study['duration'], 2)))
+    print('Total blackout time --> {} %'.format(round(sorted_data_set['total_blackout_time'][best_orbit_idx], 2)))
     print('Max active period duration --> {} hours'.format(round(sorted_data_set['max_active_time'][best_orbit_idx] / 3600.0, 2)))
     print('Max blackout period duration --> {} hours'.format(round(sorted_data_set['max_blackout_time'][best_orbit_idx], 2)))
     print('-----------------------------------------------------------------------------------------------------------')
