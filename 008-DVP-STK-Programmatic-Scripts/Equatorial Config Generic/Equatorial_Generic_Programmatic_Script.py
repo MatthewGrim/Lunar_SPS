@@ -182,9 +182,10 @@ def main():
     # Get set of orbit data, varying apogee and perigee
     print('Calculating orbit data...')
     sma, ecc, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_perigee=800.0, 
-                                                                         resolutions=np.array((25.0, 50.0, 100.0, 250.0)),
+                                                                         resolutions=np.array((50.0, 100.0, 100.0, 250.0)),
                                                                          thresholds=np.array((1000.0, 1500.0, 2500.0)))
     
+    print(orbit_data.shape)
     # Get maximum size of constellation required
     print('Calculating constellation sizes...')
     number_of_sps, arg_perigee = set_constellation_size(ecc, max_constellation_size, reference_study)
