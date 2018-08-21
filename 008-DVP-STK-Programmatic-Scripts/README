@@ -4,13 +4,13 @@ Python is used to integrate with Systems Tool Kit (STK), a free AGI software pro
 
 1. SPS Configuration Details
 
-	Classical orbital elements: [a, e, i, RAAN, w, nu]
+	Classical orbital elements: [a, e, i, w, RAAN, M]
 
 		a = semi-major axis [km]
 		e = eccentricity
 		i = inclination [deg]
-		RAAN = right angle of the ascending node [deg]
 		w = argument of perigee [deg]
+		RAAN = right angle of the ascending node [deg]
 		M = mean anomaly [deg]
 	
 	The SPS configurations studied with parametric scans are characterized as follows.
@@ -22,7 +22,7 @@ Python is used to integrate with Systems Tool Kit (STK), a free AGI software pro
 	
 	Equatorial		N			[a, e, 0, w, 0, 0]			45 N, 0 W/E
 
-	South Pole		N			[a, e, 90, 0, 90, M]		-90 S, 0 W/E
+	South Pole		N			[a, e, 90, 90, 0, M]		-90 S, 0 W/E
 
 	The mean anomaly is varied to build a constellation in the polar orbit case, and the argument of perigee is varied for a constellation in the equatorial case (for each a, e).
 
