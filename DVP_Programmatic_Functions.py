@@ -394,13 +394,8 @@ def set_constellation_size(eccentricity, num_sps, study_name):
         for i in unique_num_sps:
             angular_distribution['{}sps'.format(i)] = []
             for j in range(1, i):
-                true_anomaly = j * (2 * np.pi / i)
-                E = sympy.Symbol('E')
-                if j <= (i / 2):
-                    eccentric_anomaly = float(min(sympy.solve(cos(true_anomaly) - (cos(E) - eccentricity[i])/(1 - eccentricity[i] * cos(E)), E)))
-                elif j > (i / 2):
-                    eccentric_anomaly = float(max(sympy.solve(cos(true_anomaly) - (cos(E) - eccentricity[i])/(1 - eccentricity[i] * cos(E)), E)))
-                angular_distribution['{}sps'.format(i)].append(round((180.0 / np.pi) * eccentric_anomaly - eccentricity[i] * np.sin(eccentric_anomaly), 4))
+                mean_anomaly = j * (2 * np.pi / i)
+                angular_distribution['{}sps'.format(i)].append(round(mean_anomaly, 4))
 
     elif 'Equatorial' in study_name:
         angular_distribution = {}

@@ -30,30 +30,39 @@ def get_energy_balance():
     target_lighting = parse_csv_to_array(target_lighting_raw, start)
     target_eclipse = invert_events_list(target_lighting, total_duration)
 
-    # Import access and lighting for SPS
-    perigee = 2200.0 + 1737.0
-    apogee = 2200.0 + 1737.0
-    sps_lighting = parse_csv_to_array('{}/DVP_{}_{}perigee{}apogee_lighting.csv'.format(stk_data_path, study_name, perigee, apogee), start)
-    sps_access = parse_csv_to_array('{}/DVP_{}_{}perigee{}apogee_access.csv'.format(stk_data_path, study_name, perigee, apogee), start)
-
-    sps_active = determine_SPS_active_time(sps_lighting, target_eclipse, sps_access)
-    target_blackout = determine_blackout_data(sps_active, target_eclipse, total_duration)
-
     # Rover parameters
     Whr_to_J = 3600.0
-    rover_battery_capacity = 100.0 * Whr_to_J
-    rover_operation_power = 100.0
-    rover_hibernation_power = 7.0
-    battery_energy = determine_sps_power_balance(sps_access, target_blackout, rover_battery_capacity, rover_operation_power, rover_hibernation_power)
-    battery_energy = np.asarray(battery_energy)
-    if np.min(battery_energy) < 0.0:
-        raise RuntimeError("Battery is depleted!")
+    rover_names = ["Sorato", "AMALIA"]
+    rover_battery_capacity = [38.0 * Whr_to_J, 100.0 * Whr_to_J]
+    rover_operation_power = [17.0, 93.0]
+    rover_hibernation_power = [4.5, 7.0]
+    # Import access and lighting for SPS
+    perigees = [2500.0 + 1737.0, 2200.0 + 1737.0]
+    apogees = [2500.0 + 1737.0, 2200.0 + 1737.0]
 
-    # Plot energy balance
-    plt.figure()
-    plt.plot(battery_energy / Whr_to_J)
-    plt.ylabel("Energy in battery (Whr)")
-    plt.title("Battery storage for AMALIA rover")
+    fig, ax = plt.subplots(2, sharex=True)
+    for i, rover_name in enumerate(rover_names):
+        sps_lighting = parse_csv_to_array(
+            '{}/DVP_{}_{}perigee{}apogee_lighting.csv'.format(stk_data_path, study_name, perigees[i], apogees[i]), start)
+        sps_access = parse_csv_to_array(
+            '{}/DVP_{}_{}perigee{}apogee_access.csv'.format(stk_data_path, study_name, perigees[i], apogees[i]), start)
+
+        sps_active = determine_SPS_active_time(sps_lighting, target_eclipse, sps_access)
+        target_blackout = determine_blackout_data(sps_active, target_eclipse, total_duration)
+
+        times, battery_energy = determine_rover_battery_storage(sps_access, target_blackout, rover_battery_capacity[i], rover_operation_power[i], rover_hibernation_power[i])
+        times = np.asarray(times)
+        times /= (3600.0 * 24.0)
+        battery_energy = np.asarray(battery_energy)
+        battery_energy /= Whr_to_J
+
+        ax[i].plot(times, battery_energy)
+        ax[i].set_ylabel("{}\n Energy in battery (Whr)".format(rover_name))
+        ax[i].set_xlim((times[0], times[-1]))
+        ax[i].set_ylim((0.0, 1.05 * np.max(battery_energy)))
+    ax[1].set_xlabel("Time (days)")
+
+    plt.tight_layout()
     plt.show()
 
 if __name__ == "__main__":

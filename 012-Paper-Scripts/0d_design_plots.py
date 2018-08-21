@@ -50,15 +50,19 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, rover_specs, las
             beam_radius[final_mask] = np.nan
 
             # Calculate the resulting surface flux
-            receiver_power = laser_power / (np.pi * beam_radius ** 2) * receiver_area
+            receiver_power = laser_power/ (np.pi * beam_radius ** 2) * receiver_area
             receiver_power[np.pi * beam_radius ** 2 < receiver_area] = laser_power
             receiver_power[receiver_power < power_req] = np.nan
 
             # Normalise result by input power to get total efficiency
             receiver_power /= laser_power
-            # receiver_power[receiver_power < 0.001] = np.nan
+            receiver_power[receiver_power < 0.001] = np.nan
 
-            m = ax[j, i].contourf(np.log10(R), Z / 1e3, np.log10(receiver_power * 100), 100)
+            log_power = np.log10(receiver_power * 100)
+            ax[j, i].contourf(np.log10(R), Z / 1e3, log_power, 100)
+            m = cm.ScalarMappable()
+            m.set_array(log_power)
+            m.set_clim(-1.0, 2.0)
             fig.colorbar(m, ax=ax[j, i])
             ax[j, 0].set_ylabel('{} \n Transmission distance [km]'.format(rover_spec))
         ax[0, i].set_title('Laser Power: {}kW'.format(laser_power / 1e3))

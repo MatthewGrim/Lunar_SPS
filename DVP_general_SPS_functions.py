@@ -633,7 +633,7 @@ def determine_field_of_view(altitude):
     return theta_max
 
 
-def determine_sps_power_balance(sps_active, eclipse_times, rover_battery_capacity, rover_operation_power, rover_hibernation_power):
+def determine_rover_battery_storage(sps_active, eclipse_times, rover_battery_capacity, rover_operation_power, rover_hibernation_power):
     """
     This function is used to carry out a power balance on the energy provided by the SPS compared to that consumed during
     the lunar night. The rover is assumed to have a full battery at the beginning of the first blackout.
@@ -651,6 +651,7 @@ def determine_sps_power_balance(sps_active, eclipse_times, rover_battery_capacit
     battery_energy = []
     prev_energy_battery = rover_battery_capacity
     battery_energy.append(prev_energy_battery)
+    times = [0.0]
     # Loop through all access and blackout events in temporal order
     while access_idx < len(sps_active[0]):
         while eclipse_idx < len(eclipse_times[0]):
@@ -658,26 +659,32 @@ def determine_sps_power_balance(sps_active, eclipse_times, rover_battery_capacit
                 if eclipse_times[0][eclipse_idx] < sps_active[0][access_idx]:
                     energy_diff = eclipse_times[2][eclipse_idx] * rover_hibernation_power
                     prev_energy_battery -= energy_diff
+                    times.append(eclipse_times[1][eclipse_idx])
                     eclipse_idx += 1
                 else:
                     energy_diff = sps_active[2][access_idx] * (rover_operation_power - rover_hibernation_power)
                     prev_energy_battery += energy_diff
+                    times.append(sps_active[1][access_idx])
                     access_idx += 1
             else:
                 energy_diff = eclipse_times[2][eclipse_idx] * rover_hibernation_power
                 prev_energy_battery -= energy_diff
+                times.append(eclipse_times[1][eclipse_idx])
                 eclipse_idx += 1
 
             prev_energy_battery = min(prev_energy_battery, rover_battery_capacity)
+            prev_energy_battery = max(prev_energy_battery, 0.0)
             battery_energy.append(prev_energy_battery)
 
         if access_idx < len(sps_active[0]):
             energy_diff = sps_active[2][access_idx] * (rover_operation_power - rover_hibernation_power)
             prev_energy_battery += energy_diff
+            times.append(sps_active[1][access_idx])
             access_idx += 1
 
             prev_energy_battery = min(prev_energy_battery, rover_battery_capacity)
+            prev_energy_battery = max(prev_energy_battery, 0.0)
             battery_energy.append(prev_energy_battery)
 
-    return battery_energy
+    return times, battery_energy
 
