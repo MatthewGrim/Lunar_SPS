@@ -34,8 +34,8 @@ def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, time_
             # Connect commands for generating reports require a save location
             # Sets new orbit for satellite, varying semi major axis, eccentricity, and mean anomaly
             fh.write('SetState */Satellite/SPS1 Classical J4Perturbation "17 May 2018 10:00:00.000" "17 May 2020 '
-                     '10:00:00.000" {} Inertial "17 May 2018 10:00:00.000" {} '
-                     '90 90 0 {}\n'.format(time_step, semi_maj_axis[i] * 1000.0, eccentricity[i]))
+                     '10:00:00.000" {} Inertial "17 May 2018 10:00:00.000" {} {} '
+                     '90 90 0 {}\n'.format(time_step, semi_maj_axis[i] * 1000.0, eccentricity[i], 3.1416))
             # Generates new report of access time to target
             fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Access_Modified" File "{}\DVP_{}_{}perigee{}apogee_180.0meananom_access.csv" AccessObject '
                      '*/Target/Target1\n'.format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1]))
