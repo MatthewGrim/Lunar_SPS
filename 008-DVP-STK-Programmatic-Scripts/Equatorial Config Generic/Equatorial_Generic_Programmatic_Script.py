@@ -30,11 +30,11 @@ def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, numbe
                 for k in arg_perigee['{}sps'.format(j)]:
                     argument_of_perigees.append(k)
                     sim_file_name = "{}\DVP_{}_{}perigee{}apogee_{}argperi".format(file_path, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], k)
-				    
-					# Sets new orbit for satellite, varying semi major axis, eccentricity, and mean anomaly
+
+                    # Sets new orbit for satellite, varying semi major axis, eccentricity, and mean anomaly
                     fh.write('SetState */Satellite/SPS1 Classical J4Perturbation "17 May 2018 10:00:00.000" "17 May 2020 '
                              '10:00:00.000" {} Inertial "17 May 2018 10:00:00.000" {} {} 0 {} 0 0 \n'.format(time_step, semi_maj_axis[i]*1000.0, eccentricity[i], k))
-							 
+
                     # Generates reports
                     fh.write('ReportCreate */Satellite/SPS1 Type Export Style "Access_Modified" File "{}_access.csv" AccessObject */Target/Target1\n'.format(sim_file_name))
                     fh.write('ReportCreate */Satellite/SPS1 Type Save Style "Access_Range_Stats" File "{}_range.txt" AccessObject */Target/Target1\n'.format(sim_file_name))
@@ -98,6 +98,9 @@ def run_stk_v2(stk_data_path, scenario_path, study_name, orbit_data, argument_of
     duration = np.zeros(size)
 
     commands_idx = 0
+    # Get target lighting before loop
+    root.ExecuteCommand(commands[commands_idx])
+    commands_idx += 1
     for i in range(orbit_data.shape[0] - 1):
         for k, arg_perigee in enumerate(argument_of_perigees):
             sim_file_name = '{}\{}\DVP_{}_{}perigee{}apogee_{}argperi'.format(stk_data_path, study_name, study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], arg_perigee)
@@ -129,7 +132,7 @@ def run_stk_v2(stk_data_path, scenario_path, study_name, orbit_data, argument_of
                         root.ExecuteCommand(commands[commands_idx])
                     else:
                         print('Lighting for {} x {} km orbit at {} argument of perigee already exists'.format(orbit_data[i + 1][0], orbit_data[i + 1][1], arg_perigee))
-				
+
                 # Print progress update
                 time_end = time.time()
                 commands_idx += 1
