@@ -389,21 +389,19 @@ def set_constellation_size(eccentricity, num_sps, study_name):
     assert num_sps > 0
     unique_num_sps = range(num_sps + 1)
 
+    angular_distribution = {}
     if 'SouthPole' in study_name:
-        angular_distribution = {}
         for i in unique_num_sps:
             angular_distribution['{}sps'.format(i)] = []
             for j in range(1, i):
-                mean_anomaly = j * (2 * np.pi / i)
+                mean_anomaly = j * (360.0 * np.pi / i)
                 angular_distribution['{}sps'.format(i)].append(round(mean_anomaly, 4))
 
     elif 'Equatorial' in study_name:
-        angular_distribution = {}
         for i in unique_num_sps:
             angular_distribution['{}sps'.format(i)] = []
             for j in range(0, i):
-                arg_perigee = j * (2 * np.pi / i)
+                arg_perigee = j * (360.0 / i)
                 angular_distribution['{}sps'.format(i)].append(round(arg_perigee, 4))
-
 
     return num_sps, angular_distribution
