@@ -7,8 +7,8 @@ lighting events, and target eclipse events data reports have been extracted from
 
 """
 
-from Lunar_SPS.DVP_general_SPS_functions import *
 import matplotlib.pyplot as plt
+from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import *
 
 
 def main():

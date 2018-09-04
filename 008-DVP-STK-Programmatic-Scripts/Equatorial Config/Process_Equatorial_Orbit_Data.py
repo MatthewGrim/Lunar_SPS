@@ -6,9 +6,8 @@ This script imports and process the data reports obtained programmatically from 
 the optimal SPS orbit for the equatorial lunar SPS configuration.
 """
 
-from Lunar_SPS.DVP_general_SPS_functions import *
-from Lunar_SPS.DVP_Programmatic_Functions import *
-import os
+from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import *
+from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import *
 
 
 def main():

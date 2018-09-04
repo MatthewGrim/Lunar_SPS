@@ -11,8 +11,9 @@ overhead the longitude of the targets.
 
 """
 
-from Lunar_SPS.DVP_general_SPS_functions import *
 import os
+
+from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import *
 
 
 def eliminate_event_periods(range_data, event_data):

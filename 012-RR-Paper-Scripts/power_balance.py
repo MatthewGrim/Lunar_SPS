@@ -5,8 +5,9 @@ Date: 17/08/2018
 This script is used to assess the energy balance of a solar power satellite link
 """
 
-from Lunar_SPS.DVP_general_SPS_functions import *
 import os
+
+from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import *
 
 
 def get_energy_balance():

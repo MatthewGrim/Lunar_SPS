@@ -8,8 +8,8 @@ constraints.
 
 """
 
-from Lunar_SPS.DVP_general_SPS_functions import *
-from Lunar_SPS.DVP_Programmatic_Functions import *
+from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import *
+from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import *
 
 
 def process_data(max_constellation_size, study_name, constellation_variable, start, end, **kwargs):

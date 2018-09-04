@@ -9,8 +9,8 @@ proposed SPS constellation.
 
 """
 
-from Lunar_SPS.general_functions import *
 from Lunar_SPS.DVP_general_SPS_functions import *
+from Lunar_SPS.pysrc.post_process_functions.general_functions import *
 
 
 def scan_perigee_angles(start, total_duration, target_eclipse):

@@ -6,7 +6,7 @@ The scenario programmed in this script is the collection of access and lighting 
 in a common South Pole orbit, targeting the south pole.
 """
 
-from Lunar_SPS.DVP_Programmatic_Functions import *
+from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import *
 
 
 def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, number_of_sps, mean_anomaly, time_step,
@@ -68,7 +68,6 @@ def run_stk_v2(stk_data_path, scenario_path, study_name, orbit_data, mean_anomal
     import os
     import comtypes
     from comtypes.client import CreateObject
-    from comtypes.client import GetActiveObject
 
     print('Opening STK...')
     # Open new instance of STK
@@ -87,7 +86,6 @@ def run_stk_v2(stk_data_path, scenario_path, study_name, orbit_data, mean_anomal
     comtypes.client.gen_dir
     os.listdir(comtypes.client.gen_dir)
 
-    from comtypes.gen import STKUtil
     from comtypes.gen import STKObjects
 
     print('Loading scenario...')

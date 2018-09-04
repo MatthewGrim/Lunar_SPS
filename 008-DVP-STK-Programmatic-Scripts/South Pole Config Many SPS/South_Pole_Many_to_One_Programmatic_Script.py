@@ -16,7 +16,7 @@ Furthermore, this version of the script refers to an STK instance and scenario w
 to versions of the programmatic scripts which open STK and load the desired scenario
 """
 
-from Lunar_SPS.DVP_Programmatic_Functions import *
+from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import *
 
 
 def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, number_of_sps, mean_anomalies, time_step, study_name, file_path):
@@ -102,7 +102,6 @@ def run_stk_v2(scenario_path, study_name, stk_data_path, orbit_data):
     comtypes.client.gen_dir
     os.listdir(comtypes.client.gen_dir)
 
-    from comtypes.gen import STKUtil
     from comtypes.gen import STKObjects
 
     print('Loading scenario...')

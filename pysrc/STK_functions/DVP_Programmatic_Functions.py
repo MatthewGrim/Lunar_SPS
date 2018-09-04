@@ -10,9 +10,9 @@ and visualization of the data.
 
 import math
 import os
-import numpy as np
-import time
+
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def vary_orbital_elements(resolution, min_perigee, max_perigee, max_apogee):
@@ -337,9 +337,7 @@ def calculate_orbital_perturbations(semi_maj_axis, eccentricity, inclination_ep,
 
 def determine_constellation_size(eccentricity, max_constellation_size, study_name):
 
-    from Lunar_SPS.DVP_general_SPS_functions import convert_string_to_datetime, parse_csv_to_array, invert_events_list
-    import sympy
-    from sympy import cos
+    from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import convert_string_to_datetime, parse_csv_to_array, invert_events_list
     import numpy as np
 
     # Initialization

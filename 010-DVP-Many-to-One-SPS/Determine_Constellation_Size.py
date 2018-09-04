@@ -6,8 +6,8 @@ This script is a simple analysis used to approximate the number of SPS in a cons
 to eliminate blackouts at a lunar south pole target.
 
 """
-from Lunar_SPS.DVP_general_SPS_functions import *
-from Lunar_SPS.DVP_Programmatic_Functions import *
+from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import *
+from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import *
 
 
 def main():

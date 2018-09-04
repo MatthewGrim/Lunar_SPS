@@ -7,9 +7,9 @@ determining the total reduction in blackout time at the target for a particular 
 
 """
 
-from Lunar_SPS.DVP_general_SPS_functions import *
-from Lunar_SPS.DVP_Programmatic_Functions import *
 from SPS_Constrained_DesignFunctions import *
+from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import *
+from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import *
 
 
 def calculate_mean_link_eff(trans_radius, args):

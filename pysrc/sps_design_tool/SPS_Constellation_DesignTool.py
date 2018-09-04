@@ -15,10 +15,10 @@ space. Constraints and their activity are defined in SPS_Constrained_DesignFunct
 
 """
 
-from Lunar_SPS.DVP_Programmatic_Functions import *
-from Lunar_SPS.pysrc.sps_design_tool.SPS_Constellation_DesignOptimizer import optimize_link_efficiency
 from Lunar_SPS.pysrc.sps_design_tool.SPS_Constellation_DesignFunctions import *
+from Lunar_SPS.pysrc.sps_design_tool.SPS_Constellation_DesignOptimizer import optimize_link_efficiency
 from numpy import unravel_index
+from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import *
 
 
 def generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints):

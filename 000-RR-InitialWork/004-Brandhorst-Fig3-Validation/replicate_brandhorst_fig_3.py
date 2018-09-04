@@ -9,11 +9,9 @@ compares against the results in figure 2 of:
 
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
-import datetime
-
-from Lunar_SPS.general_functions import *
+import numpy as np
+from Lunar_SPS.pysrc.post_process_functions.general_functions import *
 
 
 def compute_access_to_target(access_fname, target_illumination_fname, satellite_illumination_fname, sim_start_time,

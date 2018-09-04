@@ -6,14 +6,15 @@ This script contains functions used for the SPS constrained design tool.
 
 """
 
-import numpy as np
 import re
+
+import numpy as np
 
 
 def study_initialization(study_name):
 
-    from Lunar_SPS.DVP_general_SPS_functions import convert_string_to_datetime
-    from Lunar_SPS.DVP_Programmatic_Functions import vary_orbital_elements, vary_orbital_elements_incrementing_resolution
+    from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import convert_string_to_datetime
+    from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import vary_orbital_elements, vary_orbital_elements_incrementing_resolution
 
     study = {}
     if study_name == 'Brandhorst_1000.0kmRes':
@@ -182,7 +183,7 @@ def enforce_constraints(data_set, data_type, constraints, constraint_name, const
 
 def sort_data_lists(data_set, orbit_data, study_name):
 
-    from Lunar_SPS.DVP_Programmatic_Functions import sort_incremented_resolution_data, sort_data_list_into_array
+    from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import sort_incremented_resolution_data, sort_data_list_into_array
 
     data_set_sorted = {}
 

@@ -8,8 +8,8 @@ SPS which the beam sizing study in Brandhorst's paper is the SPS with an argumen
 
 """
 
-from Lunar_SPS.DVP_general_SPS_functions import *
 import matplotlib.pylab as plt
+from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import *
 
 
 def determine_surface_beam_data(sps_range):

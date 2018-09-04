@@ -13,9 +13,9 @@ This script was written to fix mistakes made in the generation of the Equatorial
 
 """
 
-from Lunar_SPS.DVP_general_SPS_functions import *
-from Lunar_SPS.DVP_Programmatic_Functions import *
-import sys
+from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import *
+from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import *
+
 
 def fix_access_times(sim_file_name, total_duration_offset):
     # Fix access times by adding offset to start and finish times

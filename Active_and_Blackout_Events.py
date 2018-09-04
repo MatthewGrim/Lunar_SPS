@@ -6,9 +6,10 @@ This script is used to plot a bar graph of the SPS active times and blackout per
 
 """
 
-from Lunar_SPS.DVP_general_SPS_functions import *
-from Lunar_SPS.DVP_Programmatic_Functions import vary_orbital_elements_incrementing_resolution
 import os
+
+from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import vary_orbital_elements_incrementing_resolution
+from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import *
 
 
 def main():

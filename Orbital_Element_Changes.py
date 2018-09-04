@@ -1,9 +1,10 @@
 
-from Lunar_SPS.DVP_Programmatic_Functions import calculate_orbital_perturbations, read_data_from_file, write_data_to_file
-from Lunar_SPS.DVP_general_SPS_functions import convert_string_to_datetime
-import numpy as np
-import matplotlib.pyplot as plt
 import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import calculate_orbital_perturbations, read_data_from_file
+from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import convert_string_to_datetime
 
 
 def main():
