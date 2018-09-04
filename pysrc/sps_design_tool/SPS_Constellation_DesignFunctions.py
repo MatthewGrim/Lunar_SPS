@@ -6,15 +6,15 @@ This script contains functions used for the SPS constrained design tool.
 """
 
 import re
-
 import numpy as np
+
+from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import read_data_from_file
+from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import convert_string_to_datetime
+from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import vary_orbital_elements_incrementing_resolution
+from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import sort_incremented_resolution_data
 
 
 def study_initialization(study_name):
-
-    from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import convert_string_to_datetime
-    from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import vary_orbital_elements_incrementing_resolution
-
     study = {}
 
     if 'SouthPole' in study_name:
@@ -169,9 +169,6 @@ def enforce_constraints(data_set, data_type, constraints, constraint_name, const
 def determine_number_of_sps_for_active_time(stk_data_path, study_name, study, constraints, active_constraints, max_num_sps):
 
     # Determine what size of SPS constellation is necessary in order to achieve the total active time constraint
-
-    from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import read_data_from_file
-
     num_sps = 0
     all_nans = True
     while all_nans:
@@ -197,12 +194,6 @@ def determine_number_of_sps_for_active_time(stk_data_path, study_name, study, co
 
 
 def read_in_processed_data_reports(stk_data_path, study_name, num_sps):
-
-    from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import read_data_from_file
-
-    study = study_initialization(study_name)
-    constellation_design_variable = study['constellation_variable']
-
     data_set = {}
     data_set['total_active_time'] = read_data_from_file(stk_data_path, study_name, "TotalActive_{}SPS".format(num_sps))
     data_set['total_blackout_time'] = read_data_from_file(stk_data_path, study_name, "TotalBlackout_{}SPS".format(num_sps))
@@ -212,28 +203,14 @@ def read_in_processed_data_reports(stk_data_path, study_name, num_sps):
     data_set['mean_blackout_time'] = read_data_from_file(stk_data_path, study_name, "MeanBlackout_{}SPS".format(num_sps))
     data_set['min_active_duration'] = read_data_from_file(stk_data_path, study_name, 'MinActive_{}SPS'.format(num_sps))
 
-    if num_sps == 2:
-        data_set['mean_range'] = [(i + j) / 2.0 for i, j in zip(read_data_from_file(stk_data_path, study_name, "MeanRange_0.0{}".format(constellation_design_variable)), read_data_from_file(stk_data_path, study_name, "MeanRange_180.0{}".format(constellation_design_variable)))]
-        data_set['max_range'] = [(i + j) / 2.0 for i, j in zip(read_data_from_file(stk_data_path, study_name, "MeanMaxRange_0.0{}".format(constellation_design_variable)), read_data_from_file(stk_data_path, study_name, "MeanMaxRange_180.0{}".format(constellation_design_variable)))]
-        data_set['min_range'] = [(i + j) / 2.0 for i, j in zip(read_data_from_file(stk_data_path, study_name, "MeanMinRange_0.0{}".format(constellation_design_variable)), read_data_from_file(stk_data_path, study_name, "MeanMinRange_180.0{}".format(constellation_design_variable)))]
-        data_set['max_stored_power_time'] = [(i + j) / 2.0 for i, j in zip(read_data_from_file(stk_data_path, study_name, "MaxStoredPowerEvent_0.0{}".format(constellation_design_variable)), read_data_from_file(stk_data_path, study_name, "MaxStoredPowerEvent_180.0{}".format(constellation_design_variable)))]
-        data_set['total_stored_power_time'] = [(i + j) / 2.0 for i, j in zip(read_data_from_file(stk_data_path, study_name, "TotalStoredPowerEvent_0.0{}".format(constellation_design_variable)), read_data_from_file(stk_data_path, study_name, "TotalStoredPowerEvent_180.0{}".format(constellation_design_variable)))]
-        data_set['total_station_keeping'] = [(i + j) / 2.0 for i, j in zip(read_data_from_file(stk_data_path, study_name, "TotalStationKeeping_0.0{}".format(constellation_design_variable)), read_data_from_file(stk_data_path, study_name, "TotalStationKeeping_180.0{}".format(constellation_design_variable)))]
-    elif num_sps == 1:
-        data_set['mean_range'] = read_data_from_file(stk_data_path, study_name, "MeanRange_0.0{}".format(constellation_design_variable))
-        data_set['max_range'] = read_data_from_file(stk_data_path, study_name, "MeanMaxRange_0.0{}".format(constellation_design_variable))
-        data_set['min_range'] = read_data_from_file(stk_data_path, study_name, "MeanMinRange_0.0{}".format(constellation_design_variable))
-        data_set['max_stored_power_time'] = read_data_from_file(stk_data_path, study_name, 'MaxStoredPowerEvent_0.0{}'.format(constellation_design_variable))
-        data_set['total_stored_power_time'] = read_data_from_file(stk_data_path, study_name, 'TotalStoredPowerEvent_0.0{}'.format(constellation_design_variable))
-        data_set['total_station_keeping'] = read_data_from_file(stk_data_path, study_name, 'TotalStationKeeping_0.0{}'.format(constellation_design_variable))
+    data_set['mean_range'] = read_data_from_file(stk_data_path, study_name, "MeanRange_{}SPS".format(num_sps))
+    data_set['max_range'] = read_data_from_file(stk_data_path, study_name, "MeanMaxRange_{}SPS".format(num_sps))
+    data_set['min_range'] = read_data_from_file(stk_data_path, study_name, "MeanMinRange_{}SPS".format(num_sps))
 
     return data_set
 
 
 def sort_data_lists(data_set, orbit_data, study_name):
-
-    from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import sort_incremented_resolution_data
-
     data_set_sorted = {}
 
     if 'IncrementedRes' in study_name:

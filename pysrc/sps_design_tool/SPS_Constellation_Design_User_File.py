@@ -10,7 +10,6 @@ from Lunar_SPS.pysrc.sps_design_tool.SPS_Constellation_DesignFunctions import ro
 
 
 def main():
-
     # INITIALIZATION
     ####################################################################################################################
     # Select scenario/configuration
