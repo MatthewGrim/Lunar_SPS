@@ -2,10 +2,7 @@
 Author: Rohan Ramasamy
 Date: 04/09/2018
 
-This script processes the data obtained programmatically from STK for evaluating
-the optimal SPS orbit for the polar lunar SPS configuration based on feasible pointing and power
-constraints.
-
+This script generates the data from a generic equatorial simulation run
 """
 
 import numpy as np

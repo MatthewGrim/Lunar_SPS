@@ -2,8 +2,9 @@
 Author: Rohan Ramasamy
 Date: 04/09/2018
 
-
-
+This function processes the data obtained programmatically from STK for evaluating
+the optimal SPS orbit for the polar lunar SPS configuration based on feasible pointing and power
+constraints.
 """
 
 from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import *
