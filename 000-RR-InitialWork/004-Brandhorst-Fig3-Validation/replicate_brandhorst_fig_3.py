@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 
-from general_functions import *
+from Lunar_SPS.general_functions import *
 
 
 def compute_access_to_target(access_fname, target_illumination_fname, satellite_illumination_fname, sim_start_time,

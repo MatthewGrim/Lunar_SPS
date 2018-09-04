@@ -13,7 +13,7 @@ optimal orbit would have the highest total active, and lowest maximum blackout t
 """
 
 from Lunar_SPS.DVP_general_SPS_functions import *
-from general_functions import convert_string_to_datetime
+from Lunar_SPS.general_functions import convert_string_to_datetime
 
 
 def scan_apogee_altitudes(apogees, start, total_duration):
