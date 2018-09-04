@@ -78,14 +78,14 @@ def main(fix_access=True, fix_range=True, rename=False):
     # Get maximum size of constellation required
     print('Calculating constellation sizes...')
     max_constellation_size = 3
-    number_of_sps, arg_perigee = set_constellation_size(eccentricity, max_constellation_size, reference_study)
+    arg_perigee = set_constellation_size(v)
     
     # loop through orbits
     processed_sims = list()
     num_sims = 0
     missing_sims = 0
     for i in range(len(semi_maj_axis)):
-        for j in range(1, number_of_sps + 1):
+        for j in range(1, max_constellation_size + 1):
             # loop through mean anomalies of satellites in constellation
             for k in arg_perigee['{}sps'.format(j)]:
                 file_name = "DVP_{}_{}perigee{}apogee_{}argperi".format(study_name, orbit_data[i + 1][0], orbit_data[i + 1][1], k)

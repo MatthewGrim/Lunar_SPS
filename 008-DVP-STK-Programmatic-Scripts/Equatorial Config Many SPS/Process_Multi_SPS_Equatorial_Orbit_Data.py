@@ -6,7 +6,7 @@ This script imports and process the data obtained programmatically from STK for 
 the optimal SPS orbit for the polar lunar SPS configuration based on feasible pointing and power
 constraints.
 
-There is a section for reading and processing STK data reports, and wri ting the processed
+There is a section for reading and processing STK data reports, and writing the processed
 data to a file. The following section is for reading the processed data files if they have
 already been written. Comment out one section or the other as necessary.
 

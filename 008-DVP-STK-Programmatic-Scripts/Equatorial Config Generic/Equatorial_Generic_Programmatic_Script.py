@@ -191,7 +191,7 @@ def main():
     print(orbit_data.shape)
     # Get maximum size of constellation required
     print('Calculating constellation sizes...')
-    number_of_sps, arg_perigee = set_constellation_size(ecc, max_constellation_size, reference_study)
+    arg_perigee = set_constellation_size(max_constellation_size)
 
     # Generate connect commands for programmatically running STK simulations
     print('Writing connect commands....')

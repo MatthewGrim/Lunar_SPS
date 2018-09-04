@@ -208,11 +208,11 @@ def main():
     print(orbit_data.shape)
     # Get maximum size of constellation required
     print('Calculating constellation sizes...')
-    number_of_sps, mean_anomalies = set_constellation_size(ecc, max_constellation_size, reference_study)
+    mean_anomalies = set_constellation_size(max_constellation_size)
 
     # Generate connect commands for programmatically running STK simulations
     print('Writing connect commands....')
-    mean_anomalies = generate_stk_connect_commands(sma, ecc, orbit_data, number_of_sps, mean_anomalies, time_step,
+    mean_anomalies = generate_stk_connect_commands(sma, ecc, orbit_data, max_constellation_size, mean_anomalies, time_step,
                                                          study_name, new_path)
 
     # Open STK, load scenario, and execute commands to create data set
