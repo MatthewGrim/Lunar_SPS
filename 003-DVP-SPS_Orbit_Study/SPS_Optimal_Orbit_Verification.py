@@ -12,7 +12,7 @@ optimal orbit would have the highest total active, and lowest maximum blackout t
 
 """
 
-from DVP_general_SPS_functions import *
+from Lunar_SPS.DVP_general_SPS_functions import *
 from general_functions import convert_string_to_datetime
 
 

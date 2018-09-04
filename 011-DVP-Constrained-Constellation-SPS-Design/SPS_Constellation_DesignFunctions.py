@@ -12,8 +12,8 @@ import re
 
 def study_initialization(study_name):
 
-    from DVP_general_SPS_functions import convert_string_to_datetime
-    from DVP_Programmatic_Functions import vary_orbital_elements, vary_orbital_elements_incrementing_resolution
+    from Lunar_SPS.DVP_general_SPS_functions import convert_string_to_datetime
+    from Lunar_SPS.DVP_Programmatic_Functions import vary_orbital_elements, vary_orbital_elements_incrementing_resolution
 
     study = {}
 
@@ -167,7 +167,7 @@ def determine_number_of_sps_for_active_time(stk_data_path, study_name, study, co
 
     # Determine what size of SPS constellation is necessary in order to achieve the total active time constraint
 
-    from DVP_Programmatic_Functions import read_data_from_file
+    from Lunar_SPS.DVP_Programmatic_Functions import read_data_from_file
 
     num_sps = 0
     all_nans = True
@@ -195,7 +195,7 @@ def determine_number_of_sps_for_active_time(stk_data_path, study_name, study, co
 
 def read_in_processed_data_reports(stk_data_path, study_name, num_sps):
 
-    from DVP_Programmatic_Functions import read_data_from_file
+    from Lunar_SPS.DVP_Programmatic_Functions import read_data_from_file
 
     study = study_initialization(study_name)
     constellation_design_variable = study['constellation_variable']
@@ -229,7 +229,7 @@ def read_in_processed_data_reports(stk_data_path, study_name, num_sps):
 
 def sort_data_lists(data_set, orbit_data, study_name):
 
-    from DVP_Programmatic_Functions import sort_incremented_resolution_data, sort_data_list_into_array
+    from Lunar_SPS.DVP_Programmatic_Functions import sort_incremented_resolution_data, sort_data_list_into_array
 
     data_set_sorted = {}
 

@@ -8,7 +8,7 @@ degree argument of perigee
 
 """
 
-from DVP_general_SPS_functions import *
+from Lunar_SPS.DVP_general_SPS_functions import *
 import matplotlib.pyplot as plt
 
 

@@ -15,7 +15,7 @@ space. Constraints and their activity are defined in SPS_Constrained_DesignFunct
 
 """
 
-from DVP_Programmatic_Functions import *
+from Lunar_SPS.DVP_Programmatic_Functions import *
 from SPS_Constrained_DesignOptimizer import optimize_link_efficiency
 from SPS_Constrained_DesignFunctions import *
 from numpy import unravel_index

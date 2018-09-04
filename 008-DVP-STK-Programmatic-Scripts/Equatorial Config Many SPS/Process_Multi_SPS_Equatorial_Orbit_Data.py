@@ -12,8 +12,8 @@ already been written. Comment out one section or the other as necessary.
 
 """
 
-from DVP_general_SPS_functions import *
-from DVP_Programmatic_Functions import *
+from Lunar_SPS.DVP_general_SPS_functions import *
+from Lunar_SPS.DVP_Programmatic_Functions import *
 import sys
 
 

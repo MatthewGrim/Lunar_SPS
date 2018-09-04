@@ -337,7 +337,7 @@ def calculate_orbital_perturbations(semi_maj_axis, eccentricity, inclination_ep,
 
 def determine_constellation_size(eccentricity, max_constellation_size, study_name):
 
-    from DVP_general_SPS_functions import convert_string_to_datetime, parse_csv_to_array, invert_events_list
+    from Lunar_SPS.DVP_general_SPS_functions import convert_string_to_datetime, parse_csv_to_array, invert_events_list
     import sympy
     from sympy import cos
     import numpy as np

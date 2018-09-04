@@ -6,7 +6,7 @@ The scenario programmed in this script is the collection of access and lighting 
 in a common South Pole orbit, targeting the south pole.
 """
 
-from DVP_Programmatic_Functions import *
+from Lunar_SPS.DVP_Programmatic_Functions import *
 
 
 def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, number_of_sps, mean_anomaly, time_step,

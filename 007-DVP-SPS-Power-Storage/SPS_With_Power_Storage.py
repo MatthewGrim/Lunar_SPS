@@ -9,8 +9,8 @@ for equatorial high altitude orbit, and polar lower altitude orbit.
 
 """
 
-from DVP_general_SPS_functions import *
-from DVP_Programmatic_Functions import *
+from Lunar_SPS.DVP_general_SPS_functions import *
+from Lunar_SPS.DVP_Programmatic_Functions import *
 import os
 
 

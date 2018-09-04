@@ -13,7 +13,7 @@ These will need to be updated for each user/machine.
 
 """
 
-from DVP_Programmatic_Functions import *
+from Lunar_SPS.DVP_Programmatic_Functions import *
 import numpy as np
 import os
 import time

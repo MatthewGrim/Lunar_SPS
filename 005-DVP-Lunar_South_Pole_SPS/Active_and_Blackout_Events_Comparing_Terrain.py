@@ -8,7 +8,7 @@ included in the STK simulations.
 
 """
 
-from DVP_general_SPS_functions import *
+from Lunar_SPS.DVP_general_SPS_functions import *
 
 
 def main():

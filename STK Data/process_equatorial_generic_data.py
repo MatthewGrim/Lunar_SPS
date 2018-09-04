@@ -13,8 +13,8 @@ This script was written to fix mistakes made in the generation of the Equatorial
 
 """
 
-from DVP_general_SPS_functions import *
-from DVP_Programmatic_Functions import *
+from Lunar_SPS.DVP_general_SPS_functions import *
+from Lunar_SPS.DVP_Programmatic_Functions import *
 import sys
 
 def fix_access_times(sim_file_name, total_duration_offset):

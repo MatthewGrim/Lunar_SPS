@@ -7,8 +7,8 @@ to the mean blackout durations as a function of the perigee altitude of an orbit
 
 """
 
-from DVP_general_SPS_functions import *
-from DVP_Programmatic_Functions import vary_orbital_elements_incrementing_resolution, read_data_from_file, sort_incremented_resolution_data
+from Lunar_SPS.DVP_general_SPS_functions import *
+from Lunar_SPS.DVP_Programmatic_Functions import vary_orbital_elements_incrementing_resolution, read_data_from_file, sort_incremented_resolution_data
 import os
 
 

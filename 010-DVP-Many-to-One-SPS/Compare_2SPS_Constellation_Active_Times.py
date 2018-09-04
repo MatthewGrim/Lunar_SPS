@@ -7,8 +7,8 @@ of the relative initial true anomaly between the satellites.
 
 """
 
-from DVP_general_SPS_functions import *
-from DVP_Programmatic_Functions import *
+from Lunar_SPS.DVP_general_SPS_functions import *
+from Lunar_SPS.DVP_Programmatic_Functions import *
 
 
 def main():

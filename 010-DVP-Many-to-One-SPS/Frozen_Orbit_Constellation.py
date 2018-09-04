@@ -7,8 +7,8 @@ determining the total reduction in blackout time at the target for a particular 
 
 """
 
-from DVP_general_SPS_functions import *
-from DVP_Programmatic_Functions import *
+from Lunar_SPS.DVP_general_SPS_functions import *
+from Lunar_SPS.DVP_Programmatic_Functions import *
 from SPS_Constrained_DesignFunctions import *
 
 

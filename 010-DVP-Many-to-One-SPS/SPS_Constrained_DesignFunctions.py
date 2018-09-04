@@ -93,7 +93,7 @@ def enforce_constraints(data_set, data_type, constraints, constraint_name, const
 
 def sort_data_lists(data_set, orbit_data):
 
-    from DVP_Programmatic_Functions import sort_incremented_resolution_data
+    from Lunar_SPS.DVP_Programmatic_Functions import sort_incremented_resolution_data
 
     data_set_sorted = {}
 

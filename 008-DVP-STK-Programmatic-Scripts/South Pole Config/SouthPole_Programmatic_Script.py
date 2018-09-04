@@ -9,7 +9,7 @@ is the collection of access and lighting times for an SPS in a lunar polar orbit
 
 """
 
-from DVP_Programmatic_Functions import *
+from Lunar_SPS.DVP_Programmatic_Functions import *
 
 
 def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, time_step, study_name, file_path):

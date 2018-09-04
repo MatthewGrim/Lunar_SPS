@@ -7,7 +7,7 @@ of the Brandhorst study: " A solar electric propulsion mission for lunar power b
 
 """
 
-from DVP_general_SPS_functions import *
+from Lunar_SPS.DVP_general_SPS_functions import *
 
 
 def main():

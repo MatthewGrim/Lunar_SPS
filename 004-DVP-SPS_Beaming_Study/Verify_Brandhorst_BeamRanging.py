@@ -8,7 +8,7 @@ SPS which the beam sizing study in Brandhorst's paper is the SPS with an argumen
 
 """
 
-from DVP_general_SPS_functions import *
+from Lunar_SPS.DVP_general_SPS_functions import *
 import matplotlib.pylab as plt
 
 

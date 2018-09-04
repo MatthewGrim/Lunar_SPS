@@ -6,8 +6,8 @@ This script imports and process the data obtained programmatically from STK for 
 the optimal SPS orbit for the Brandhorst lunar SPS configuration.
 """
 
-from DVP_general_SPS_functions import *
-from DVP_Programmatic_Functions import *
+from Lunar_SPS.DVP_general_SPS_functions import *
+from Lunar_SPS.DVP_Programmatic_Functions import *
 import os
 
 
