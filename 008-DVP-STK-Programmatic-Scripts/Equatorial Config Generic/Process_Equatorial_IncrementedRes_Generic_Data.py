@@ -10,20 +10,28 @@ constraints.
 
 from Lunar_SPS.DVP_general_SPS_functions import *
 from Lunar_SPS.DVP_Programmatic_Functions import *
-import sys
 
 
-def process_data(max_constellation_size):
-    start = convert_string_to_datetime(['2018', '05', '17', '10', '0', '0.0'])
-    end = convert_string_to_datetime(['2020', '05', '17', '10', '0', '0.0'])
+def process_data(max_constellation_size, study_name, constellation_variable, start, end, **kwargs):
+    """
+    max_constellation_size: number of satellites in the constellation
+    study_name: name of the study being processed
+    oonstellation_variable: angle varied for particular constellation type. For equatorial this is the argument of
+                            perigee (argperi). For south pole orbits this is the mean anomaly (meananom).
+    start: list representing the start time of the simulation
+    end: list representing the end time of the simulation
+    """
     total_duration = (end - start).total_seconds()
 
     # get orbital elements
-    max_perigee = 5000.0
-    max_apogee = 5000.0
+    max_perigee = kwargs.get('max_perigee', 5000.0)
+    max_apogee = kwargs.get('max_apogee', 5000.0)
+    min_perigee = kwargs.get('min_perigee', 800.0)
+    resolutions = kwargs.get('resolutions', None)
+    thresholds = kwargs.get('thresholds', None)
     sma, ecc, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_perigee=800.0,
-                                                                         resolutions=np.array((50.0, 100.0, 100.0, 250.0)),
-                                                                         thresholds=np.array((1000.0, 1500.0, 2500.0)))
+                                                                         resolutions=resolutions,
+                                                                         thresholds=thresholds)
 
     # Get angular distributions for each sps
     arg_perigee = set_constellation_size(max_constellation_size)
@@ -33,7 +41,6 @@ def process_data(max_constellation_size):
     current_folder = os.getcwd()
     issue_folder = os.path.dirname(current_folder)
     main_directory = os.path.dirname(issue_folder)
-    study_name = 'Equatorial_IncrementedRes_Generic'
     stk_data_path = os.path.join(main_directory, 'STK Data', study_name)
 
     # Import target illumination events
@@ -63,10 +70,11 @@ def process_data(max_constellation_size):
         sps_active_total = []
 
         for j, arg in enumerate(arg_perigees):
-            sim_name = 'DVP_{}_{}perigee{}apogee_{}argperi'.format(study_name,
+            sim_name = 'DVP_{}_{}perigee{}apogee_{}{}'.format(study_name,
                                                                    orbit_data[i][0],
                                                                    orbit_data[i][1],
-                                                                   arg)
+                                                                   arg,
+                                                                   constellation_variable)
 
             # Import access and lighting for SPS
             sps_lighting = parse_csv_to_array('{}/{}_lighting.csv'.format(stk_data_path, sim_name), start)
@@ -119,5 +127,20 @@ def process_data(max_constellation_size):
 
 
 if __name__ == '__main__':
-    process_data(3)
+    # Set main variables of study
+    start = convert_string_to_datetime(['2018', '05', '17', '10', '0', '0.0'])
+    end = convert_string_to_datetime(['2020', '05', '17', '10', '0', '0.0'])
+    study_name = 'Equatorial_IncrementedRes_Generic'
+    constellation_variable = 'arg_peri'
+
+    # Set kwargs for orbital variables
+    kwargs = {
+        "resolutions": np.array((50.0, 100.0, 100.0, 250.0)),
+        "thresholds": np.array((1000.0, 1500.0, 2500.0)),
+        "max_perigee": 5000.0,
+        "max_apogee": 5000.0,
+        "min_apogee": 800.0
+    }
+
+    process_data(3, study_name, constellation_variable, start, end, **kwargs)
 
