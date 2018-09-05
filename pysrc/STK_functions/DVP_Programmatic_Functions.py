@@ -89,12 +89,10 @@ def vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_p
     orbit_data = [0, 0]
     if min_perigee is not None:
         perigee = min_perigee
-        apogee = perigee    
-        orbit_data = np.vstack((orbit_data, [perigee + radius_moon, apogee + radius_moon]))
     else:
         perigee = 0.0
     
-    while perigee <= max_perigee:
+    while perigee < max_perigee:
         # Set perigee step
         if 0.0 <= perigee < thresholds[0]:
             peri_step = resolutions[0]
@@ -107,7 +105,6 @@ def vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_p
 
         # Add apogees for current perigee
         apogee = perigee
-        perigee = perigee + peri_step
         while apogee <= max_apogee:
             orbit_data = np.vstack((orbit_data, [perigee + radius_moon, apogee + radius_moon]))
             if 0.0 <= apogee < thresholds[0]:
@@ -119,6 +116,7 @@ def vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_p
             elif thresholds[2] <= apogee:
                 apo_step = resolutions[3]
             apogee += apo_step
+        perigee = perigee + peri_step
 
     eccentricity = np.zeros(len(orbit_data) - 1)
     semi_maj_axis = np.zeros(len(orbit_data) - 1)
@@ -162,7 +160,7 @@ def sort_incremented_resolution_data(orbit_data, data_list,
             num_apogees[j] = 1 + int((max_apogee - unique_perigees[j]) / resolution[3])
         else:
             raise RuntimeError("Should not be possible to get here!")
-        assert num_apogees[j] <= len(unique_apogees)
+        assert 1 <= num_apogees[j] <= len(unique_apogees), num_apogees[j]
 
     # Sort data
     start = np.zeros([len(unique_perigees)])
@@ -170,6 +168,9 @@ def sort_incremented_resolution_data(orbit_data, data_list,
         start[j] = np.sum(num_apogees[0:j])
         for k in range(num_apogees[j]):
             shift = int(len(unique_apogees) - num_apogees[j])
+            debug_string = "{}, {}, {}, {}".format(unique_perigees[j], unique_apogees[shift + k], orbit_data[k + int(start[j]) + 1][0], orbit_data[k + int(start[j]) + 1][1])
+            assert unique_perigees[j] == orbit_data[k + int(start[j]) + 1][0], debug_string
+            assert unique_apogees[shift + k] == orbit_data[k + int(start[j]) + 1][1], debug_string
             data_array[j, shift + k] = data_list[k + int(start[j])]
 
     # Remove zeros for impossible orbit combos (with perigee altitude > apogee altitude)
