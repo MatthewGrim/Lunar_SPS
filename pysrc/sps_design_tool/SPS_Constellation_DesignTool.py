@@ -21,21 +21,24 @@ from numpy import unravel_index
 from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import *
 
 
-def generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints, num_sps):
+def generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints, num_sps,
+                          **kwargs):
     # --- INITIALIZATION ---
-    study = study_initialization(study_name)
+    study = study_initialization(study_name, **kwargs)
     transmitter = trans_metrics(transmitter_selection)
     rover = rover_metrics(rover_selection)
 
     # Get pathway to main Lunar_SPS directory
     current_folder = os.getcwd()
-    main_directory = os.path.dirname(current_folder)
+    parent_folder = os.path.dirname(current_folder)
+    main_directory = os.path.dirname(parent_folder)
     stk_data_path = os.path.join(main_directory, 'STK Data', study_name)
 
     # --- OPTIMIZE TRANSMITTER APERTURE SIZE ---
     # Based on current constraints, determine transmitter aperture size which provides highest possible link efficiency
     # within constrained design space
-    optimum = optimize_link_efficiency(num_sps, transmitter_selection, rover_selection, constraints, active_constraints, study_name)
+    optimum = optimize_link_efficiency(num_sps, transmitter_selection, rover_selection, constraints,
+                                       active_constraints, study_name, study['duration'])
     transmitter['radius'] = optimum.x
 
     # --- READ IN DATA FILES ---
@@ -97,7 +100,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
 
     # --- PARSING/REORGANIZING DATA ---
     # Reorganize the data lists into 2D arrays
-    sorted_data_set, perigee_altitudes, unique_perigees, apogee_altitudes, unique_apogees = sort_data_lists(data_set, study['orbits'], study_name)
+    sorted_data_set, perigee_altitudes, unique_perigees, apogee_altitudes, unique_apogees = sort_data_lists(data_set, study['orbits'], study_name, **kwargs)
 
     # --- SELECT SOLUTION WITH HIGHEST LINK EFFICIENCY ---
     # Find best orbit according to weighted objective function

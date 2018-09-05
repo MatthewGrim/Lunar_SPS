@@ -104,10 +104,10 @@ def vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_p
             peri_step = resolutions[2]
         elif thresholds[2] <= perigee:
             peri_step = resolutions[3]
-                
+
         # Add apogees for current perigee
-        perigee = perigee + peri_step
         apogee = perigee
+        perigee = perigee + peri_step
         while apogee <= max_apogee:
             orbit_data = np.vstack((orbit_data, [perigee + radius_moon, apogee + radius_moon]))
             if 0.0 <= apogee < thresholds[0]:
@@ -129,7 +129,9 @@ def vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_p
     return semi_maj_axis, eccentricity, orbit_data
 
 
-def sort_incremented_resolution_data(orbit_data, data_list):
+def sort_incremented_resolution_data(orbit_data, data_list,
+                                     resolution=np.asarray([10.0, 25.0, 50.0, 100.0]),
+                                     thresholds=np.asarray([100.0, 250.0, 1000.0])):
 
     # Get list of unique perigee and apogee altitudes
     r_moon = 1737.0
@@ -145,9 +147,8 @@ def sort_incremented_resolution_data(orbit_data, data_list):
     data_array = np.zeros([len(unique_perigees), len(unique_apogees)])
 
     # Define resolution and bounds for incremented resolution approach
-    resolution = [10.0, 25.0, 50.0, 100.0]
-    thresholds = [100.0 + r_moon, 250.0 + r_moon, 1000.0 + r_moon]
-    num_apogees = np.zeros([len(unique_perigees)])
+    thresholds += r_moon
+    num_apogees = np.zeros([len(unique_perigees)], dtype='int')
 
     # Determine number of unique apogee steps between a given perigee value and max apogee value
     for j in range(len(unique_perigees)):
@@ -159,12 +160,15 @@ def sort_incremented_resolution_data(orbit_data, data_list):
             num_apogees[j] = 1 + int((thresholds[2] - unique_perigees[j]) / resolution[2]) + int((max_apogee - thresholds[2]) / resolution[3])
         elif thresholds[2] <= unique_perigees[j]:
             num_apogees[j] = 1 + int((max_apogee - unique_perigees[j]) / resolution[3])
+        else:
+            raise RuntimeError("Should not be possible to get here!")
+        assert num_apogees[j] <= len(unique_apogees)
 
     # Sort data
     start = np.zeros([len(unique_perigees)])
     for j in range(len(unique_perigees)):
         start[j] = np.sum(num_apogees[0:j])
-        for k in range(int(num_apogees[j])):
+        for k in range(num_apogees[j]):
             shift = int(len(unique_apogees) - num_apogees[j])
             data_array[j, shift + k] = data_list[k + int(start[j])]
 

@@ -7,6 +7,7 @@ This script contains functions used for the SPS constrained design tool.
 
 import re
 import numpy as np
+import os
 
 from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import read_data_from_file
 from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import convert_string_to_datetime
@@ -14,20 +15,25 @@ from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import vary_orbita
 from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import sort_incremented_resolution_data
 
 
-def study_initialization(study_name):
+def study_initialization(study_name, **kwargs):
     study = {}
 
+    study['start'] = convert_string_to_datetime(['2018', '05', '17', '10', '0', '0.0'])
+    study['end'] = convert_string_to_datetime(['2020', '05', '17', '10', '0', '0.0'])
+    study['duration'] = (study['end'] - study['start']).total_seconds()
+
+    # Get orbit data set
+    max_perigee = kwargs.get('max_perigee', 5000.0)
+    max_apogee = kwargs.get('max_apogee', 5000.0)
+    min_perigee = kwargs.get('min_perigee', 800.0)
+    resolutions = kwargs.get('resolutions', None)
+    thresholds = kwargs.get('thresholds', None)
+    semi_maj_axis, eccentricity, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee,
+                                                                                            min_perigee=min_perigee,
+                                                                                            resolutions=resolutions,
+                                                                                            thresholds=thresholds)
+
     if 'SouthPole' in study_name:
-        study['start'] = convert_string_to_datetime(['2018', '05', '17', '10', '0', '0.0'])
-        study['end'] = convert_string_to_datetime(['2020', '05', '17', '10', '0', '0.0'])
-        study['duration'] = (study['end'] - study['start']).total_seconds()
-
-        # Set bounds on parametric scan
-        max_perigee = 5000.0
-        max_apogee = 5000.0
-
-        # Get orbit data set
-        semi_maj_axis, eccentricity, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee)
         study['semi-maj-axis'] = semi_maj_axis
         study['eccentricity'] = eccentricity
         study['orbits'] = orbit_data
@@ -37,16 +43,6 @@ def study_initialization(study_name):
             study['constellation_variable'] = 'meananom'
 
     elif 'Equatorial' in study_name:
-        study['start'] = convert_string_to_datetime(['2018', '05', '17', '10', '0', '0.0'])
-        study['end'] = convert_string_to_datetime(['2020', '05', '17', '10', '0', '0.0'])
-        study['duration'] = (study['end'] - study['start']).total_seconds()
-
-        # Set bounds on parametric scan
-        max_perigee = 5000.0
-        max_apogee = 5000.0
-
-        # Get orbit data set
-        semi_maj_axis, eccentricity, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee)
         study['semi-maj-axis'] = semi_maj_axis
         study['eccentricity'] = eccentricity
         study['orbits'] = orbit_data
@@ -203,19 +199,22 @@ def read_in_processed_data_reports(stk_data_path, study_name, num_sps):
     data_set['mean_blackout_time'] = read_data_from_file(stk_data_path, study_name, "MeanBlackout_{}SPS".format(num_sps))
     data_set['min_active_duration'] = read_data_from_file(stk_data_path, study_name, 'MinActive_{}SPS'.format(num_sps))
 
-    data_set['mean_range'] = read_data_from_file(stk_data_path, study_name, "MeanRange_{}SPS".format(num_sps))
-    data_set['max_range'] = read_data_from_file(stk_data_path, study_name, "MeanMaxRange_{}SPS".format(num_sps))
-    data_set['min_range'] = read_data_from_file(stk_data_path, study_name, "MeanMinRange_{}SPS".format(num_sps))
+    data_set['mean_range'] = np.loadtxt(os.path.join(stk_data_path, "MeanRange_{}SPS_{}.txt".format(num_sps, study_name)))
+    data_set['max_range'] = np.loadtxt(os.path.join(stk_data_path, "MeanMaxRange_{}SPS_{}.txt".format(num_sps, study_name)))
+    data_set['min_range'] = np.loadtxt(os.path.join(stk_data_path, "MeanMinRange_{}SPS_{}.txt".format(num_sps, study_name)))
 
     return data_set
 
 
-def sort_data_lists(data_set, orbit_data, study_name):
+def sort_data_lists(data_set, orbit_data, study_name, **kwargs):
     data_set_sorted = {}
 
     if 'IncrementedRes' in study_name:
         for j in data_set:
-            data_set_sorted[j] = sort_incremented_resolution_data(orbit_data, data_set[j])
+            resolutions = kwargs.get('resolutions', None)
+            thresholds = kwargs.get('thresholds', None)
+            data_set_sorted[j] = sort_incremented_resolution_data(orbit_data, data_set[j],
+                                                                  resolution=resolutions, thresholds=thresholds)
 
     # Extract unique perigees and apogees tested for plotting
     unique_perigees = [orbit_data[1][0]]
@@ -244,7 +243,7 @@ def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_s
     # Cycle through all access events
     for i in range(0, len(data_set['max_range'])):
         # If range is "np.nan", no access periods exist for that orbit, therefore treat orbit as infeasible design
-        if data_set['max_range'] == np.nan:
+        if data_set['max_range'][i] == np.nan:
             data_set['min_link_efficiency'].append(np.nan)
             data_set['mean_link_efficiency'].append(np.nan)
             data_set['min_power_received'].append(np.nan)

@@ -449,7 +449,6 @@ def invert_events_list(active_times, duration):
 
 
 def combine_events(events_1, events_2):
-
     assert len(events_1[0]) == len(events_1[1])
     assert len(events_2[0]) == len(events_2[1])
     new_start = []

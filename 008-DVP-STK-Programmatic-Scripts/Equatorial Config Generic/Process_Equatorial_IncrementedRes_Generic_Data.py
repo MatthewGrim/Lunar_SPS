@@ -15,7 +15,7 @@ if __name__ == '__main__':
     start = convert_string_to_datetime(['2018', '05', '17', '10', '0', '0.0'])
     end = convert_string_to_datetime(['2020', '05', '17', '10', '0', '0.0'])
     study_name = 'Equatorial_IncrementedRes_Generic'
-    constellation_variable = 'arg_peri'
+    constellation_variable = 'argperi'
 
     # Set kwargs for orbital variables
     kwargs = {
@@ -26,5 +26,5 @@ if __name__ == '__main__':
         "min_apogee": 800.0
     }
 
-    process_stk_data(3, study_name, constellation_variable, start, end, **kwargs)
+    process_stk_data(1, study_name, constellation_variable, start, end, **kwargs)
 

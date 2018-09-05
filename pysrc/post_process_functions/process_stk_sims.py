@@ -67,7 +67,7 @@ def process_stk_data(max_constellation_size, study_name, constellation_variable,
     for i in range(1, len(orbit_data)):
         print('Progress: {}%'.format(round(100.0 * (i - 1) / (len(orbit_data) - 2), 2)))
         print("Perigee radius: {} km, Apogee radius: {} km".format(orbit_data[i][0], orbit_data[i][1]))
-        sps_active_total = []
+        sps_active_total = None
 
         for j, arg in enumerate(arg_perigees):
             sim_name = 'DVP_{}_{}perigee{}apogee_{}{}'.format(study_name,
@@ -82,13 +82,16 @@ def process_stk_data(max_constellation_size, study_name, constellation_variable,
 
             # Get active time of individual satellite and combine events with total
             sps_active = determine_SPS_active_time(sps_lighting, target_eclipse, sps_access)
-            sps_active_total = combine_events(sps_active_total, sps_active)
+            if j == 0:
+                sps_active_total = sps_active
+            else:
+                sps_active_total = combine_events(sps_active_total, sps_active)
 
             # Get the mean, min and max range for the satellite
-            sps_range = import_range_data_statistics('{}/{}_range'.format(stk_data_path, sim_name), stk_data_path)
-            data['mean_range'][j, i] = np.sum([(range * duration) / np.sum(sps_active[2]) for range, duration in zip(sps_range[2], sps_active[2])])
-            data['mean_min_range'][j, i] = np.sum([(range * duration) / np.sum(sps_active[2]) for range, duration in zip(sps_range[0], sps_active[2])])
-            data['mean_max_range'][j, i] = np.sum([(range * duration) / np.sum(sps_active[2]) for range, duration in zip(sps_range[1], sps_active[2])])
+            sps_range = import_range_data_statistics('{}_range'.format(sim_name), stk_data_path)
+            data['mean_range'][j, i - 1] = np.sum([(range * duration) / np.sum(sps_active[2]) for range, duration in zip(sps_range[2], sps_active[2])])
+            data['mean_min_range'][j, i - 1] = np.sum([(range * duration) / np.sum(sps_active[2]) for range, duration in zip(sps_range[0], sps_active[2])])
+            data['mean_max_range'][j, i - 1] = np.sum([(range * duration) / np.sum(sps_active[2]) for range, duration in zip(sps_range[1], sps_active[2])])
 
         # Determine active time statistics
         data['total_active_time'].append(np.sum(sps_active[2]))

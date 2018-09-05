@@ -5,16 +5,17 @@ Author: Rohan Ramasamy
 This script serves for simplified user interaction with the SPS constrained design tool.
 """
 
+import numpy as np
+
 from Lunar_SPS.pysrc.sps_design_tool.SPS_Constellation_DesignTool import generate_design_space
 from Lunar_SPS.pysrc.sps_design_tool.SPS_Constellation_DesignFunctions import rover_metrics
 
 
 def main():
-    # INITIALIZATION
-    ####################################################################################################################
+    # --- INITIALIZATION ---
     # Select scenario/configuration
-    study_name = 'SouthPole_IncrementedRes_Generic'
-    # study_name = 'Equatorial_IncrementedRes_Generic'
+    # study_name = 'SouthPole_IncrementedRes_Generic'
+    study_name = 'Equatorial_IncrementedRes_Generic'
 
     # Select transmitter
     transmitter_selection = '100kW'
@@ -23,10 +24,11 @@ def main():
     # Fleet size must be integer, rover separation distance must be float (with decimal)
     # Fleet size comes first, then separation
     rover_selection = 'sorato'
-    ####################################################################################################################
 
-    # DEFINE CONSTRAINTS
-    ####################################################################################################################
+    # Defines the number of satellites in the constellation being studied
+    num_sps = 1
+
+    # --- DEFINE CONSTRAINTS ---
     # Initialize dictionaries
     constraints = {}
     active_constraints = {}
@@ -59,6 +61,13 @@ def main():
     active_constraints['transmitter_pwr_optimization'] = 0
     ####################################################################################################################
 
-    generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints)
+    kwargs = {
+        "resolutions": np.array((50.0, 100.0, 100.0, 250.0)),
+        "thresholds": np.array((1000.0, 1500.0, 2500.0)),
+        "min_perigee": 800.0,
+        "max_perigee": 5000.0,
+        "max_apogee": 5000.0
+    }
+    generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints, num_sps, **kwargs)
 
 main()
