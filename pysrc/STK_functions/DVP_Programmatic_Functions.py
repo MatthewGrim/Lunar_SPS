@@ -131,6 +131,7 @@ def sort_incremented_resolution_data(orbit_data, data_list,
                                      resolution=np.asarray([10.0, 25.0, 50.0, 100.0]),
                                      thresholds=np.asarray([100.0, 250.0, 1000.0])):
 
+    assert len(orbit_data) - 1 == len(data_list)
     # Get list of unique perigee and apogee altitudes
     r_moon = 1737.0
     unique_perigees = [orbit_data[1][0]]
