@@ -6,6 +6,8 @@ The scenario programmed in this script is the collection of access and lighting 
 in a common equatorial orbit, targeting the south pole.
 """
 
+import time
+
 from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import *
 
 
@@ -193,7 +195,7 @@ def main():
 
     # Generate connect commands for programmatically running STK simulations
     print('Writing connect commands....')
-    argument_of_perigees = generate_stk_connect_commands(sma, ecc, orbit_data, number_of_sps, arg_perigee, time_step, study_name, new_path)
+    argument_of_perigees = generate_stk_connect_commands(sma, ecc, orbit_data, max_constellation_size, arg_perigee, time_step, study_name, new_path)
 
     # Open STK, load scenario, and execute commands to create data set
     run_stk_v2(stk_data_path, scenario_path, study_name, orbit_data, argument_of_perigees)
