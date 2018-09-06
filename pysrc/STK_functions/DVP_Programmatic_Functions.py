@@ -90,9 +90,9 @@ def vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_p
     if min_perigee is not None:
         perigee = min_perigee
     else:
-        perigee = 0.0
+        perigee = resolutions[0]
     
-    while perigee < max_perigee:
+    while perigee <= max_perigee:
         # Set perigee step
         if 0.0 <= perigee < thresholds[0]:
             peri_step = resolutions[0]
@@ -146,23 +146,22 @@ def sort_incremented_resolution_data(orbit_data, data_list,
     data_array = np.zeros([len(unique_perigees), len(unique_apogees)])
 
     # Define resolution and bounds for incremented resolution approach
-    thresholds += r_moon
+    radial_thresholds = thresholds + r_moon
     num_apogees = np.zeros([len(unique_perigees)], dtype='int')
 
     # Determine number of unique apogee steps between a given perigee value and max apogee value
     for j in range(len(unique_perigees)):
-        if r_moon < unique_perigees[j] < thresholds[0]:
-            num_apogees[j] = 1 + int((thresholds[0] - unique_perigees[j]) / resolution[0]) + int((thresholds[1] - thresholds[0]) / resolution[1]) + int((thresholds[2] - thresholds[1]) / resolution[2]) + int((max_apogee - thresholds[2]) / resolution[3])
-        elif thresholds[0] <= unique_perigees[j] < thresholds[1]:
-            num_apogees[j] = 1 + int((thresholds[1] - unique_perigees[j]) / resolution[1]) + int((thresholds[2] - thresholds[1]) / resolution[2]) + int((max_apogee - thresholds[2]) / resolution[3])
-        elif thresholds[1] <= unique_perigees[j] < thresholds[2]:
-            num_apogees[j] = 1 + int((thresholds[2] - unique_perigees[j]) / resolution[2]) + int((max_apogee - thresholds[2]) / resolution[3])
-        elif thresholds[2] <= unique_perigees[j]:
+        if r_moon < unique_perigees[j] < radial_thresholds[0]:
+            num_apogees[j] = 1 + int((radial_thresholds[0] - unique_perigees[j]) / resolution[0]) + int((radial_thresholds[1] - radial_thresholds[0]) / resolution[1]) + int((radial_thresholds[2] - radial_thresholds[1]) / resolution[2]) + int((max_apogee - radial_thresholds[2]) / resolution[3])
+        elif radial_thresholds[0] <= unique_perigees[j] < radial_thresholds[1]:
+            num_apogees[j] = 1 + int((radial_thresholds[1] - unique_perigees[j]) / resolution[1]) + int((radial_thresholds[2] - radial_thresholds[1]) / resolution[2]) + int((max_apogee - radial_thresholds[2]) / resolution[3])
+        elif radial_thresholds[1] <= unique_perigees[j] < radial_thresholds[2]:
+            num_apogees[j] = 1 + int((radial_thresholds[2] - unique_perigees[j]) / resolution[2]) + int((max_apogee - radial_thresholds[2]) / resolution[3])
+        elif radial_thresholds[2] <= unique_perigees[j]:
             num_apogees[j] = 1 + int((max_apogee - unique_perigees[j]) / resolution[3])
         else:
             raise RuntimeError("Should not be possible to get here!")
         assert 1 <= num_apogees[j] <= len(unique_apogees), num_apogees[j]
-
     # Sort data
     start = np.zeros([len(unique_perigees)])
     for j in range(len(unique_perigees)):
