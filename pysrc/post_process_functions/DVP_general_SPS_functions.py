@@ -309,7 +309,7 @@ def get_event_overlaps_fast(access_times, event_times):
             event_start = event_times[0][event_idx]
             event_end = event_times[1][event_idx]
             if event_start >= event_end:
-                raise RuntimeError("It should not be possible to get here")
+                raise RuntimeError("It should not be possible to get here: {} {}".format(event_start, event_end))
 
         # Look for no overlap cases - move to next event pair with the chance of overlap
         if event_end < access_start:
