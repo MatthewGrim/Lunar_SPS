@@ -48,37 +48,33 @@ def calculate_link_eff(trans_radius, args, **kwargs):
     data_set['mean_link_efficiency'] = []
     data_set['min_link_efficiency'] = []
     data_set['min_power_received'] = []
+    km_to_m = 1000.0
     for i in range(len(data_set['mean_range'])):
-        if math.isnan(data_set['mean_range'][i]):
-            data_set['mean_link_efficiency'].append(0.0)
-            data_set['min_link_efficiency'].append(0.0)
-            data_set['min_power_received'].append(0.0)
-        else:
-            # Actual beam radius as defined by Gaussian beam divergence
-            mean_surf_beam_radius = trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
-            max_surf_beam_radius = trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['max_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
+        # Actual beam radius as defined by Gaussian beam divergence
+        mean_surf_beam_radius = trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * km_to_m) / (np.pi * trans_radius ** 2)) ** 2)
+        max_surf_beam_radius = trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set['max_range'][i] * km_to_m) / (np.pi * trans_radius ** 2)) ** 2)
 
-            # If calculating for fleet, remove designs which give beam smaller than area covered by fleet, and calculate
-            # link efficiency to each individual rover
-            if "fleet" in args[1]:
-                if max_surf_beam_radius < rover['fleet_radius']:
-                    data_set['mean_link_efficiency'].append(0.0)
-                    data_set['min_link_efficiency'].append(0.0)
-                else:
-                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / mean_surf_beam_radius) ** 2)
-                    data_set['min_link_efficiency'].append((rover['rec_radius'] / max_surf_beam_radius) ** 2)
-
-            # If calculating for single rover, 100% efficiency if beam fits within receiver
+        # If calculating for fleet, remove designs which give beam smaller than area covered by fleet, and calculate
+        # link efficiency to each individual rover
+        if "fleet" in args[1]:
+            if max_surf_beam_radius < rover['fleet_radius']:
+                data_set['mean_link_efficiency'].append(0.0)
+                data_set['min_link_efficiency'].append(0.0)
             else:
-                if max_surf_beam_radius <= rover['rec_radius']:
-                    data_set['mean_link_efficiency'].append(1.0)
-                    data_set['min_link_efficiency'].append(1.0)
-                else:
-                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / mean_surf_beam_radius) ** 2)
-                    data_set['min_link_efficiency'].append((rover['rec_radius'] / max_surf_beam_radius) ** 2)
+                data_set['mean_link_efficiency'].append((rover['rec_radius'] / mean_surf_beam_radius) ** 2)
+                data_set['min_link_efficiency'].append((rover['rec_radius'] / max_surf_beam_radius) ** 2)
 
-            # Calculate mean power received at target
-            data_set['min_power_received'].append(data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
+        # If calculating for single rover, 100% efficiency if beam fits within receiver
+        else:
+            if max_surf_beam_radius <= rover['rec_radius']:
+                data_set['mean_link_efficiency'].append(1.0)
+                data_set['min_link_efficiency'].append(1.0)
+            else:
+                data_set['mean_link_efficiency'].append((rover['rec_radius'] / mean_surf_beam_radius) ** 2)
+                data_set['min_link_efficiency'].append((rover['rec_radius'] / max_surf_beam_radius) ** 2)
+
+        # Calculate mean power received at target
+        data_set['min_power_received'].append(data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
 
     # Remove infeasible designs which do not have any active events
     for i in data_set['total_active_time']:
