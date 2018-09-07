@@ -35,7 +35,8 @@ def process_stk_data(max_constellation_size, study_name, constellation_variable,
 
     # Get angular distributions for each sps
     arg_perigee = set_constellation_size(max_constellation_size)
-    arg_perigees = arg_perigee['{}sps'.format(max_constellation_size)]
+    key = '{}sps'.format(max_constellation_size)
+    arg_perigees = arg_perigee[key]
 
     # Get pathway to SPS data directory
     current_folder = os.getcwd()
