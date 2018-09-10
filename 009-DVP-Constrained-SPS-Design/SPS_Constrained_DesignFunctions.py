@@ -97,19 +97,19 @@ def rover_metrics(rover_name):
     if "amalia" in rover_name:
         # Team ITALIA AMALIA (intermediate)
         rover['operation_pwr'] = 100.0
-        rover['rec_efficiency'] = 0.33
+        rover['rec_efficiency'] = 0.225
         rover['hibernation_pwr'] = 7.0
         rover['battery_capacity'] = 100.0
     elif "sorato" in rover_name:
         # ispace Sorato (miniature)
         rover['operation_pwr'] = 21.5
-        rover['rec_efficiency'] = 0.33
+        rover['rec_efficiency'] = 0.225
         rover['hibernation_pwr'] = 4.5
         rover['battery_capacity'] = 38.0
     elif "curiosity" in rover_name:
         # NASA Curiosity (large)
         rover['operation_pwr'] = 270.0
-        rover['rec_efficiency'] = 0.33
+        rover['rec_efficiency'] = 0.225
         rover['hibernation_pwr'] = 23.5
         rover['battery_capacity'] = 1600.0
     else:
@@ -117,7 +117,7 @@ def rover_metrics(rover_name):
 
     # Approximate rover receiver radius
     solar_intensity = 1367.0
-    receiver_efficiency = 0.1
+    receiver_efficiency = 0.09
     receiver_area = rover['operation_pwr'] / (solar_intensity * receiver_efficiency)
     rover['rec_radius'] = np.sqrt(receiver_area / np.pi)
     rover['fleet_radius'] = np.sqrt(2.0) * ((2.0 * num_rovers_across_diameter * rover['rec_radius']) + (num_rovers_across_diameter - 1.0) * separation) / 2.0
