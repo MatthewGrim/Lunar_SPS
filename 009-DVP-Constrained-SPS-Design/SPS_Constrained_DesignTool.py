@@ -21,7 +21,7 @@ from numpy import unravel_index
 from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import *
 
 
-def generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints):
+def generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints, trans_radius=None):
 
     # INITIALIZATION
     ####################################################################################################################
@@ -46,8 +46,14 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     ####################################################################################################################
     # Based on current constraints, determine transmitter aperture size which provides highest possible link efficiency
     # within constrained design space
-    optimum = optimize_link_efficiency(transmitter_selection, rover_selection, constraints, active_constraints, study_name)
-    transmitter['radius'] = optimum.x
+    if trans_radius is None:
+        print("Optimising transmitter radius")
+        optimum = optimize_link_efficiency(transmitter_selection, rover_selection, constraints, active_constraints, study_name)
+        assert optimum.success
+        transmitter['radius'] = optimum.x
+        print(optimum.x, optimum.message)
+    else:
+        transmitter['radius'] = trans_radius
     ####################################################################################################################
 
     # READ IN DATA FILES
@@ -130,6 +136,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
         data_set = enforce_constraints(data_set, 'min_active_time', constraints, 'min_active_duration', 'min')
     else:
         pass
+
     # Calculate link efficiency and power delivered, applying pointing constraint
     if "fleet" in rover_selection:
         data_set = calculate_link_efficiency_and_power_delivered_for_fleet(rover, data_set, transmitter, constraints, active_constraints)
@@ -180,7 +187,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     # OPTIMIZE TRANSMITTER POWER
     ####################################################################################################################
     sorted_data_set, surf_flux, transmitter = optimize_transmitter_power(transmitter, rover, sorted_data_set, best_orbit_idx, constraints, active_constraints)
-    transmitter['radius'] = optimum.x
+    transmitter['radius'] = optimum.x if trans_radius is None else trans_radius
     ####################################################################################################################
 
     # OPTIMIZE SOLAR ARRAY (GENERATOR) SIZE

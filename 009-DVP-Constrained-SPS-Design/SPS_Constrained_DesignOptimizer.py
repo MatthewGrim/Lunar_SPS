@@ -14,7 +14,6 @@ from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import *
 
 
 def calculate_link_eff(trans_radius, args):
-
     # INITIALIZATION
     ####################################################################################################################
     # Get pathway to main Lunar_SPS directory
@@ -98,7 +97,7 @@ def calculate_link_eff(trans_radius, args):
         # Remove data points for which blackout durations exceed the limit
         for i in range(len(data_set['max_blackout_time'])):
             if data_set['max_blackout_time'][i] > constraints['max_blackout'] * 3600.0:
-                data_set['mean_link_efficiency'][i] = 0.0
+                data_set['mean_link_efficiency'][i] = np.nan
     else:
         pass
     ####################################################################################################################
@@ -109,7 +108,7 @@ def calculate_link_eff(trans_radius, args):
         # Remove data points for which the overall blackout time is not sufficiently reduced
         for i in range(len(data_set['total_active_time'])):
             if (100.0 * data_set['total_active_time'][i] / study['duration']) < constraints['min_active_time']:
-                data_set['mean_link_efficiency'][i] = 0.0
+                data_set['mean_link_efficiency'][i] = np.nan
     else:
         pass
     ####################################################################################################################
@@ -119,7 +118,7 @@ def calculate_link_eff(trans_radius, args):
     if active_constraints['min_power'] == 1:
         for i in range(len(data_set['min_power_received'])):
             if data_set['min_power_received'][i] < constraints['min_power']:
-                data_set['mean_link_efficiency'][i] = 0.0
+                data_set['mean_link_efficiency'][i] = np.nan
     else:
         pass
     ####################################################################################################################
@@ -146,17 +145,19 @@ def calculate_link_eff(trans_radius, args):
 
             # Check pointing error constraint
             if surf_beam_radius[0] < min_beam_radius[0] or surf_beam_radius[1] < min_beam_radius[1] or surf_beam_radius[2] < min_beam_radius[2]:
-                data_set['mean_link_efficiency'][i] = 0.0
+                data_set['mean_link_efficiency'][i] = np.nan
     else:
         if 'fleet' in rover:
             max_surf_beam_radius = transmitter * np.sqrt(1 + (transmitter['wavelength'] * (data_set['max_range'][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
             if max_surf_beam_radius < rover['fleet_radius']:
-                data_set['mean_link_efficiency'][i] = 0.0
+                data_set['mean_link_efficiency'][i] = np.nan
     ####################################################################################################################
 
     # Find best link efficiency
-    best_orbit_idx = np.nanargmax(data_set['mean_link_efficiency'])
+    if np.all(np.isnan(data_set['mean_link_efficiency'])):
+        return 1.0
 
+    best_orbit_idx = np.nanargmax(data_set['mean_link_efficiency'])
     return 1.0 - data_set['mean_link_efficiency'][best_orbit_idx]
 
 
@@ -170,8 +171,18 @@ def optimize_link_efficiency(trans_selection, rover_selection, constraints, acti
         else:
             trans_radius_max = 0.5
     elif "Equatorial" in study_name:
-        trans_radius_max = 0.7
+        trans_radius_max = 1.5
     args = [trans_selection, rover_selection, constraints, active_constraints, study_name]
-    optimum = minimize_scalar(calculate_link_eff, bounds=(1e-3, trans_radius_max), method='bounded', args=args)
 
-    return optimum
+    iter = 0
+    while True:
+        print("Iteration: {}, Max radius: {}".format(iter, trans_radius_max))
+        optimum = minimize_scalar(calculate_link_eff, bounds=(1e-3, trans_radius_max), method='bounded', args=args)
+        if np.isclose(optimum.x, trans_radius_max):
+            trans_radius_max *= 0.9
+        else:
+            return optimum
+
+        iter += 1
+        if iter > 10:
+            raise RuntimeError()

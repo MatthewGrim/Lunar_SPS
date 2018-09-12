@@ -257,6 +257,8 @@ def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_s
                 else:
                     data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[2]) ** 2)
                     data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
+    # Make sure the pointing constraint has not been violated
+    assert not np.all(np.isnan(data_set['mean_link_efficiency']))
 
     # Calculate total energy delivered to receiver based on mean power
     data_set['total_energy'] = []
