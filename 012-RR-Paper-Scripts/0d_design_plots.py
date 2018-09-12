@@ -32,7 +32,7 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, rover_specs, las
     altitudes = np.logspace(4, 6.699, 1001)
     R, Z = np.meshgrid(trans_radius, altitudes, indexing="ij")
 
-    fig, ax = plt.subplots(len(power_reqs), len(laser_powers), sharey=True, sharex=True, figsize=(12, 10))
+    fig, ax = plt.subplots(len(power_reqs), len(laser_powers), sharey=True, sharex=True, figsize=(15, 8))
     for i, laser_power in enumerate(laser_powers):
         for j in range(len(power_reqs)):
             rover_spec = rover_specs[j]
@@ -66,7 +66,7 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, rover_specs, las
             fig.colorbar(m, ax=ax[j, i])
             ax[j, 0].set_ylabel('{} \n Transmission distance [km]'.format(rover_spec))
         ax[0, i].set_title('Laser Power: {}kW'.format(laser_power / 1e3))
-        ax[1, i].set_xlabel('Logarithm Radius [m]')
+        ax[1, i].set_xlabel('Logarithm of Transmitter Radius [m]')
     plt.tight_layout()
     plt.show()
 
