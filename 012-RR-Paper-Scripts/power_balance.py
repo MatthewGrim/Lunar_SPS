@@ -59,8 +59,8 @@ def get_energy_balance():
 
         ax[i].plot(times, battery_energy)
         ax[i].set_ylabel("{}\n Energy in battery (Whr)".format(rover_name))
-        ax[i].set_xlim((times[0], times[-1]))
-        ax[i].set_ylim((0.0, 1.05 * np.max(battery_energy)))
+        ax[i].set_xlim((19, 35))
+        ax[i].set_ylim((0.95 * np.min(battery_energy), 1.05 * np.max(battery_energy)))
     ax[1].set_xlabel("Time (days)")
 
     plt.tight_layout()
