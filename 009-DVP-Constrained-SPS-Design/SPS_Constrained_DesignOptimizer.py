@@ -197,10 +197,10 @@ def optimize_link_efficiency(trans_selection, rover_selection, constraints, acti
         print("Iteration: {}, Max radius: {}".format(iter, trans_radius_max))
         optimum = minimize_scalar(calculate_link_eff, bounds=(1e-3, trans_radius_max), method='bounded', args=args)
         if np.isclose(optimum.x, trans_radius_max):
-            trans_radius_max *= 0.95
+            trans_radius_max *= 0.9
         else:
             return optimum
 
         iter += 1
-        if iter > 10:
+        if iter > 15:
             raise RuntimeError()
