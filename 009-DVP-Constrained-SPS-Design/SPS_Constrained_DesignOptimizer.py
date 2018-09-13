@@ -189,7 +189,7 @@ def optimize_link_efficiency(trans_selection, rover_selection, constraints, acti
         else:
             trans_radius_max = 0.5
     elif "Equatorial" in study_name:
-        trans_radius_max = 1.5
+        trans_radius_max = 1.128
     args = [trans_selection, rover_selection, constraints, active_constraints, study_name, include_tracking]
 
     iter = 0
@@ -197,7 +197,7 @@ def optimize_link_efficiency(trans_selection, rover_selection, constraints, acti
         print("Iteration: {}, Max radius: {}".format(iter, trans_radius_max))
         optimum = minimize_scalar(calculate_link_eff, bounds=(1e-3, trans_radius_max), method='bounded', args=args)
         if np.isclose(optimum.x, trans_radius_max):
-            trans_radius_max *= 0.9
+            trans_radius_max *= 0.95
         else:
             return optimum
 
