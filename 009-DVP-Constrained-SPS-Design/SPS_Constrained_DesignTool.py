@@ -140,7 +140,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     if "fleet" in rover_selection:
         data_set = calculate_link_efficiency_and_power_delivered_for_fleet(rover, data_set, transmitter, constraints, active_constraints)
     else:
-        data_set = calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_set, transmitter, constraints, active_constraints)
+        data_set = calculate_link_efficiency_and_power_delivered_for_single_rover(rover, study, data_set, transmitter, constraints, active_constraints)
     assert not np.all(np.isnan(data_set['mean_active_time']))
 
     # Remove data points for which not enough power is delivered on average

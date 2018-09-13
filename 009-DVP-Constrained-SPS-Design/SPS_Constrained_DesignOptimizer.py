@@ -29,6 +29,7 @@ def calculate_link_eff(trans_radius, args):
     active_constraints = args[3]
     # Retrieve study name
     study_name = args[4]
+    include_tracking = args[5]
     study = study_initialization(study_name)
 
     # Set file path for data
@@ -47,10 +48,27 @@ def calculate_link_eff(trans_radius, args):
 
     # CALCULATE LINK EFFICIENCY, MEAN POWER
     ####################################################################################################################
+    orbits = study['orbits']
     data_set['mean_link_efficiency'] = []
     data_set['min_link_efficiency'] = []
     data_set['min_power_received'] = []
     for i in range(len(data_set['mean_range'])):
+        if include_tracking:
+            orbit_apogee = orbits[i + 1][0]
+            r_moon = 1737.0
+            side_1 = r_moon * np.sin(np.pi / 4.0)
+            side_2 = orbit_apogee - r_moon * np.cos(np.pi / 4.0)
+            if side_2 < side_1:
+                tracking_efficiency = 0.0
+            else:
+                angle = np.arctan(side_1 / side_2)
+                assert angle < np.pi / 4.0, angle
+                tracking_angle = np.pi / 4.0 + angle
+                tracking_efficiency = np.cos(tracking_angle) * 2.0 / np.pi
+                assert tracking_efficiency > 0.0, tracking_efficiency
+        else:
+            tracking_efficiency = 1.0
+
         if math.isnan(data_set['mean_range'][i]):
             data_set['mean_link_efficiency'].append(0.0)
             data_set['min_link_efficiency'].append(0.0)
@@ -67,8 +85,8 @@ def calculate_link_eff(trans_radius, args):
                     data_set['mean_link_efficiency'].append(0.0)
                     data_set['min_link_efficiency'].append(0.0)
                 else:
-                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / mean_surf_beam_radius) ** 2)
-                    data_set['min_link_efficiency'].append((rover['rec_radius'] / max_surf_beam_radius) ** 2)
+                    data_set['mean_link_efficiency'].append(tracking_efficiency * (rover['rec_radius'] / mean_surf_beam_radius) ** 2)
+                    data_set['min_link_efficiency'].append(tracking_efficiency * (rover['rec_radius'] / max_surf_beam_radius) ** 2)
 
             # If calculating for single rover, 100% efficiency if beam fits within receiver
             else:
@@ -76,8 +94,8 @@ def calculate_link_eff(trans_radius, args):
                     data_set['mean_link_efficiency'].append(1.0)
                     data_set['min_link_efficiency'].append(1.0)
                 else:
-                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / mean_surf_beam_radius) ** 2)
-                    data_set['min_link_efficiency'].append((rover['rec_radius'] / max_surf_beam_radius) ** 2)
+                    data_set['mean_link_efficiency'].append(tracking_efficiency * (rover['rec_radius'] / mean_surf_beam_radius) ** 2)
+                    data_set['min_link_efficiency'].append(tracking_efficiency * (rover['rec_radius'] / max_surf_beam_radius) ** 2)
 
             # Calculate mean power received at target
             data_set['min_power_received'].append(data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
@@ -161,7 +179,7 @@ def calculate_link_eff(trans_radius, args):
     return 1.0 - data_set['mean_link_efficiency'][best_orbit_idx]
 
 
-def optimize_link_efficiency(trans_selection, rover_selection, constraints, active_constraints, study_name):
+def optimize_link_efficiency(trans_selection, rover_selection, constraints, active_constraints, study_name, include_tracking=True):
 
     from scipy.optimize import minimize_scalar
 
@@ -172,7 +190,7 @@ def optimize_link_efficiency(trans_selection, rover_selection, constraints, acti
             trans_radius_max = 0.5
     elif "Equatorial" in study_name:
         trans_radius_max = 1.5
-    args = [trans_selection, rover_selection, constraints, active_constraints, study_name]
+    args = [trans_selection, rover_selection, constraints, active_constraints, study_name, include_tracking]
 
     iter = 0
     while True:

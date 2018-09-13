@@ -97,19 +97,19 @@ def rover_metrics(rover_name):
     if "amalia" in rover_name:
         # Team ITALIA AMALIA (intermediate)
         rover['operation_pwr'] = 100.0
-        rover['rec_efficiency'] = 0.225
+        rover['rec_efficiency'] = 0.5
         rover['hibernation_pwr'] = 7.0
         rover['battery_capacity'] = 100.0
     elif "sorato" in rover_name:
         # ispace Sorato (miniature)
         rover['operation_pwr'] = 21.5
-        rover['rec_efficiency'] = 0.225
+        rover['rec_efficiency'] = 0.5
         rover['hibernation_pwr'] = 4.5
         rover['battery_capacity'] = 38.0
     elif "curiosity" in rover_name:
         # NASA Curiosity (large)
         rover['operation_pwr'] = 270.0
-        rover['rec_efficiency'] = 0.225
+        rover['rec_efficiency'] = 0.5
         rover['hibernation_pwr'] = 23.5
         rover['battery_capacity'] = 1600.0
     else:
@@ -197,15 +197,32 @@ def sort_data_lists(data_set, orbit_data, study_name):
     return data_set_sorted
 
 
-def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_set, transmitter, constraints, active_constraints):
+def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, study, data_set, transmitter, constraints, active_constraints, include_tracking=True):
 
     # Initialize lists
     data_set['min_link_efficiency'] = []
     data_set['min_power_received'] = []
     data_set['mean_link_efficiency'] = []
     data_set['mean_power_received'] = []
+    orbits = study['orbits']
     # Cycle through all access events
     for i in range(0, len(data_set['max_range'])):
+        if include_tracking:
+            orbit_apogee = orbits[i + 1][0]
+            r_moon = 1737.0
+            side_1 = r_moon * np.sin(np.pi / 4.0)
+            side_2 = orbit_apogee - r_moon * np.cos(np.pi / 4.0)
+            if side_2 < side_1:
+                tracking_efficiency = 0.0
+            else:
+                angle = np.arctan(side_1 / side_2)
+                assert angle < np.pi / 4.0, angle
+                tracking_angle = np.pi / 4.0 + angle
+                tracking_efficiency = np.cos(tracking_angle) * 2 / np.pi
+                assert tracking_efficiency > 0.0, tracking_efficiency
+        else:
+            tracking_efficiency = 1.0
+
         # If range is "np.nan", no access periods exist for that orbit, therefore treat orbit as infeasible design
         if data_set['max_range'] == np.nan:
             data_set['min_link_efficiency'].append(np.nan)
@@ -236,8 +253,8 @@ def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_s
                     for j in data_set:
                         data_set[j][i] = np.nan
                 else:
-                    data_set['min_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[1]) ** 2)
-                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[2]) ** 2)
+                    data_set['min_link_efficiency'].append(tracking_efficiency * (rover['rec_radius'] / surf_beam_radius[1]) ** 2)
+                    data_set['mean_link_efficiency'].append(tracking_efficiency * (rover['rec_radius'] / surf_beam_radius[2]) ** 2)
                     data_set['min_power_received'].append(data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
                     data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
 
@@ -245,17 +262,17 @@ def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_s
             else:
                 # Calculate minimum link efficiency, as well as power delivered based on max surface beam size
                 if surf_beam_radius[1] <= rover['rec_radius']:
-                    data_set['min_link_efficiency'].append(1.0)
-                    data_set['min_power_received'].append(rover['rec_efficiency'] * transmitter['power'])
+                    data_set['min_link_efficiency'].append(tracking_efficiency)
+                    data_set['min_power_received'].append(tracking_efficiency * rover['rec_efficiency'] * transmitter['power'])
                 else:
-                    data_set['min_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[1]) ** 2)
+                    data_set['min_link_efficiency'].append(tracking_efficiency * (rover['rec_radius'] / surf_beam_radius[1]) ** 2)
                     data_set['min_power_received'].append(data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
                 # Calculate mean link efficiency, as well as power delivered based on mean surface beam size
                 if surf_beam_radius[2] <= rover['rec_radius']:
-                    data_set['mean_link_efficiency'].append(1.0)
-                    data_set['mean_power_received'].append(rover['rec_efficiency'] * transmitter['power'])
+                    data_set['mean_link_efficiency'].append(tracking_efficiency)
+                    data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
                 else:
-                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[2]) ** 2)
+                    data_set['mean_link_efficiency'].append(tracking_efficiency * (rover['rec_radius'] / surf_beam_radius[2]) ** 2)
                     data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
     # Make sure the pointing constraint has not been violated
     assert not np.all(np.isnan(data_set['mean_link_efficiency']))
@@ -345,7 +362,7 @@ def optimize_transmitter_power(transmitter, rover, sorted_data_set, best_orbit_i
 
     if active_constraints['transmitter_pwr_optimization'] == 1:
         # Determine minimum allowable transmitter power based on rover requirements
-        min_allowable_transmitter_pwr = constraints['min_power'] * max_surf_beam_radius ** 2 / (rover['rec_efficiency'] * rover['rec_radius'] ** 2)
+        min_allowable_transmitter_pwr = constraints['min_power'] / (rover['rec_efficiency'] * sorted_data_set['min_link_efficiency'][best_orbit_idx])
 
         # Adjust mean power delivered according to the minimum allowable transmitter power
         sorted_data_set['mean_power_received'] = sorted_data_set['mean_power_received'] * (min_allowable_transmitter_pwr / transmitter['power'])
@@ -365,7 +382,7 @@ def optimize_transmitter_power(transmitter, rover, sorted_data_set, best_orbit_i
 
     # Calculate flux variations
     surf_flux = {}
-    surf_flux ['mean'] = transmitter['power'] / (np.pi * mean_surf_beam_radius ** 2)
+    surf_flux['mean'] = transmitter['power'] / (np.pi * mean_surf_beam_radius ** 2)
     surf_flux['min'] = transmitter['power'] / (np.pi * max_surf_beam_radius ** 2)
     surf_flux['max'] = transmitter['power'] / (np.pi * min_surf_beam_radius ** 2)
 
