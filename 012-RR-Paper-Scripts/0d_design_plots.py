@@ -74,10 +74,10 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, rover_specs, las
 
 
 def main():
-    trans_wavelength = 1e-6
+    trans_wavelength = 850e-9
     laser_power = [4e3, 15e3, 100e3]
     rover_specs = ["AMALIA in Hibernation", "AMALIA in Operation"]
-    rec_area = [0.731, 0.731]
+    rec_area = [0.366, 0.366]
     power_req = [21.0, 300.0]
     _, _ = get_surfaceflux_from_wavelength_and_laser_power(trans_wavelength, rover_specs, laser_power, rec_area, power_req)
 
