@@ -21,7 +21,8 @@ from numpy import unravel_index
 from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import *
 
 
-def generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints, trans_radius=None):
+def generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints,
+                          trans_radius=None, include_tracking=True):
 
     # INITIALIZATION
     ####################################################################################################################
@@ -48,7 +49,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     # within constrained design space
     if trans_radius is None:
         print("Optimising transmitter radius")
-        optimum = optimize_link_efficiency(transmitter_selection, rover_selection, constraints, active_constraints, study_name)
+        optimum = optimize_link_efficiency(transmitter_selection, rover_selection, constraints, active_constraints, study_name, include_tracking=include_tracking)
         assert optimum.success
         transmitter['radius'] = optimum.x
         print(optimum.x, optimum.message)
@@ -140,7 +141,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     if "fleet" in rover_selection:
         data_set = calculate_link_efficiency_and_power_delivered_for_fleet(rover, data_set, transmitter, constraints, active_constraints)
     else:
-        data_set = calculate_link_efficiency_and_power_delivered_for_single_rover(rover, study, data_set, transmitter, constraints, active_constraints)
+        data_set = calculate_link_efficiency_and_power_delivered_for_single_rover(rover, study, data_set, transmitter, constraints, active_constraints, include_tracking=include_tracking)
     assert not np.all(np.isnan(data_set['mean_active_time']))
 
     # Remove data points for which not enough power is delivered on average
