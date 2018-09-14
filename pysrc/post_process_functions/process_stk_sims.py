@@ -61,15 +61,16 @@ def process_stk_data(max_constellation_size, study_name, constellation_variable,
     data['mean_blackout_time'] = []
     data['min_blackout_time'] = []
     data['std_blackout_time'] = []
-    data['mean_range'] = np.zeros((len(arg_perigees), len(orbit_data) - 1))
-    data['mean_max_range'] = np.zeros((len(arg_perigees), len(orbit_data) - 1))
-    data['mean_min_range'] = np.zeros((len(arg_perigees), len(orbit_data) - 1))
+    data['mean_range'] = np.zeros((len(orbit_data) - 1))
+    data['mean_max_range'] = np.zeros((len(orbit_data) - 1))
+    data['mean_min_range'] = np.zeros((len(orbit_data) - 1))
 
     for i in range(1, len(orbit_data)):
         print('Progress: {}%'.format(round(100.0 * (i - 1) / (len(orbit_data) - 2), 2)))
         print("Perigee radius: {} km, Apogee radius: {} km".format(orbit_data[i][0], orbit_data[i][1]))
         sps_active_total = None
 
+        total_time = 0.0
         for j, arg in enumerate(arg_perigees):
             sim_name = 'DVP_{}_{}perigee{}apogee_{}{}'.format(study_name,
                                                                    orbit_data[i][0],
@@ -89,20 +90,25 @@ def process_stk_data(max_constellation_size, study_name, constellation_variable,
                 sps_active_total = combine_events(sps_active_total, sps_active)
 
             # Get the mean, min and max range for the satellite
+            total_time += np.sum(sps_active[2])
             sps_range = import_range_data_statistics('{}_range'.format(sim_name), stk_data_path)
-            data['mean_range'][j, i - 1] = np.sum([(range * duration) / np.sum(sps_active[2]) for range, duration in zip(sps_range[2], sps_active[2])])
-            data['mean_min_range'][j, i - 1] = np.sum([(range * duration) / np.sum(sps_active[2]) for range, duration in zip(sps_range[0], sps_active[2])])
-            data['mean_max_range'][j, i - 1] = np.sum([(range * duration) / np.sum(sps_active[2]) for range, duration in zip(sps_range[1], sps_active[2])])
+            data['mean_range'][i - 1] += np.sum([range * duration for range, duration in zip(sps_range[2], sps_active[2])])
+            data['mean_min_range'][i - 1] += np.sum([range * duration for range, duration in zip(sps_range[0], sps_active[2])])
+            data['mean_max_range'][i - 1] += np.sum([range * duration for range, duration in zip(sps_range[1], sps_active[2])])
+
+        data['mean_range'][i - 1] /= total_time
+        data['mean_min_range'][i - 1] /= total_time
+        data['mean_max_range'][i - 1] /= total_time
 
         # Determine active time statistics
-        data['total_active_time'].append(np.sum(sps_active[2]))
-        data['max_active_time'].append(np.max(sps_active[2]))
-        data['mean_active_time'].append(np.mean(sps_active[2]))
-        data['min_active_time'].append(np.min(sps_active[2]))
-        data['std_active_time'].append(np.std(sps_active[2]))
+        data['total_active_time'].append(np.sum(sps_active_total[2]))
+        data['max_active_time'].append(np.max(sps_active_total[2]))
+        data['mean_active_time'].append(np.mean(sps_active_total[2]))
+        data['min_active_time'].append(np.min(sps_active_total[2]))
+        data['std_active_time'].append(np.std(sps_active_total[2]))
 
         # Determine the target blackout statistics
-        target_blackout = determine_blackout_data(sps_active, target_eclipse, total_duration)
+        target_blackout = determine_blackout_data(sps_active_total, target_eclipse, total_duration)
         data['total_blackout_time'].append(np.sum(target_blackout[2]))
         data['max_blackout_time'].append(np.max(target_blackout[2]))
         data['mean_blackout_time'].append(np.mean(target_blackout[2]))
