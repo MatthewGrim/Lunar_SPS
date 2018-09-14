@@ -92,7 +92,8 @@ def main():
         # Minimum reduction in overall blackout time in percent
         constraints['min_active_time'] = 10.0
         # Minimum allowable single active event duration in hours
-        constraints['min_active_duration'] = rover['battery_capacity'] / rover['operation_pwr']
+        constraints['min_active_duration'] = 49.76 * rover["hibernation_pwr"] / (rover["operation_pwr"]) * 1.1
+
         # Minimum power requirement at target in Watts
         constraints['min_power'] = rover['operation_pwr']
         # Maximum time rover can survive without recharging in hours
