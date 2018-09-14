@@ -9,7 +9,7 @@ proposed SPS constellation.
 
 """
 
-from Lunar_SPS.DVP_general_SPS_functions import *
+from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import *
 from Lunar_SPS.pysrc.post_process_functions.general_functions import *
 
 
