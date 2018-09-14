@@ -38,20 +38,20 @@ def get_energy_balance():
     rover_operation_power = [17.0, 93.0]
     rover_hibernation_power = [4.5, 7.0]
     # Import access and lighting for SPS
-    perigees = [2500.0 + 1737.0, 2200.0 + 1737.0]
-    apogees = [2500.0 + 1737.0, 2200.0 + 1737.0]
+    perigees = [3400.0 + 1737.0, 1300.0 + 1737.0]
+    apogees = [3400.0 + 1737.0, 1300.0 + 1737.0]
 
     fig, ax = plt.subplots(2, sharex=True)
     for i, rover_name in enumerate(rover_names):
-        sps_lighting = parse_csv_to_array(
-            '{}/DVP_{}_{}perigee{}apogee_lighting.csv'.format(stk_data_path, study_name, perigees[i], apogees[i]), start)
-        sps_access = parse_csv_to_array(
-            '{}/DVP_{}_{}perigee{}apogee_access.csv'.format(stk_data_path, study_name, perigees[i], apogees[i]), start)
+        sps_lighting = parse_csv_to_array('{}/DVP_{}_{}perigee{}apogee_lighting.csv'.format(stk_data_path, study_name, perigees[i], apogees[i]), start)
+        sps_access = parse_csv_to_array('{}/DVP_{}_{}perigee{}apogee_access.csv'.format(stk_data_path, study_name, perigees[i], apogees[i]), start)
 
         sps_active = determine_SPS_active_time(sps_lighting, target_eclipse, sps_access)
+        check_event_order_consistency(sps_active)
         target_blackout = determine_blackout_data(sps_active, target_eclipse, total_duration)
+        check_event_order_consistency(target_blackout)
 
-        times, battery_energy = determine_rover_battery_storage(sps_access, target_blackout, rover_battery_capacity[i], rover_operation_power[i], rover_hibernation_power[i])
+        times, battery_energy = determine_rover_battery_storage(sps_active, target_blackout, rover_battery_capacity[i], rover_operation_power[i], rover_hibernation_power[i])
         times = np.asarray(times)
         times /= (3600.0 * 24.0)
         battery_energy = np.asarray(battery_energy)

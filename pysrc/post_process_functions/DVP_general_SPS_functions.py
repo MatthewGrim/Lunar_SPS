@@ -654,24 +654,47 @@ def determine_rover_battery_storage(sps_active, eclipse_times, rover_battery_cap
     # Loop through all access and blackout events in temporal order
     while access_idx < len(sps_active[0]):
         while eclipse_idx < len(eclipse_times[0]):
+            # Defensive checks
+            if access_idx < len(sps_active[0]):
+                assert not sps_active[2][access_idx] <= 0.0
+                assert not sps_active[0][access_idx] == sps_active[1][access_idx], sps_active[2][access_idx]
+            if eclipse_idx < len(eclipse_times[0]):
+                assert not eclipse_times[2][eclipse_idx] <= 0.0
+                assert not eclipse_times[0][eclipse_idx] == eclipse_times[1][eclipse_idx], eclipse_times[2][eclipse_idx]
+
             if access_idx < len(sps_active[0]):
                 if eclipse_times[0][eclipse_idx] < sps_active[0][access_idx]:
+                    if not sps_active[0][access_idx] >= eclipse_times[1][eclipse_idx]:
+                        string = "{}, {}, {}, {}".format(eclipse_times[0][eclipse_idx], eclipse_times[1][eclipse_idx], sps_active[0][access_idx], sps_active[1][access_idx])
+                        raise RuntimeError(string)
+
                     energy_diff = eclipse_times[2][eclipse_idx] * rover_hibernation_power
                     prev_energy_battery -= energy_diff
                     times.append(eclipse_times[1][eclipse_idx])
+                    assert times[-1] > times[-2]
                     eclipse_idx += 1
                 else:
+                    if not eclipse_times[0][eclipse_idx] >= sps_active[1][access_idx]:
+                        string = "{}, {}, {}, {}".format(eclipse_times[0][eclipse_idx], eclipse_times[1][eclipse_idx], sps_active[0][access_idx], sps_active[1][access_idx])
+                        raise RuntimeError(string)
+
                     energy_diff = sps_active[2][access_idx] * (rover_operation_power - rover_hibernation_power)
                     prev_energy_battery += energy_diff
                     times.append(sps_active[1][access_idx])
+                    assert times[-1] > times[-2]
                     access_idx += 1
             else:
                 energy_diff = eclipse_times[2][eclipse_idx] * rover_hibernation_power
                 prev_energy_battery -= energy_diff
                 times.append(eclipse_times[1][eclipse_idx])
+                assert times[-1] > times[-2]
                 eclipse_idx += 1
 
+            if times[-1] - times[-2] > 5 * 24 * 3600.0:
+                prev_energy_battery = rover_battery_capacity
+
             prev_energy_battery = min(prev_energy_battery, rover_battery_capacity)
+            # assert prev_energy_battery > 0.0
             prev_energy_battery = max(prev_energy_battery, 0.0)
             battery_energy.append(prev_energy_battery)
 
@@ -679,9 +702,14 @@ def determine_rover_battery_storage(sps_active, eclipse_times, rover_battery_cap
             energy_diff = sps_active[2][access_idx] * (rover_operation_power - rover_hibernation_power)
             prev_energy_battery += energy_diff
             times.append(sps_active[1][access_idx])
+            assert times[-1] > times[-2]
             access_idx += 1
 
+            if times[-1] - times[-2] > 5 * 24 * 3600.0:
+                prev_energy_battery = rover_battery_capacity
+
             prev_energy_battery = min(prev_energy_battery, rover_battery_capacity)
+            # assert prev_energy_battery > 0.0
             prev_energy_battery = max(prev_energy_battery, 0.0)
             battery_energy.append(prev_energy_battery)
 
