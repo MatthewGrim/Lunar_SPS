@@ -52,7 +52,7 @@ def remake_brandhorst_fig3():
     raw_access_SPS2 = "SPS2-Access(135).csv"
     raw_sps1_lighting = "SPS1-Lighting(0)-Edited.csv"
     raw_access_SPS1 = "SPS1-Access(0).csv"
-    raw_target_eclipse = 'Target1-Eclipse-Edited.csv'
+    raw_target_eclipse = 'Target1-eclipse.csv'
 
     start = convert_string_to_datetime(['2008', '07', '01', '10', '0', '0.0'])
     end = convert_string_to_datetime(['2010', '06', '30', '10', '0', '0.0'])

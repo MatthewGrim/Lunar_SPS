@@ -49,9 +49,9 @@ def check_event_order_consistency(events):
         end = events[1][idx]
 
         if start < last_end:
-            print("Inconsistent event times!")
+            raise RuntimeError("Inconsistent event times!")
         if end < start:
-            print("Inconsistent event times!")
+            raise RuntimeError("Inconsistent event times!")
 
         idx += 1
 
@@ -277,12 +277,23 @@ def get_event_overlaps(access_times, event_times):
 
 
 def get_event_overlaps_fast(access_times, event_times):
-    # This function finds overlap between events and access times between the SPS and the target.
-    # "Conditional events" should be times when the SPS would be active, if it can access the target
-    # Therefore take satellite illumination and target eclipses as event_times.
-    # Output is an array containing start, end and duration of overlap events.
+    """
+    This function finds overlap between events and access times between the SPS and the target.
+    "Conditional events" should be times when the SPS would be active, if it can access the target
+    Therefore take satellite illumination and target eclipses as event_times.
+    Output is an array containing start, end and duration of overlap events.
+
+    WARNING: This function only works for data that is ordered in time.
+
+    :param access_times:
+    :param event_times:
+    :return:
+    """
     assert len(access_times[0]) == len(access_times[1])
     assert len(event_times[0]) == len(event_times[1])
+    # Check events are ordered in time
+    check_event_order_consistency(access_times)
+    check_event_order_consistency(event_times)
 
     overlap_start = []
     overlap_end = []
