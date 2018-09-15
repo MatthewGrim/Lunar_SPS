@@ -33,15 +33,15 @@ def get_energy_balance():
 
     # Rover parameters
     Whr_to_J = 3600.0
-    rover_names = ["Sorato", "AMALIA"]
-    rover_battery_capacity = [38.0 * Whr_to_J, 100.0 * Whr_to_J]
-    rover_operation_power = [17.0, 93.0]
-    rover_hibernation_power = [4.5, 7.0]
+    rover_names = ["AMALIA"]
+    rover_battery_capacity = [100.0 * Whr_to_J]
+    rover_operation_power = [93.0]
+    rover_hibernation_power = [7.0]
     # Import access and lighting for SPS
-    perigees = [2500.0 + 1737.0, 1800.0 + 1737.0]
-    apogees = [2500.0 + 1737.0, 1800.0 + 1737.0]
+    perigees = [1700.0 + 1737.0]
+    apogees = [1700.0 + 1737.0]
 
-    fig, ax = plt.subplots(2, sharex=False)
+    fig, ax = plt.subplots(1, sharex=False)
     for i, rover_name in enumerate(rover_names):
         sps_lighting = parse_csv_to_array('{}/DVP_{}_{}perigee{}apogee_lighting.csv'.format(stk_data_path, study_name, perigees[i], apogees[i]), start)
         sps_access = parse_csv_to_array('{}/DVP_{}_{}perigee{}apogee_access.csv'.format(stk_data_path, study_name, perigees[i], apogees[i]), start)
@@ -57,11 +57,11 @@ def get_energy_balance():
         battery_energy = np.asarray(battery_energy)
         battery_energy /= Whr_to_J
 
-        ax[i].plot(times, battery_energy)
-        ax[i].set_ylabel("{}\n Energy in battery (Whr)".format(rover_name))
-        # ax[i].set_xlim((19, 35))
-        ax[i].set_ylim((0.95 * np.min(battery_energy), 1.05 * np.max(battery_energy)))
-    ax[1].set_xlabel("Time (days)")
+        ax.plot(times, battery_energy)
+        ax.set_ylabel("{}\n Energy in battery (Whr)".format(rover_name))
+        ax.set_xlim((19, 35))
+        ax.set_ylim((0.95 * np.min(battery_energy), 1.05 * np.max(battery_energy)))
+    ax.set_xlabel("Time (days)")
 
     plt.tight_layout()
     plt.show()
