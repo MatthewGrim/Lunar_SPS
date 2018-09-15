@@ -34,7 +34,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     main_directory = os.path.dirname(current_folder)
 
     # Set file path for data
-    stk_data_path = r'{}\STK Data\{}'.format(main_directory, study_name)
+    stk_data_path = r'{}\STK Data\{}'.format(main_directory, study_name, study_name)
 
     # Retrieve chosen transmitter design metrics
     transmitter = trans_metrics(transmitter_selection)
@@ -49,7 +49,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     # within constrained design space
     if trans_radius is None:
         print("Optimising transmitter radius")
-        optimum = optimize_link_efficiency(transmitter_selection, rover_selection, constraints, active_constraints, study_name, include_tracking=include_tracking)
+        optimum = optimize_link_efficiency(transmitter_selection, rover_selection, constraints, active_constraints, study_name, stk_data_path, include_tracking=include_tracking)
         assert optimum.success
         transmitter['radius'] = optimum.x
         print(optimum.x, optimum.message)

@@ -29,11 +29,12 @@ def calculate_link_eff(trans_radius, args):
     active_constraints = args[3]
     # Retrieve study name
     study_name = args[4]
-    include_tracking = args[5]
     study = study_initialization(study_name)
 
     # Set file path for data
-    stk_data_path = r'{}\STK Data\{}'.format(main_directory, study_name)
+    stk_data_path = args[5]
+
+    include_tracking = args[6]
     ####################################################################################################################
 
     # READ IN DATA FILES
@@ -179,7 +180,7 @@ def calculate_link_eff(trans_radius, args):
     return 1.0 - data_set['mean_link_efficiency'][best_orbit_idx]
 
 
-def optimize_link_efficiency(trans_selection, rover_selection, constraints, active_constraints, study_name, include_tracking=True):
+def optimize_link_efficiency(trans_selection, rover_selection, constraints, active_constraints, study_name, stk_data_path, include_tracking=True):
 
     from scipy.optimize import minimize_scalar
 
@@ -190,7 +191,7 @@ def optimize_link_efficiency(trans_selection, rover_selection, constraints, acti
             trans_radius_max = 0.5
     elif "Equatorial" in study_name:
         trans_radius_max = 1.128
-    args = [trans_selection, rover_selection, constraints, active_constraints, study_name, include_tracking]
+    args = [trans_selection, rover_selection, constraints, active_constraints, study_name, stk_data_path, include_tracking]
 
     iter = 0
     while True:
