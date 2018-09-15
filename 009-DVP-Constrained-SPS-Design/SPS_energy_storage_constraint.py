@@ -49,6 +49,7 @@ def energy_storage_constraint(rover_name):
 
     # Cycle through available orbit configurations and calculate active/blackout durations
     file_name = "survival_constraint_{}".format(rover_name)
+    Whr_to_J = 3600.0
     if os.path.exists(file_name):
         sorted_survival_grid = np.loadtxt(file_name)
     else:
@@ -75,8 +76,8 @@ def energy_storage_constraint(rover_name):
                     # Blackout times
                     target_blackout = determine_blackout_data(sps_active, target_eclipse, total_duration)
                     times, battery_energy = determine_rover_battery_storage(sps_active, target_blackout,
-                                                                            rover['battery_capacity'],
-                                                                            rover['operation_pwr'],
+                                                                            rover['battery_capacity'] * Whr_to_J,
+                                                                            rover['operation_pwr'] - rover['hibernation_pwr'],
                                                                             rover['hibernation_pwr'])
                     if np.any(np.asarray(battery_energy) < 0.0):
                         rover_survives.append(0)
@@ -102,6 +103,8 @@ def energy_storage_constraint(rover_name):
     perigee_altitudes = [i - r_moon for i in unique_perigees]
     apogee_altitudes = [i - r_moon for i in unique_apogees]
 
+    print(rover_survives)
+    print(np.any(sorted_survival_grid > 0.0))
     plt.figure()
     plt.contourf(apogee_altitudes, perigee_altitudes, sorted_survival_grid, 100)
     plt.title('Rover Survived')
@@ -112,6 +115,6 @@ def energy_storage_constraint(rover_name):
 
 
 if __name__ == '__main__':
-    rover_name = 'amalia'
-    energy_storage_constraint(rover_name)
+    for rover_name in ['sorato', 'amalia']:
+        energy_storage_constraint(rover_name)
 
