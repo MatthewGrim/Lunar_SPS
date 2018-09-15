@@ -16,10 +16,6 @@ from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import *
 def calculate_link_eff(trans_radius, args):
     # INITIALIZATION
     ####################################################################################################################
-    # Get pathway to main Lunar_SPS directory
-    current_folder = os.getcwd()
-    main_directory = os.path.dirname(current_folder)
-
     # Retrieve transmitter metrics
     transmitter = trans_metrics(args[0])
     # Retrieve rover/target metrics
@@ -30,10 +26,9 @@ def calculate_link_eff(trans_radius, args):
     # Retrieve study name
     study_name = args[4]
     study = study_initialization(study_name)
-
     # Set file path for data
     stk_data_path = args[5]
-
+    # Define whether to include tracking
     include_tracking = args[6]
     ####################################################################################################################
 
