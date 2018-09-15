@@ -117,7 +117,7 @@ def rover_metrics(rover_name):
 
     # Approximate rover receiver radius
     solar_intensity = 1367.0
-    receiver_efficiency = 0.09
+    receiver_efficiency = 0.2
     receiver_area = rover['operation_pwr'] / (solar_intensity * receiver_efficiency)
     rover['rec_radius'] = np.sqrt(receiver_area / np.pi)
     rover['fleet_radius'] = np.sqrt(2.0) * ((2.0 * num_rovers_across_diameter * rover['rec_radius']) + (num_rovers_across_diameter - 1.0) * separation) / 2.0
@@ -131,7 +131,7 @@ def trans_metrics(selection):
 
     if '100kW' in selection:
         # IPG YLS10000
-        transmitter['wavelength'] = 1070e-9
+        transmitter['wavelength'] = 850e-9
         transmitter['power'] = 100e3
         transmitter['mass'] = 3600.0
         transmitter['efficiency'] = 0.35

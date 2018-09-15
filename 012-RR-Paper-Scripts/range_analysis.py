@@ -61,28 +61,19 @@ def process_data(rover):
         data = import_range_data("2500_2500_range_data")
         power = power_delivered(data, 29.77e3, 0.317, 1070e-9, 0.175)
     elif rover == "AMALIA":
-        data = import_range_data("2200_2200_range_data")
-        power = power_delivered(data, 29.34e3, 0.292, 1070e-9, 0.813)
+        data = import_range_data("1700_1700_range_data")
+        power = power_delivered(data, 19.43e3, 0.2392, 850e-9, 0.366)
     else:
         raise ValueError("Rover name does not exist!")
 
-    receiver_efficiency = 0.225
+    receiver_efficiency = 0.5
     power = receiver_efficiency * power[:]
     plt.figure()
     plt.plot(data[0, :], power[:])
     plt.xlim((0, 1))
     plt.show()
 
-    tracking_efficiency = np.cos((data[2, :] + 90.0 + 45.0) * np.pi / 180.0) / 0.45
-    plt.figure()
-    plt.plot(tracking_efficiency)
-    plt.show()
-
-    print(np.average(power[:]) / np.min(power))
-    print(np.average(tracking_efficiency))
-    print(np.average(power[:]) / np.min(power) * np.average(tracking_efficiency))
-
 
 if __name__ == '__main__':
-    rover_name = "sorato"
+    rover_name = "AMALIA"
     process_data(rover_name)
