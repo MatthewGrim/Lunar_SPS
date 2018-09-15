@@ -41,6 +41,10 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
 
     # Retrieve chosen rover design metrics
     rover = rover_metrics(rover_selection)
+
+    # The tracking assumption only works for the equatorial case
+    if include_tracking:
+        assert "Equatorial" in study_name
     ####################################################################################################################
 
     # OPTIMIZE TRANSMITTER APERTURE SIZE
