@@ -90,9 +90,9 @@ def main():
         # Minimum pointing error of SPS system in radians
         constraints['point_error'] = 1e-6
         # Minimum reduction in overall blackout time in percent
-        constraints['min_active_time'] = 10.0
+        constraints['min_active_time'] = 49.76 * rover["hibernation_pwr"] / (rover["operation_pwr"])
         # Minimum allowable single active event duration in hours
-        constraints['min_active_duration'] = 49.76 * rover["hibernation_pwr"] / (rover["operation_pwr"]) * 1.1
+        constraints['min_active_duration'] = rover['battery_capacity'] / rover['operation_pwr']
 
         # Minimum power requirement at target in Watts
         constraints['min_power'] = rover['operation_pwr']
@@ -110,10 +110,10 @@ def main():
         active_constraints['max_blackout'] = 1
         active_constraints['min_delta_v_margin'] = 0
 
-        active_constraints['transmitter_pwr_optimization'] = 0
+        active_constraints['transmitter_pwr_optimization'] = 1
         ####################################################################################################################
 
-        apogees, perigees, sorted_data, best_orbit = generate_design_space(study_name, rover_name, transmitter_selection, constraints, active_constraints)
+        apogees, perigees, sorted_data, best_orbit = generate_design_space(study_name, rover_name, transmitter_selection, constraints, active_constraints, include_tracking=False)
         rover_apogees[rover_selection] = apogees
         rover_perigees[rover_selection] = perigees
         rover_data[rover_selection] = sorted_data
