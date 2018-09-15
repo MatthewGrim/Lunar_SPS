@@ -103,11 +103,9 @@ def energy_storage_constraint(rover_name):
     perigee_altitudes = [i - r_moon for i in unique_perigees]
     apogee_altitudes = [i - r_moon for i in unique_apogees]
 
-    print(rover_survives)
-    print(np.any(sorted_survival_grid > 0.0))
     plt.figure()
     plt.contourf(apogee_altitudes, perigee_altitudes, sorted_survival_grid, 100)
-    plt.title('Rover Survived')
+    plt.title('Rover Survival')
     plt.ylabel('Perigee Altitude [km]')
     plt.xlabel('Apogee Altitude [km]')
     plt.colorbar()
