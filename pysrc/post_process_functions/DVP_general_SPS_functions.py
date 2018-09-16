@@ -713,7 +713,7 @@ def determine_rover_battery_storage(sps_active, eclipse_times, rover_battery_cap
                 prev_energy_battery = rover_battery_capacity
 
             prev_energy_battery = min(prev_energy_battery, rover_battery_capacity)
-            # assert prev_energy_battery > 0.0
+            assert prev_energy_battery > 0.0
             # prev_energy_battery = max(prev_energy_battery, 0.0)
             battery_energy.append(prev_energy_battery)
 
@@ -730,7 +730,7 @@ def determine_rover_battery_storage(sps_active, eclipse_times, rover_battery_cap
                 prev_energy_battery = rover_battery_capacity
 
             prev_energy_battery = min(prev_energy_battery, rover_battery_capacity)
-            # assert prev_energy_battery > 0.0
+            assert prev_energy_battery > 0.0
             # prev_energy_battery = max(prev_energy_battery, 0.0)
             battery_energy.append(prev_energy_battery)
 
