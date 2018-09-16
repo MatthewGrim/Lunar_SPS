@@ -37,7 +37,7 @@ def get_energy_balance():
     apogees = [2300, 1700]
     two_satellites = [True, False]
 
-    fig, ax = plt.subplots(len(rover_names), sharex=True)
+    fig, ax = plt.subplots(len(rover_names), sharex=True, figsize=(20, 7))
     for i, rover_name in enumerate(rover_names):
         sps_lighting = parse_csv_to_array('{}/{}/{}_{}_Lighting_0.csv'.format(stk_data_path, perigees[i], perigees[i], apogees[i]), start)
         sps_access = parse_csv_to_array('{}/{}/{}_{}_Access_0.csv'.format(stk_data_path, perigees[i], perigees[i], apogees[i]), start)
@@ -47,12 +47,17 @@ def get_energy_balance():
             sps_access_2 = parse_csv_to_array('{}/{}/{}_{}_Access_180.csv'.format(stk_data_path, perigees[i], perigees[i], apogees[i]), start)
             sps_active_2 = determine_SPS_active_time(sps_lighting_2, target_eclipse, sps_access_2)
             sps_active = combine_events(sps_active, sps_active_2)
+            num_sats = 2
+        else:
+            num_sats = 1
 
         check_event_order_consistency(sps_active)
         target_blackout = determine_blackout_data(sps_active, target_eclipse, total_duration)
         check_event_order_consistency(target_blackout)
 
-        times, battery_energy = determine_rover_battery_storage(sps_active, target_blackout, rover_battery_capacity[i], rover_operation_power[i], rover_hibernation_power[i])
+        times, battery_energy = determine_rover_battery_storage(sps_active, target_blackout, rover_battery_capacity[i],
+                                                                rover_operation_power[i], rover_hibernation_power[i],
+                                                                total_duration, num_sats)
         times = np.asarray(times)
         times /= (3600.0 * 24.0)
         battery_energy = np.asarray(battery_energy)
@@ -60,8 +65,8 @@ def get_energy_balance():
 
         ax[i].plot(times, battery_energy)
         ax[i].set_ylabel("{}\n Energy in battery (Whr)".format(rover_name))
-        ax[i].set_xlim((19, 35))
-        ax[i].set_ylim((0.95 * np.min(battery_energy), 1.05 * np.max(battery_energy)))
+        ax[i].set_xlim((19.5, 35))
+        ax[i].set_ylim((0.98 * np.min(battery_energy), 1.02 * np.max(battery_energy)))
     ax[len(rover_names) - 1].set_xlabel("Time (days)")
 
     plt.tight_layout()

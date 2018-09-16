@@ -643,7 +643,8 @@ def determine_field_of_view(altitude):
     return theta_max
 
 
-def determine_rover_battery_storage(sps_active, eclipse_times, rover_battery_capacity, rover_operation_power, rover_hibernation_power):
+def determine_rover_battery_storage(sps_active, eclipse_times, rover_battery_capacity, rover_operation_power,
+                                    rover_hibernation_power, total_duration, num_sats):
     """
     This function is used to carry out a power balance on the energy provided by the SPS compared to that consumed during
     the lunar night. The rover is assumed to have a full battery at the beginning of the first blackout.
@@ -653,6 +654,8 @@ def determine_rover_battery_storage(sps_active, eclipse_times, rover_battery_cap
     rover_battery_capacity: in Joules
     rover_operation_power: in Watts
     rover_hibernation_power: in Watts
+    total_duration: in seconds
+    num_sats: number of satellites powering rover
     """
     assert rover_operation_power > rover_hibernation_power
 
@@ -665,6 +668,7 @@ def determine_rover_battery_storage(sps_active, eclipse_times, rover_battery_cap
     # Loop through all access and blackout events in temporal order
     energy_delivered = 0.0
     energy_used = 0.0
+    energy_excess = 0.0
     while access_idx < len(sps_active[0]):
         while eclipse_idx < len(eclipse_times[0]):
             # Defensive checks - making sure durations are not zero and event start and finish are not equal
@@ -712,7 +716,10 @@ def determine_rover_battery_storage(sps_active, eclipse_times, rover_battery_cap
             if times[-1] - times[-2] > 5 * 24 * 3600.0:
                 prev_energy_battery = rover_battery_capacity
 
-            prev_energy_battery = min(prev_energy_battery, rover_battery_capacity)
+            if prev_energy_battery > rover_battery_capacity:
+                energy_excess += prev_energy_battery - rover_battery_capacity
+                prev_energy_battery = min(prev_energy_battery, rover_battery_capacity)
+
             assert prev_energy_battery > 0.0
             # prev_energy_battery = max(prev_energy_battery, 0.0)
             battery_energy.append(prev_energy_battery)
@@ -729,13 +736,17 @@ def determine_rover_battery_storage(sps_active, eclipse_times, rover_battery_cap
             if times[-1] - times[-2] > 5 * 24 * 3600.0:
                 prev_energy_battery = rover_battery_capacity
 
-            prev_energy_battery = min(prev_energy_battery, rover_battery_capacity)
+            if prev_energy_battery > rover_battery_capacity:
+                energy_excess += prev_energy_battery - rover_battery_capacity
+                prev_energy_battery = min(prev_energy_battery, rover_battery_capacity)
             assert prev_energy_battery > 0.0
             # prev_energy_battery = max(prev_energy_battery, 0.0)
             battery_energy.append(prev_energy_battery)
 
     assert energy_delivered == np.sum(sps_active[2]) * (rover_operation_power - rover_hibernation_power)
     assert energy_used == np.sum(eclipse_times[2]) * rover_hibernation_power
+    per_sat_active_time = energy_excess / energy_delivered * np.sum(sps_active[2]) / total_duration / num_sats
+    print("Necessary active time [%]: {}".format(100 * per_sat_active_time))
 
     return times, battery_energy
 
