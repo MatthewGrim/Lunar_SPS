@@ -45,8 +45,9 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, rover_specs, las
             radius_constraint_one = pointing_error * Z + receiver_radius
             radius_constraint_two = pointing_error * Z + beam_radius
             mask_one = beam_radius < radius_constraint_one
-            mask_two = receiver_radius > radius_constraint_two
-            final_mask = np.logical_and(mask_one, np.logical_not(mask_two))
+            # mask_two = receiver_radius > radius_constraint_two
+            # final_mask = np.logical_and(mask_one, np.logical_not(mask_two))
+            final_mask = mask_one
             beam_radius[final_mask] = np.nan
 
             # Calculate the resulting surface flux
@@ -76,9 +77,9 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, rover_specs, las
 def main():
     trans_wavelength = 850e-9
     laser_power = [4e3, 15e3, 100e3]
-    rover_specs = ["AMALIA in Hibernation", "AMALIA in Operation"]
-    rec_area = [0.366, 0.366]
-    power_req = [21.0, 300.0]
+    rover_specs = ["Sorato", "AMALIA"]
+    rec_area = [0.079, 0.366]
+    power_req = [43.0, 200.0]
     _, _ = get_surfaceflux_from_wavelength_and_laser_power(trans_wavelength, rover_specs, laser_power, rec_area, power_req)
 
 

@@ -14,29 +14,33 @@ from matplotlib import pyplot as plt
 def plot_results(apogee_altitudes, perigee_altitudes, sorted_data_set, best_orbit, rover_metric):
     # Plot constrained design variables
     num_contours = 100
-    fig, ax = plt.subplots(2, 4, figsize=(15, 8))
+    fig, ax = plt.subplots(2, 4, figsize=(15, 8), sharex='col', sharey='row')
 
     rovers = ["Sorato", "AMALIA"]
     for i, rover in enumerate(rovers):
         im = ax[i, 0].contourf(apogee_altitudes[rover], perigee_altitudes[rover], sorted_data_set[rover]['total_active_time'], num_contours)
-        ax[i, 0].set_title('Total Active Time [%]')
         ax[i, 0].set_ylabel('{}\n Perigee Altitude [km]'.format(rover))
+        ax[i, 0].set_ylim([800.0, 5000.0])
         fig.colorbar(im, ax=ax[i, 0])
 
         im = ax[i, 1].contourf(apogee_altitudes[rover], perigee_altitudes[rover], sorted_data_set[rover]['max_blackout_time'], num_contours)
-        ax[i, 1].set_title('Max Blackout Time [hrs]')
         fig.colorbar(im, ax=ax[i, 1])
 
-        im = ax[i, 2].contourf(apogee_altitudes[rover], perigee_altitudes[rover], sorted_data_set[rover]['mean_power_received'], num_contours)
-        ax[i, 2].set_title('Mean Power [W]')
+        im = ax[i, 2].contourf(apogee_altitudes[rover], perigee_altitudes[rover], 1e-3 * rover_metric[rover]['operation_pwr'] / (rover_metric[rover]['rec_efficiency'] * sorted_data_set[rover]['min_link_efficiency']), num_contours)
         fig.colorbar(im, ax=ax[i, 2])
 
         im = ax[i, 3].contourf(apogee_altitudes[rover], perigee_altitudes[rover], sorted_data_set[rover]['mean_link_efficiency'] * 100.0, num_contours)
-        ax[i, 3].set_title('Mean Link Efficiency [%]')
         ax[i, 3].scatter(best_orbit[rover][0], best_orbit[rover][1], marker='x')
         fig.colorbar(im, ax=ax[i, 3])
+
+        if i == 0:
+            ax[i, 0].set_title('Total Active Time [%]')
+            ax[i, 1].set_title('Max Blackout Time [hrs]')
+            ax[i, 2].set_title('Laser Power [kW]')
+            ax[i, 3].set_title('Mean Link Efficiency [%]')
     for i in range(4):
         ax[1, i].set_xlabel("Apogee Altitude [km]")
+        ax[1, i].set_xlim([800.0, 5000.0])
     fig.tight_layout()
     plt.show()
 
