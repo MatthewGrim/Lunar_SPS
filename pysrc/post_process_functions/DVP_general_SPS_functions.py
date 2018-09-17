@@ -745,8 +745,10 @@ def determine_rover_battery_storage(sps_active, eclipse_times, rover_battery_cap
 
     assert np.isclose(energy_delivered, np.sum(sps_active[2]) * (rover_operation_power - rover_hibernation_power))
     assert np.isclose(energy_used, np.sum(eclipse_times[2]) * rover_hibernation_power)
-    per_sat_active_time = energy_excess / energy_delivered * np.sum(sps_active[2]) / total_duration / num_sats
+    per_sat_active_time = (energy_delivered - energy_excess) / energy_delivered * np.sum(sps_active[2]) / total_duration / num_sats
     print("Necessary active time [%]: {}".format(100 * per_sat_active_time))
+    print("Potential Active Rover Operations: {}%".format((energy_excess / rover_operation_power) / np.sum(eclipse_times[2]) * 100))
+    print("Minimum battery capacity: {}%".format(np.min(np.asarray(battery_energy)) / rover_battery_capacity * 100))
 
     return times, battery_energy
 
