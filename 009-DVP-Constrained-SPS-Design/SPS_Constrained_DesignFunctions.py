@@ -98,7 +98,7 @@ def rover_metrics(rover_name):
         # Team ITALIA AMALIA (intermediate)
         rover['operation_pwr'] = 100.0
         rover['rec_efficiency'] = 0.5
-        rover['hibernation_pwr'] = 7.0
+        rover['hibernation_pwr'] = 7.2
         rover['battery_capacity'] = 100.0
     elif "sorato" in rover_name:
         # ispace Sorato (miniature)
@@ -131,7 +131,7 @@ def trans_metrics(selection):
 
     if '100kW' in selection:
         # IPG YLS10000
-        transmitter['wavelength'] = 850e-9
+        transmitter['wavelength'] = 859e-9
         transmitter['power'] = 100e3
         transmitter['mass'] = 3600.0
         transmitter['efficiency'] = 0.35
