@@ -12,7 +12,7 @@ import matplotlib.cm as cm
 
 
 def get_surfaceflux_from_wavelength_and_laser_power(wavelength, rover_specs, laser_powers, receiver_areas,
-                                                    power_reqs, pointing_error=1e-6):
+                                                    power_reqs, pointing_error=[1e-6, 1e-7]):
     """
     Plot the surface flux, and beam radius of a design at a specified wavelength, laser power,
     and receiver size.
@@ -42,8 +42,8 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, rover_specs, las
             # Get the beam radius
             beam_radius = R * np.sqrt(1.0 + (Z * wavelength / (np.pi * R ** 2)) ** 2)
             receiver_radius = np.sqrt(receiver_area / np.pi)
-            radius_constraint_one = pointing_error * Z + receiver_radius
-            radius_constraint_two = pointing_error * Z + beam_radius
+            radius_constraint_one = pointing_error[j] * Z + receiver_radius
+            radius_constraint_two = pointing_error[j] * Z + beam_radius
             mask_one = beam_radius < radius_constraint_one
             # mask_two = receiver_radius > radius_constraint_two
             # final_mask = np.logical_and(mask_one, np.logical_not(mask_two))
@@ -75,11 +75,14 @@ def get_surfaceflux_from_wavelength_and_laser_power(wavelength, rover_specs, las
 
 
 def main():
-    trans_wavelength = 850e-9
+    trans_wavelength = 859e-9
     laser_power = [4e3, 15e3, 100e3]
-    rover_specs = ["Sorato", "AMALIA"]
-    rec_area = [0.079, 0.366]
-    power_req = [43.0, 200.0]
+    # rover_specs = ["Sorato $\sigma_p = 1 \mu Rad$", "Sorato $\sigma_p = 0.1 \mu Rad$"]
+    # rec_area = [0.079, 0.079]
+    # power_req = [43.0, 43.0]
+    rover_specs = ["AMALIA $\sigma_p = 1 \mu Rad$", "AMALIA $\sigma_p = 0.1 \mu Rad$"]
+    rec_area = [0.366, 0.366]
+    power_req = [200.0, 200.0]
     _, _ = get_surfaceflux_from_wavelength_and_laser_power(trans_wavelength, rover_specs, laser_power, rec_area, power_req)
 
 
