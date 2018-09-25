@@ -6,7 +6,7 @@ The scenario programmed in this script is the collection of access and lighting 
 in a common South Pole orbit, targeting the south pole.
 """
 
-from DVP_Programmatic_Functions import *
+from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import *
 
 
 def generate_stk_connect_commands(semi_maj_axis, eccentricity, orbit_data, number_of_sps, mean_anomaly, time_step,
@@ -163,9 +163,15 @@ def run_stk_v2(stk_data_path, scenario_path, study_name, orbit_data, mean_anomal
 
 
 def main():
+    low_orbits = True
+
     # Set resolution of data points in km
-    max_perigee = 5000.0
-    max_apogee = 5000.0
+    if low_orbits:
+        max_perigee = 5000.0
+        max_apogee = 5000.0
+    else:
+        max_perigee = 10000.0
+        max_apogee = 10000.0
 
     # Set time step size for satellite in STK
     # Note that this does not set the time step for the scenario. Change this by hand.
@@ -200,18 +206,23 @@ def main():
 
     # Get set of orbit data, varying apogee and perigee
     print('Calculating orbit data...')
-    sma, ecc, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_perigee=800.0,
-                                                                         resolutions=np.array((50.0, 100.0, 100.0, 250.0)),
-                                                                         thresholds=np.array((1000.0, 1500.0, 2500.0)))
+    if low_orbits:
+        sma, ecc, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_perigee=800.0,
+                                                                             resolutions=np.array((50.0, 100.0, 100.0, 250.0)),
+                                                                             thresholds=np.array((1000.0, 1500.0, 2500.0)))
+    else:
+        sma, ecc, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_perigee=2500.0,
+                                                                             resolutions=np.array((250.0, 500.0, 500.0, 500.0)),
+                                                                             thresholds=np.array((5000.0, 7000.0, 8000.0)))
 
     print(orbit_data.shape)
     # Get maximum size of constellation required
     print('Calculating constellation sizes...')
-    number_of_sps, mean_anomalies = set_constellation_size(ecc, max_constellation_size, reference_study)
+    mean_anomalies = set_constellation_size(max_constellation_size)
 
     # Generate connect commands for programmatically running STK simulations
     print('Writing connect commands....')
-    mean_anomalies = generate_stk_connect_commands(sma, ecc, orbit_data, number_of_sps, mean_anomalies, time_step,
+    mean_anomalies = generate_stk_connect_commands(sma, ecc, orbit_data, max_constellation_size, mean_anomalies, time_step,
                                                          study_name, new_path)
 
     # Open STK, load scenario, and execute commands to create data set

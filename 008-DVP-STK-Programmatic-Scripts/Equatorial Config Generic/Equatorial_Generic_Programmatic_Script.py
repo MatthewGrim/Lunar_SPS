@@ -115,6 +115,7 @@ def run_stk_v2(stk_data_path, scenario_path, study_name, orbit_data, argument_of
                 elif j == 1:
                     print('Generating SPS access report...')
                     if not os.path.exists('{}_access.csv'.format(sim_file_name)):
+                        print(commands[commands_idx])
                         root.ExecuteCommand(commands[commands_idx])
                     else:
                         print('Access report for {} x {} km orbit at {} argument of perigee already exists'.format(orbit_data[i + 1][0], orbit_data[i + 1][1], arg_perigee))
@@ -122,6 +123,7 @@ def run_stk_v2(stk_data_path, scenario_path, study_name, orbit_data, argument_of
                 elif j == 2:
                     print('Generating SPS range report...')
                     if not os.path.exists('{}_range.txt'.format(sim_file_name)):
+                        print(commands[commands_idx])
                         root.ExecuteCommand(commands[commands_idx])
                     else:
                         print('Range report for {} x {} km orbit at {} argument of perigee already exists'.format(orbit_data[i + 1][0], orbit_data[i + 1][1], arg_perigee))
@@ -129,6 +131,7 @@ def run_stk_v2(stk_data_path, scenario_path, study_name, orbit_data, argument_of
                 elif j == 3:
                     print('Generating SPS lighting report...')
                     if not os.path.exists('{}_lighting.csv'.format(sim_file_name)):
+                        print(commands[commands_idx])
                         root.ExecuteCommand(commands[commands_idx])
                     else:
                         print('Lighting for {} x {} km orbit at {} argument of perigee already exists'.format(orbit_data[i + 1][0], orbit_data[i + 1][1], arg_perigee))
@@ -146,10 +149,15 @@ def run_stk_v2(stk_data_path, scenario_path, study_name, orbit_data, argument_of
 
 
 def main():
+    low_orbits = True
 
     # Set resolution of data points in km
-    max_perigee = 5000.0
-    max_apogee = 5000.0
+    if low_orbits:
+        max_perigee = 5000.0
+        max_apogee = 5000.0
+    else:
+        max_perigee = 10000.0
+        max_apogee = 10000.0
 
     # Set time step size for satellite in STK
     # Note that this does not set the time step for the scenario. Change this by hand.
@@ -184,10 +192,15 @@ def main():
 
     # Get set of orbit data, varying apogee and perigee
     print('Calculating orbit data...')
-    sma, ecc, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_perigee=800.0, 
-                                                                         resolutions=np.array((50.0, 100.0, 100.0, 250.0)),
-                                                                         thresholds=np.array((1000.0, 1500.0, 2500.0)))
-    
+    if low_orbits:
+        sma, ecc, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_perigee=800.0,
+                                                                             resolutions=np.array((50.0, 100.0, 100.0, 250.0)),
+                                                                             thresholds=np.array((1000.0, 1500.0, 2500.0)))
+    else:
+        sma, ecc, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_perigee=2500.0,
+                                                                             resolutions=np.array((250.0, 500.0, 500.0, 500.0)),
+                                                                             thresholds=np.array((5000.0, 7000.0, 8000.0)))
+
     print(orbit_data.shape)
     # Get maximum size of constellation required
     print('Calculating constellation sizes...')
