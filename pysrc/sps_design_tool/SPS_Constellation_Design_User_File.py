@@ -26,7 +26,7 @@ def main():
     rover_selection = 'sorato'
 
     # Defines the number of satellites in the constellation being studied
-    num_sps = 2
+    num_sps = 1
 
     # --- DEFINE CONSTRAINTS ---
     # Initialize dictionaries
@@ -40,8 +40,6 @@ def main():
     constraints['point_error'] = 1e-6
     # Minimum reduction in overall blackout time in percent
     constraints['min_active_time'] = 10.0
-    # Minimum allowable single active event duration in hours
-    constraints['min_active_duration'] = rover['battery_capacity'] / rover['operation_pwr']
     # Minimum power requirement at target in Watts
     constraints['min_power'] = rover['operation_pwr']
     # Maximum time rover can survive without recharging in hours
@@ -51,14 +49,13 @@ def main():
 
     # Specify which constraints are active
     # 1 = active, anything else = inactive
-    active_constraints['point_error'] = 0
-    active_constraints['min_active_time'] = 0
-    active_constraints['min_active_duration'] = 0
-    active_constraints['min_power'] = 0
-    active_constraints['max_blackout'] = 0
+    active_constraints['point_error'] = 1
+    active_constraints['min_active_time'] = 1
+    active_constraints['min_power'] = 1
+    active_constraints['max_blackout'] = 1
     active_constraints['min_delta_v_margin'] = 0
 
-    active_constraints['transmitter_pwr_optimization'] = 0
+    active_constraints['transmitter_pwr_optimization'] = 1
     ####################################################################################################################
 
     kwargs = {

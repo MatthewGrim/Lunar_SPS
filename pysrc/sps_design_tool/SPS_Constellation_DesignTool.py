@@ -80,17 +80,9 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
         data_set = enforce_constraints(data_set, 'total_active_time', constraints, 'min_active_time', 'min')
     else:
         pass
-    # Remove data points for which the overall blackout time is not sufficiently reduced
-    if active_constraints['min_active_duration'] == 1:
-        data_set = enforce_constraints(data_set, 'min_active_duration', constraints, 'min_active_duration', 'min')
-    else:
-        pass
 
     # --- CALCULATE LINK EFFICIENCY AND POWER/ENERGY DELIVERED, APPLY POINTING CONSTRAINT ---
-    if "fleet" in rover_selection:
-        data_set = calculate_link_efficiency_and_power_delivered_for_fleet(rover, data_set, transmitter, constraints, active_constraints)
-    else:
-        data_set = calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_set, transmitter, constraints, active_constraints)
+    data_set = calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_set, transmitter, constraints, active_constraints)
 
     # Remove data points for which not enough power is delivered on average
     if active_constraints['min_power'] == 1:

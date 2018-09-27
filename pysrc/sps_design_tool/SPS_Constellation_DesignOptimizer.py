@@ -138,8 +138,10 @@ def calculate_link_eff(trans_radius, args, **kwargs):
                 data_set['mean_link_efficiency'][i] = 0.0
 
     # Find best link efficiency
-    best_orbit_idx = np.nanargmax(data_set['mean_link_efficiency'])
+    if np.all(np.isnan(data_set['mean_link_efficiency'])):
+        return 1.0
 
+    best_orbit_idx = np.nanargmax(data_set['mean_link_efficiency'])
     return 1.0 - data_set['mean_link_efficiency'][best_orbit_idx]
 
 
@@ -147,11 +149,18 @@ def optimize_link_efficiency(num_sps, trans_selection, rover_selection, constrai
 
     from scipy.optimize import minimize_scalar
 
-    if "NorthPole" in study_name:
-        trans_radius_max = 0.5
-    elif "Equatorial" in study_name:
-        trans_radius_max = 0.7
+    trans_radius_max = 1.12
     args = [num_sps, trans_selection, rover_selection, constraints, active_constraints, study_name, duration]
-    optimum = minimize_scalar(calculate_link_eff, bounds=(1e-3, trans_radius_max), method='bounded', args=args)
 
-    return optimum
+    iter = 0
+    while True:
+        print("Iteration: {}, Max radius: {}".format(iter, trans_radius_max))
+        optimum = minimize_scalar(calculate_link_eff, bounds=(1e-3, trans_radius_max), method='bounded', args=args)
+        if np.isclose(optimum.x, trans_radius_max):
+            trans_radius_max *= 0.9
+        else:
+            return optimum
+
+        iter += 1
+        if iter > 15:
+            raise RuntimeError()

@@ -16,8 +16,7 @@ from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import sort_increm
 
 
 def study_initialization(study_name, **kwargs):
-    study = {}
-
+    study = dict()
     study['start'] = convert_string_to_datetime(['2018', '05', '17', '10', '0', '0.0'])
     study['end'] = convert_string_to_datetime(['2020', '05', '17', '10', '0', '0.0'])
     study['duration'] = (study['end'] - study['start']).total_seconds()
@@ -62,46 +61,22 @@ def rover_metrics(rover_name):
     import math
 
     rover = {}
-
-    if "fleet" in rover_name:
-        num_rovers = [float(s) for s in rover_name.split() if s.isdigit()]
-        num_rovers_across_diameter = math.ceil(np.sqrt(num_rovers[0]))
-    else:
-        num_rovers_across_diameter = 1.0
-
-    if "separation" in rover_name:
-        separation = [float(s) for s in re.findall("\d+\.\d+", rover_name)]
-        separation = separation[0]
-    else:
-        separation = 0.0
-
     if "amalia" in rover_name:
         # Team ITALIA AMALIA (intermediate)
         rover['operation_pwr'] = 100.0
-        rover['rec_efficiency'] = 0.33
+        rover['rec_efficiency'] = 0.5
         rover['hibernation_pwr'] = 7.0
         rover['battery_capacity'] = 100.0
+        rover['rec_radius'] = 0.341213188075
     elif "sorato" in rover_name:
         # ispace Sorato (miniature)
         rover['operation_pwr'] = 21.5
-        rover['rec_efficiency'] = 0.33
+        rover['rec_efficiency'] = 0.5
         rover['hibernation_pwr'] = 4.5
         rover['battery_capacity'] = 38.0
-    elif "curiosity" in rover_name:
-        # NASA Curiosity (large)
-        rover['operation_pwr'] = 270.0
-        rover['rec_efficiency'] = 0.33
-        rover['hibernation_pwr'] = 23.5
-        rover['battery_capacity'] = 1600.0
+        rover['rec_radius'] = 0.158214046592
     else:
         print('Invalid rover name: {}. Valid names: amalia, sorato, curiosity'.format(rover_name))
-
-    # Approximate rover receiver radius
-    solar_intensity = 1367.0
-    receiver_efficiency = 0.1
-    receiver_area = rover['operation_pwr'] / (solar_intensity * receiver_efficiency)
-    rover['rec_radius'] = np.sqrt(receiver_area / np.pi)
-    rover['fleet_radius'] = np.sqrt(2.0) * ((2.0 * num_rovers_across_diameter * rover['rec_radius']) + (num_rovers_across_diameter - 1.0) * separation) / 2.0
 
     return rover
 
@@ -112,14 +87,14 @@ def trans_metrics(selection):
 
     if '100kW' in selection:
         # IPG YLS10000
-        transmitter['wavelength'] = 1070e-9
+        transmitter['wavelength'] = 859e-9
         transmitter['power'] = 100e3
         transmitter['mass'] = 3600.0
         transmitter['efficiency'] = 0.35
 
     elif selection == '15kW':
         # IPG YLS-CUT
-        transmitter['wavelength'] = 1070e-9
+        transmitter['wavelength'] = 859e-9
         transmitter['power'] = 15e3
         transmitter['mass'] = 440.0
         transmitter['efficiency'] = 0.35
@@ -127,7 +102,7 @@ def trans_metrics(selection):
     elif selection == '4kW':
         # Fujikura
         # Mass is estimated based on specific power of IPG lasers
-        transmitter['wavelength'] = 1080e-9
+        transmitter['wavelength'] = 859e-9
         transmitter['power'] = 4e3
         transmitter['mass'] = 150.0
         transmitter['efficiency'] = 0.26
@@ -234,7 +209,6 @@ def sort_data_lists(data_set, orbit_data, study_name, **kwargs):
 
 
 def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_set, transmitter, constraints, active_constraints):
-
     # Initialize lists
     data_set['min_link_efficiency'] = []
     data_set['min_power_received'] = []
