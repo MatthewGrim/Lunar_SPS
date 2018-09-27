@@ -33,7 +33,7 @@ def main():
 
     # Get pathway to main Lunar_SPS directory
     current_folder = os.getcwd()
-    main_directory = os.path.dirname(current_folder)
+    main_directory = os.path.dirname(os.path.dirname(current_folder))
 
     # Set file path for data
     stk_data_path = r'{}\STK Data\{}'.format(main_directory, study_name)
