@@ -14,7 +14,7 @@ from Lunar_SPS.pysrc.sps_design_tool.SPS_Constellation_DesignFunctions import ro
 def main():
     # --- INITIALIZATION ---
     # Select scenario/configuration
-    # study_name = 'SouthPole_IncrementedRes_Generic'
+    # study_name = 'NorthPole_IncrementedRes_Generic'
     study_name = 'Equatorial_IncrementedRes_Generic'
 
     # Select transmitter
@@ -26,7 +26,7 @@ def main():
     rover_selection = 'sorato'
 
     # Defines the number of satellites in the constellation being studied
-    num_sps = 1
+    num_sps = 2
 
     # --- DEFINE CONSTRAINTS ---
     # Initialize dictionaries

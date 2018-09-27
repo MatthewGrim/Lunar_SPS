@@ -33,7 +33,7 @@ def study_initialization(study_name, **kwargs):
                                                                                             resolutions=resolutions,
                                                                                             thresholds=thresholds)
 
-    if 'SouthPole' in study_name:
+    if 'NorthPole' in study_name:
         study['semi-maj-axis'] = semi_maj_axis
         study['eccentricity'] = eccentricity
         study['orbits'] = orbit_data

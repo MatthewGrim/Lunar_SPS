@@ -147,7 +147,7 @@ def optimize_link_efficiency(num_sps, trans_selection, rover_selection, constrai
 
     from scipy.optimize import minimize_scalar
 
-    if "SouthPole" in study_name:
+    if "NorthPole" in study_name:
         trans_radius_max = 0.5
     elif "Equatorial" in study_name:
         trans_radius_max = 0.7
