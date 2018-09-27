@@ -7,7 +7,7 @@ Rohan Ramasamy
 This project is a study of lunar orbits for satellites used to power receivers wirelessly on the surface of the Moon. The project is geared towards enabling lunar rover exploration that can survive the lunar night. The first few project directories are related to developing the groundwork for replication of results from an H. W. Brandhorst paper called "A solar electric propulsion mission for lunar power beaming" which is a useful benchmark publication for lunar solar power satellite design. Later project directories are focused on development of a design tool for solar power satellites which can provide wireless power service to lunar rovers.
 
 ##Getting Started
-####Project Directories:
+####Project Directories: below is a description of the projects within the studies directory. These directories contain the testing and development analysis leading to the final design tool in the pysrc directory.
 
 000-RR-InitialWork: Contains initial work to scope out the use of STK, assess the viability of carrying out further analysis with this workflow. The studies inside are initial attempts to replicate H. Brandhorst's work.
 
@@ -33,4 +33,6 @@ This project is a study of lunar orbits for satellites used to power receivers w
 
 011-DVP-Constellation-SPS-Design: Contains version solar power satellite design tool which allows for solar power satellite constellation designs.
 
+012-RR-Paper-Scripts: Contains scripts to regenerate the results from a paper presented at the 69th IAC.
 
+013-RR-circular_orbit-model: Contains a script to test a theoretical model for the necessary rover design for a SPS concept.
