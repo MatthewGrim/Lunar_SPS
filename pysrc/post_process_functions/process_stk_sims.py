@@ -41,7 +41,7 @@ def process_stk_data(max_constellation_size, study_name, constellation_variable,
     # Get pathway to SPS data directory
     current_folder = os.getcwd()
     issue_folder = os.path.dirname(current_folder)
-    main_directory = os.path.dirname(issue_folder)
+    main_directory = os.path.dirname(os.path.dirname(issue_folder))
     stk_data_path = os.path.join(main_directory, 'STK Data', study_name)
 
     # Import target illumination events
@@ -61,6 +61,10 @@ def process_stk_data(max_constellation_size, study_name, constellation_variable,
     data['mean_blackout_time'] = []
     data['min_blackout_time'] = []
     data['std_blackout_time'] = []
+    data['total_station_keeping'] = np.zeros((len(orbit_data) - 1))
+    data['total_stored_power_time'] = np.zeros((len(orbit_data) - 1))
+    data['max_stored_power_time'] = np.zeros((len(orbit_data) - 1))
+    data['mean_stored_power_time'] = np.zeros((len(orbit_data) - 1))
     data['mean_range'] = np.zeros((len(orbit_data) - 1))
     data['mean_max_range'] = np.zeros((len(orbit_data) - 1))
     data['mean_min_range'] = np.zeros((len(orbit_data) - 1))
@@ -96,9 +100,31 @@ def process_stk_data(max_constellation_size, study_name, constellation_variable,
             data['mean_min_range'][i - 1] += np.sum([range * duration for range, duration in zip(sps_range[0], sps_active[2])])
             data['mean_max_range'][i - 1] += np.sum([range * duration for range, duration in zip(sps_range[1], sps_active[2])])
 
+            # Determine station-keeping/battery-charging events
+            sps_station_keeping_events = determine_battery_chargeup_events(sps_lighting, sps_access, total_duration)
+            data['total_station_keeping'][i - 1] += np.sum(sps_station_keeping_events[2])
+
+            # Stored power events
+            sps_eclipse = invert_events_list(sps_lighting, total_duration)
+            sps_use_stored_power = determine_SPS_storedpower_time(sps_eclipse, target_eclipse, sps_access)
+            # Check if stored power events exist, if not insert nan
+            if np.sum(sps_use_stored_power) == 0.0:
+                pass
+            else:
+                data['total_stored_power_time'][i - 1] += np.sum(sps_use_stored_power[2])
+                data['max_stored_power_time'][i - 1] += max(sps_use_stored_power[2])
+                data['mean_stored_power_time'][i - 1] += np.mean(sps_use_stored_power[2])
+
+        # Divide by total time across all satellites to get average link requirements
         data['mean_range'][i - 1] /= total_time
         data['mean_min_range'][i - 1] /= total_time
         data['mean_max_range'][i - 1] /= total_time
+
+        # Divide by number of satellites to get average satellite requirements
+        data['total_station_keeping'][i - 1] /= max_constellation_size
+        data['total_stored_power_time'][i - 1] /= max_constellation_size
+        data['max_stored_power_time'][i - 1] /= max_constellation_size
+        data['mean_stored_power_time'][i - 1] /= max_constellation_size
 
         # Determine active time statistics
         data['total_active_time'].append(np.sum(sps_active_total[2]))
@@ -120,6 +146,14 @@ def process_stk_data(max_constellation_size, study_name, constellation_variable,
     write_data_to_file(stk_data_path, study_name, data['mean_range'], "MeanRange_{}".format(postfix_name))
     write_data_to_file(stk_data_path, study_name, data['mean_min_range'], "MeanMinRange_{}".format(postfix_name))
     write_data_to_file(stk_data_path, study_name, data['mean_max_range'], "MeanMaxRange_{}".format(postfix_name))
+
+    # STATION KEEPING
+    write_data_to_file(stk_data_path, study_name, data['total_station_keeping'], "TotalStationKeeping_{}".format(postfix_name))
+
+    # STORED POWER
+    write_data_to_file(stk_data_path, study_name, data['total_stored_power_time'], "TotalStoredPower_{}".format(postfix_name))
+    write_data_to_file(stk_data_path, study_name, data['max_stored_power_time'], "MaxStoredPower_{}".format(postfix_name))
+    write_data_to_file(stk_data_path, study_name, data['mean_stored_power_time'], "MeanStoredPower_{}".format(postfix_name))
 
     # ACTIVE TIME DATA
     write_data_to_file(stk_data_path, study_name, data['total_active_time'], "TotalActive_{}".format(postfix_name))
