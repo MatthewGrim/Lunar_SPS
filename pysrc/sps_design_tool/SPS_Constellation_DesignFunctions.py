@@ -194,9 +194,9 @@ def sort_data_lists(data_set, orbit_data, study_name, **kwargs):
     data_set_sorted = {}
 
     if 'IncrementedRes' in study_name:
+        resolutions = kwargs.get('resolutions', None)
+        thresholds = kwargs.get('thresholds', None)
         for j in data_set:
-            resolutions = kwargs.get('resolutions', None)
-            thresholds = kwargs.get('thresholds', None)
             data_set_sorted[j] = sort_incremented_resolution_data(orbit_data, data_set[j],
                                                                   resolution=resolutions, thresholds=thresholds)
 
