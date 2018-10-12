@@ -107,7 +107,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     sorted_data_set, surf_flux, transmitter = optimize_transmitter_power(transmitter, rover, sorted_data_set, best_orbit_idx, constraints, active_constraints)
     transmitter['radius'] = optimum.x
 
-    # --- OPTIMIZE SOLAR ARRAY (GENERATOR) SIZE ---
+    # # --- OPTIMIZE SOLAR ARRAY (GENERATOR) SIZE ---
     # # Power generator parameters - Stretched lens array SquareRigger platform
     solar_array_eff = 0.3
     # solar_array_spec_pwr = 300.0
@@ -208,7 +208,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     plt.colorbar()
     plt.subplot(224)
     plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['delta_v_to_maintain'], 500)
-    plt.title('$\Delta V$ Margin [$kms^{-1}$]')
+    plt.title('$\Delta V$ Maintenence Requirement [$kms^{-1}$]')
     plt.xlabel('Apogee Altitude [km]')
     plt.colorbar()
 

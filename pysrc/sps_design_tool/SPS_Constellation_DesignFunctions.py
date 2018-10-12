@@ -176,12 +176,12 @@ def read_in_processed_data_reports(stk_data_path, study_name, num_sps):
     data_set['min_range'] = np.loadtxt(os.path.join(stk_data_path, "MeanMinRange_{}SPS_{}.txt".format(num_sps, study_name)))
 
     # STATION KEEPING
-    data_set['total_station_keeping'] = np.loadtxt(os.path.join(stk_data_path, "TotalStationKeeping_{}SPS_{}.txt".format(num_sps, study_name)))
+    # data_set['total_station_keeping'] = np.loadtxt(os.path.join(stk_data_path, "TotalStationKeeping_{}SPS_{}.txt".format(num_sps, study_name)))
 
     # STORED POWER
-    data_set['total_stored_power_time'] = np.loadtxt(os.path.join(stk_data_path, "TotalStoredPower_{}SPS_{}.txt".format(num_sps, study_name)))
-    data_set['max_stored_power_time'] = np.loadtxt(os.path.join(stk_data_path, "MaxStoredPower_{}SPS_{}.txt".format(num_sps, study_name)))
-    data_set['mean_stored_power_time'] = np.loadtxt(os.path.join(stk_data_path, "MeanStoredPower_{}SPS_{}.txt".format(num_sps, study_name)))
+    # data_set['total_stored_power_time'] = np.loadtxt(os.path.join(stk_data_path, "TotalStoredPower_{}SPS_{}.txt".format(num_sps, study_name)))
+    # data_set['max_stored_power_time'] = np.loadtxt(os.path.join(stk_data_path, "MaxStoredPower_{}SPS_{}.txt".format(num_sps, study_name)))
+    # data_set['mean_stored_power_time'] = np.loadtxt(os.path.join(stk_data_path, "MeanStoredPower_{}SPS_{}.txt".format(num_sps, study_name)))
 
     data_set['mean_range'] = np.loadtxt(os.path.join(stk_data_path, "MeanRange_{}SPS_{}.txt".format(num_sps, study_name)))
     data_set['max_range'] = np.loadtxt(os.path.join(stk_data_path, "MeanMaxRange_{}SPS_{}.txt".format(num_sps, study_name)))

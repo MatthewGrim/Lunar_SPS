@@ -27,5 +27,5 @@ if __name__ == '__main__':
     }
 
     for i in range(1, 4):
-        process_stk_data(1, study_name, constellation_variable, start, end, **kwargs)
+        process_stk_data(i, study_name, constellation_variable, start, end, **kwargs)
 
