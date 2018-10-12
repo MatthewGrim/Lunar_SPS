@@ -150,6 +150,9 @@ def run_stk_v2(stk_data_path, scenario_path, study_name, orbit_data, argument_of
 
 def main():
     low_orbits = True
+    high_orbits = False
+    if low_orbits and high_orbits:
+        raise ValueError("Invalid specification of orbit scan")
 
     # Set resolution of data points in km
     if low_orbits:
@@ -196,10 +199,14 @@ def main():
         sma, ecc, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_perigee=800.0,
                                                                              resolutions=np.array((50.0, 100.0, 100.0, 250.0)),
                                                                              thresholds=np.array((1000.0, 1500.0, 2500.0)))
-    else:
+    elif high_orbits:
         sma, ecc, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_perigee=2500.0,
                                                                              resolutions=np.array((250.0, 500.0, 500.0, 500.0)),
                                                                              thresholds=np.array((5000.0, 7000.0, 8000.0)))
+    else:
+        sma, ecc, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee, min_perigee=800.0,
+                                                                             resolutions=np.array((50.0, 100.0, 250.0, 500.0)),
+                                                                             thresholds=np.array((1000.0, 2500.0, 5000.0)))
 
     print(orbit_data.shape)
     # Get maximum size of constellation required

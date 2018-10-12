@@ -19,10 +19,10 @@ if __name__ == '__main__':
 
     # Set kwargs for orbital variables
     kwargs = {
-        "resolutions": np.array((50.0, 100.0, 100.0, 250.0)),
-        "thresholds": np.array((1000.0, 1500.0, 2500.0)),
-        "max_perigee": 5000.0,
-        "max_apogee": 5000.0,
+        "resolutions": np.array((50.0, 100.0, 250.0, 500.0)),
+        "thresholds": np.array((1000.0, 2500.0, 5000.0)),
+        "max_perigee": 10000.0,
+        "max_apogee": 10000.0,
         "min_apogee": 800.0
     }
 
