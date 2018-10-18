@@ -40,8 +40,9 @@ def plot_constellation_active_times():
 
             im = ax[i, num_sps - 1].contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['total_active_time'], 500)
             fig.colorbar(im, ax=ax[i, num_sps - 1])
-        name = "Polar" if "North Pole" in study_name else "Equatorial"
-        ax[i, 0].set_ylabel(name)
+            ax[i, num_sps - 1].set_xlabel("Apolune Radius")
+        name = "Polar" if "NorthPole" in study_name else "Equatorial"
+        ax[i, 0].set_ylabel("{}\n Perilune Radius".format(name))
     plt.show()
 
 
