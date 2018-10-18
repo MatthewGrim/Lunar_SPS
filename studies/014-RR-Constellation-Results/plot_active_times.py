@@ -13,11 +13,11 @@ from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import *
 
 def plot_constellation_active_times():
     kwargs = {
-        "resolutions": np.array((50.0, 100.0, 250.0, 500.0)),
-        "thresholds": np.array((1000.0, 2500.0, 5000.0)),
+        "resolutions": np.array((50.0, 100.0, 100.0, 250.0)),
+        "thresholds": np.array((1000.0, 1500.0, 2500.0)),
         "min_perigee": 800.0,
-        "max_perigee": 10000.0,
-        "max_apogee": 10000.0
+        "max_perigee": 5000.0,
+        "max_apogee": 5000.0
     }
 
     fig, ax = plt.subplots(2, 3, sharex='col', sharey='row')
@@ -33,14 +33,15 @@ def plot_constellation_active_times():
             # --- READ IN DATA FILES ---
             data_set = read_in_processed_data_reports(stk_data_path, study_name, num_sps)
 
-            data_set['total_active_time'] = [100.0 * i / study['duration'] for i in data_set['total_active_time']]
+            data_set['total_active_time'] = [100.0 * j / study['duration'] for j in data_set['total_active_time']]
 
             # Reorganize the data lists into 2D arrays
             sorted_data_set, perigee_altitudes, unique_perigees, apogee_altitudes, unique_apogees = sort_data_lists(data_set, study['orbits'], study_name, **kwargs)
 
             im = ax[i, num_sps - 1].contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['total_active_time'], 500)
             fig.colorbar(im, ax=ax[i, num_sps - 1])
-        ax[i, 0].set_ylabel(study_name)
+        name = "Polar" if "North Pole" in study_name else "Equatorial"
+        ax[i, 0].set_ylabel(name)
     plt.show()
 
 

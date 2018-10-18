@@ -96,9 +96,9 @@ def process_stk_data(max_constellation_size, study_name, constellation_variable,
             # Get the mean, min and max range for the satellite
             total_time += np.sum(sps_active[2])
             sps_range = import_range_data_statistics('{}_range'.format(sim_name), stk_data_path)
-            data['mean_range'][i - 1] += np.sum([range * duration for range, duration in zip(sps_range[2], sps_active[2])])
-            data['mean_min_range'][i - 1] += np.sum([range * duration for range, duration in zip(sps_range[0], sps_active[2])])
-            data['mean_max_range'][i - 1] += np.sum([range * duration for range, duration in zip(sps_range[1], sps_active[2])])
+            data['mean_range'][i - 1] += np.sum([r * duration for r, duration in zip(sps_range[2], sps_active[2])])
+            data['mean_min_range'][i - 1] += np.sum([r * duration for r, duration in zip(sps_range[0], sps_active[2])])
+            data['mean_max_range'][i - 1] += np.sum([r * duration for r, duration in zip(sps_range[1], sps_active[2])])
 
             # Determine station-keeping/battery-charging events
             sps_station_keeping_events = determine_battery_chargeup_events(sps_lighting, sps_access, total_duration)
