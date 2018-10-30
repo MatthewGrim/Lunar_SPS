@@ -19,7 +19,7 @@ def plot_results(apogee_altitudes, perigee_altitudes, sorted_data_set, best_orbi
     rovers = ["Sorato", "AMALIA"]
     for i, rover in enumerate(rovers):
         im = ax[i, 0].contourf(apogee_altitudes[rover], perigee_altitudes[rover], sorted_data_set[rover]['total_active_time'], num_contours)
-        ax[i, 0].set_ylabel('{}\n Perigee Altitude [km]'.format(rover))
+        ax[i, 0].set_ylabel('{}\n Perilune Altitude [km]'.format(rover))
         ax[i, 0].set_ylim([800.0, 5000.0])
         fig.colorbar(im, ax=ax[i, 0])
 
@@ -39,7 +39,7 @@ def plot_results(apogee_altitudes, perigee_altitudes, sorted_data_set, best_orbi
             ax[i, 2].set_title('Laser Power [kW]')
             ax[i, 3].set_title('Mean Link Efficiency [%]')
     for i in range(4):
-        ax[1, i].set_xlabel("Apogee Altitude [km]")
+        ax[1, i].set_xlabel("Apolune Altitude [km]")
         ax[1, i].set_xlim([800.0, 5000.0])
     fig.tight_layout()
     plt.show()
