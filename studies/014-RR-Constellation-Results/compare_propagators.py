@@ -73,7 +73,7 @@ def compare_propagators():
             ax[1, 2].set_title("True/Mean Anomaly")
             name = "{}: {}km by {}km".format(orbit, pair[0], pair[1])
             fig.suptitle(name)       
-            plt.savefig(name)
+            plt.savefig(os.path.join(main_dir, name))
             plt.close()
 
 
