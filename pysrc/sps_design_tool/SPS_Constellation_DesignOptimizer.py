@@ -34,7 +34,7 @@ def calculate_link_eff(trans_radius, args, **kwargs):
     duration = args[6]
 
     # Set file path for data
-    stk_data_path = r'{}\STK Data\{}'.format(main_directory, study_name)
+    stk_data_path = os.path.join(main_directory, 'STK Data', study_name)
 
     # --- READ IN DATA FILES ---
     data_set = {}
