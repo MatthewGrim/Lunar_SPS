@@ -73,13 +73,13 @@ def rover_metrics(rover_name):
     elif "excavator" in rover_name:
         rover['operation_pwr'] = 760.0
         rover['rec_efficiency'] = 0.5
-        rover['hibernation_pwr'] = 48.0
-        rover['battery_capacity'] = 4400.0
+        rover['hibernation_pwr'] = 100.0
+        rover['battery_capacity'] = 6000.0
     elif "demonstrator" in rover_name:
         rover['operation_pwr'] = 5350.0
         rover['rec_efficiency'] = 0.5
-        rover['hibernation_pwr'] = 145.0
-        rover['battery_capacity'] = 34.4e3
+        rover['hibernation_pwr'] = 300.0
+        rover['battery_capacity'] = 40e3
     else:
         print('Invalid rover name: {}. Valid names: amalia, sorato, curiosity'.format(rover_name))
 
