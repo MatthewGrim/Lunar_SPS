@@ -71,15 +71,13 @@ def rover_metrics(rover_name):
         rover['hibernation_pwr'] = 4.5
         rover['battery_capacity'] = 38.0
     elif "excavator" in rover_name:
-        rover['operation_pwr'] = 907.0
+        rover['operation_pwr'] = 760.0
         rover['rec_efficiency'] = 0.5
         rover['hibernation_pwr'] = 48.0
         rover['battery_capacity'] = 4400.0
     elif "demonstrator" in rover_name:
-        # Including 20% margin
-        rover['operation_pwr'] = 7851.0
+        rover['operation_pwr'] = 5350.0
         rover['rec_efficiency'] = 0.5
-        # 63W comes from night time heating
         rover['hibernation_pwr'] = 145.0
         rover['battery_capacity'] = 34.4e3
     else:
