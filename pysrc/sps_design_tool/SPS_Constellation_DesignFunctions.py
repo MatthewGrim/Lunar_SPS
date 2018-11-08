@@ -64,16 +64,31 @@ def rover_metrics(rover_name):
         rover['rec_efficiency'] = 0.5
         rover['hibernation_pwr'] = 7.0
         rover['battery_capacity'] = 100.0
-        rover['rec_radius'] = 0.341213188075
     elif "sorato" in rover_name:
         # ispace Sorato (miniature)
         rover['operation_pwr'] = 21.5
         rover['rec_efficiency'] = 0.5
         rover['hibernation_pwr'] = 4.5
         rover['battery_capacity'] = 38.0
-        rover['rec_radius'] = 0.158214046592
+    elif "excavator" in rover_name:
+        rover['operation_pwr'] = 907.0
+        rover['rec_efficiency'] = 0.5
+        rover['hibernation_pwr'] = 48.0
+        rover['battery_capacity'] = 4400.0
+    elif "demonstrator" in rover_name:
+        # Including 20% margin
+        rover['operation_pwr'] = 7851.0
+        rover['rec_efficiency'] = 0.5
+        # 63W comes from night time heating
+        rover['hibernation_pwr'] = 82.0 + 63.0
+        rover['battery_capacity'] = 34.4e3
     else:
         print('Invalid rover name: {}. Valid names: amalia, sorato, curiosity'.format(rover_name))
+
+    solar_intensity = 1367.0
+    receiver_solar_efficiency = 0.2
+    receiver_area = rover['operation_pwr'] / (solar_intensity * receiver_solar_efficiency)
+    rover['rec_radius'] = np.sqrt(receiver_area / np.pi)
 
     return rover
 

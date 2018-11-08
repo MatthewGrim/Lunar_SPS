@@ -107,50 +107,11 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     sorted_data_set, surf_flux, transmitter = optimize_transmitter_power(transmitter, rover, sorted_data_set, best_orbit_idx, constraints, active_constraints)
     transmitter['radius'] = optimum.x
 
-    # # --- OPTIMIZE SOLAR ARRAY (GENERATOR) SIZE ---
-    # # Power generator parameters - Stretched lens array SquareRigger platform
-    solar_array_eff = 0.3
-    # solar_array_spec_pwr = 300.0
-    # # Metric which measures force applied by electric propulsion per unit power
-    # electric_propulsion_specific_thrust = 1.0 / 20e3
-    # # Add desired delta-v margin if constraint is active
-    # if active_constraints['min_delta_v_margin'] == 1:
-    #     delta_v_requirement = sorted_data_set['delta_v_to_maintain'][best_orbit_idx] + (constraints['min_delta_v_margin'] * 1e3)
-    # else:
-    #     delta_v_requirement = sorted_data_set['delta_v_to_maintain'][best_orbit_idx]
-    # # Determine minimum allowable transmitter power based on ability to maintain orbit with electric propulsion
-    # min_allowable_generator_pwr_delta_v = (transmitter['mass'] * delta_v_requirement) / (electric_propulsion_specific_thrust * sorted_data_set['total_station_keeping'][best_orbit_idx] - (delta_v_requirement / solar_array_spec_pwr))
-    # # Minimum allowable power required from generator to operate transmitter
-    # min_allowable_generator_pwr_transmitter = transmitter['power'] / transmitter['efficiency']
-    # # Select largest of two minimum generator sizes
-    # generator_pwr = np.max([min_allowable_generator_pwr_delta_v, min_allowable_generator_pwr_transmitter])
-    # # Mass of generator
-    # generator_mass = generator_pwr / solar_array_spec_pwr
-    #
-    # # --- DETERMINE DELTA V MARGIN FOR STATION KEEPING ---
-    # # Available delta v integrated across all events, assuming 1N thrust for 20kW power
-    # # Estimate delta v available based on electric propulsion system, integrated across all station keeping events
-    # data_set['delta_v_available'] = [(electric_propulsion_specific_thrust * generator_pwr * i) / (generator_mass + transmitter['mass']) for i in data_set['total_station_keeping']]
-    # sorted_data_set['delta_v_available'] = sort_incremented_resolution_data(study['orbits'], data_set['delta_v_available'])
-    #
-    # # Determine delta v margin between available and required delta v for orbit maintenance
-    # data_set['delta_v_margin'] = [(i - j) / 1000.0 for i, j in zip(data_set['delta_v_available'], data_set['delta_v_to_maintain'])]
-    # sorted_data_set['delta_v_margin'] = sort_incremented_resolution_data(study['orbits'], data_set['delta_v_margin'])
-    #
-    # if active_constraints['min_delta_v_margin'] == 1:
-    #     # Remove design points for which the margin is negative
-    #     for i in range(len(sorted_data_set['delta_v_margin'][0])):
-    #         for j in range(len(sorted_data_set['delta_v_margin'][1])):
-    #             if sorted_data_set['delta_v_margin'][i][j] < 0.0:
-    #                 for k in sorted_data_set:
-    #                     sorted_data_set[k][i][j] = np.nan
-    # else:
-    #     pass
-
     # --- EVALUATE STEADY STATE TEMPERATURE ---
     # Steady state temperature
     solar_irradiance = 1367.0
     emissivity = 0.8
+    solar_array_eff = 0.3
     steady_state_temp = (solar_irradiance * (1 - solar_array_eff * transmitter['efficiency']) / (2 * emissivity * 5.67e-8)) ** 0.25
 
     # --- EVALUATE FLUX AND HEAT LOAD AT RECEIVER ---
@@ -161,34 +122,46 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     # --- DISPLAY RESULTS ---
     # Print out performance results for optimal orbit
     r_moon = 1737.0
-    print('-----------------------------------------------------------------------------------------------------------')
+    num_lines_in_header = 80
+
+    header = ' SATELLITE ORBIT '
+    num_lines = (num_lines_in_header - len(header)) // 2
+    print('-' * num_lines + header + '-' * num_lines)
     print('Number of SPS: {}'.format(num_sps))
     print('Optimal orbit altitudes --> Perigee: {} km, Apogee: {} km'.format(round(best_perigee - r_moon, 2), round(best_apogee - r_moon, 2)))
     print('Orbital period --> {} minutes'.format(round(orbit_period / 60.0, 2)))
-    print('-----------------------------------------------------------------------------------------------------------')
-    print('Minimum allowable transmitter power --> {} kW'.format(round(transmitter['power'] / 1000.0, 2)))
-    print('Mean flux at receiver --> {} AM0'.format(round(surf_flux['mean'] / solar_irradiance, 2)))
-    print('Maximum flux at receiver --> {} AM0'.format(round(surf_flux['max'] / solar_irradiance, 2)))
-    print('Minimum flux at receiver --> {} AM0'.format(round(surf_flux['min'] / solar_irradiance, 2)))
-    print('-----------------------------------------------------------------------------------------------------------')
-    print('Mean link efficiency --> {} %'.format(round(sorted_data_set['mean_link_efficiency'][best_orbit_idx] * 100.0, 5)))
-    print('Mean power delivered --> {} W'.format(round(sorted_data_set['mean_power_received'][best_orbit_idx], 2)))
-    print('Mean heat load on receiver --> {} W'.format(round(target_heat_load, 2)))
-    print('Total energy transferred --> {} MJ per year'.format(round(sorted_data_set['total_energy'][best_orbit_idx] / 2e6, 2)))
-    print('-----------------------------------------------------------------------------------------------------------')
-    print('Transmitter aperture radius: {} cm'.format(round(transmitter['radius'] * 100.0, 2)))
-    print('Steady state temperature --> {} Celsius'.format(round(steady_state_temp - 273.15, 2)))
-    print('-----------------------------------------------------------------------------------------------------------')
-    print('Estimated argument of perigee drift rate --> {} deg/yr'.format(round(sorted_data_set['arg_perigee_drift'][best_orbit_idx], 2)))
-    if best_apogee - best_perigee == 0.0:
-        print('NOTE: Circular orbit, correction of argument of perigee drift practically not necessary')
-    print('-----------------------------------------------------------------------------------------------------------')
     print('Total active time (blackout reduction) --> {} %'.format(round(sorted_data_set['total_active_time'][best_orbit_idx], 2)))
     print('Total blackout time --> {} %'.format(round(100.0 * sorted_data_set['total_blackout_time'][best_orbit_idx] / study['duration'], 2)))
     print('Max active period duration --> {} hours'.format(round(sorted_data_set['max_active_time'][best_orbit_idx] / 3600.0, 2)))
     print('Max blackout period duration --> {} hours'.format(round(sorted_data_set['max_blackout_duration'][best_orbit_idx], 2)))
-    print('-----------------------------------------------------------------------------------------------------------')
-
+    
+    header = ' LASER TRANSMITTER '
+    num_lines = (num_lines_in_header - len(header)) // 2
+    print('-' * num_lines + header + '-' * num_lines)
+    print('Minimum allowable transmitter power --> {} kW'.format(round(transmitter['power'] / 1000.0, 2)))
+    print('Transmitter aperture radius: {} cm'.format(round(transmitter['radius'] * 100.0, 2)))
+    print('Mean link efficiency --> {} %'.format(round(sorted_data_set['mean_link_efficiency'][best_orbit_idx] * 100.0, 5)))
+    print('Mean power delivered --> {} W'.format(round(sorted_data_set['mean_power_received'][best_orbit_idx], 2)))
+    print('Steady state temperature --> {} Celsius'.format(round(steady_state_temp - 273.15, 2)))
+    
+    header = ' RECEIVER CHARACTERISTICS '
+    num_lines = (num_lines_in_header - len(header)) // 2
+    print('-' * num_lines + header + '-' * num_lines)
+    print('Receiver Area --> {} $m^2$'.format(np.pi * rover['rec_radius'] ** 2))
+    print('Mean flux at receiver --> {} AM0'.format(round(surf_flux['mean'] / solar_irradiance, 2)))
+    print('Maximum flux at receiver --> {} AM0'.format(round(surf_flux['max'] / solar_irradiance, 2)))
+    print('Minimum flux at receiver --> {} AM0'.format(round(surf_flux['min'] / solar_irradiance, 2)))
+    print('Mean heat load on receiver --> {} W'.format(round(target_heat_load, 2)))
+    print('Total energy transferred --> {} MJ per year'.format(round(sorted_data_set['total_energy'][best_orbit_idx] / 2e6, 2)))
+    
+    header = ' ORBITAL STABILITY '
+    num_lines = (num_lines_in_header - len(header)) // 2
+    print('-' * num_lines + header + '-' * num_lines)
+    print('Estimated argument of perigee drift rate --> {} deg/yr'.format(round(sorted_data_set['arg_perigee_drift'][best_orbit_idx], 2)))
+    if best_apogee - best_perigee == 0.0:
+        print('NOTE: Circular orbit, correction of argument of perigee drift practically not necessary')
+    print('-' * num_lines_in_header)
+    
     # Plot constrained design variables
     plt.figure(1, figsize=(15, 8))
     plt.subplot(221)
@@ -207,14 +180,6 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     plt.xlabel('Apogee Altitude [km]')
     plt.colorbar()
     plt.subplot(224)
-    plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['delta_v_to_maintain'], 500)
-    plt.title('$\Delta V$ Maintenence Requirement [$kms^{-1}$]')
-    plt.xlabel('Apogee Altitude [km]')
-    plt.colorbar()
-
-    # Plot mean link efficiency
-    r_moon = 1737.0
-    plt.figure(2, figsize=(15, 8))
     plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['mean_link_efficiency'] * 100.0, 500)
     plt.title('Mean Link Efficiency [%]')
     plt.xlabel('Apogee Altitude [km]')
