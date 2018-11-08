@@ -162,29 +162,6 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
         print('NOTE: Circular orbit, correction of argument of perigee drift practically not necessary')
     print('-' * num_lines_in_header)
     
-    # Plot constrained design variables
-    plt.figure(1, figsize=(15, 8))
-    plt.subplot(221)
-    plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['total_active_time'], 500)
-    plt.title('Total Active Time [%]')
-    plt.ylabel('Perigee Altitude [km]')
-    plt.colorbar()
-    plt.subplot(222)
-    plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['max_blackout_duration'], 500)
-    plt.title('Max Blackout Time [hrs]')
-    plt.ylabel('Perigee Altitude [km]')
-    plt.colorbar()
-    plt.subplot(223)
-    plt.contourf(apogee_altitudes, perigee_altitudes, 1e-3 * rover['operation_pwr'] / (rover['rec_efficiency'] * sorted_data_set['min_link_efficiency']), 500)
-    plt.title('Laser Power [kW]')
-    plt.xlabel('Apogee Altitude [km]')
-    plt.colorbar()
-    plt.subplot(224)
-    plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['mean_link_efficiency'] * 100.0, 500)
-    plt.title('Mean Link Efficiency [%]')
-    plt.xlabel('Apogee Altitude [km]')
-    plt.ylabel('Perigee Altitude [km]')
-    plt.colorbar()
-    plt.scatter(best_apogee - r_moon, best_perigee - r_moon, marker='x')
-    plt.show()
+    best_orbit = [best_apogee - r_moon, best_perigee - r_moon]
+    return apogee_altitudes, perigee_altitudes, sorted_data_set, best_orbit
 

@@ -80,7 +80,7 @@ def rover_metrics(rover_name):
         rover['operation_pwr'] = 7851.0
         rover['rec_efficiency'] = 0.5
         # 63W comes from night time heating
-        rover['hibernation_pwr'] = 82.0 + 63.0
+        rover['hibernation_pwr'] = 145.0
         rover['battery_capacity'] = 34.4e3
     else:
         print('Invalid rover name: {}. Valid names: amalia, sorato, curiosity'.format(rover_name))
