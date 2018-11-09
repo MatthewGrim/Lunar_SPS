@@ -6,6 +6,7 @@ This script serves for simplified user interaction with the SPS constrained desi
 """
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 from Lunar_SPS.pysrc.sps_design_tool.SPS_Constellation_DesignTool import generate_design_space
 from Lunar_SPS.pysrc.sps_design_tool.SPS_Constellation_DesignFunctions import rover_metrics
@@ -92,9 +93,6 @@ def main():
     plt.ylabel('Perigee Altitude [km]')
     plt.colorbar()
     plt.scatter(best_orbit[0], best_orbit[1], marker='x')
-    suptitle = "{} {} results".format(study_type, rover_selection)
-    plt.suptitle(suptitle)
-    plt.savefig('{}_{}_results'.format(study_type, rover_selection))
     plt.show()
 
 main()
