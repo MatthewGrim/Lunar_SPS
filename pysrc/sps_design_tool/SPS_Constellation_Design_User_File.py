@@ -65,6 +65,36 @@ def main():
         "max_perigee": 5000.0,
         "max_apogee": 5000.0
     }
-    generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints, num_sps, **kwargs)
+
+    apogee_altitudes, perigee_altitudes, sorted_data_set, best_orbit = generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints, num_sps, **kwargs)
+
+    # Plot constrained design variables
+    plt.figure(1, figsize=(15, 8))
+    plt.subplot(221)
+    plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['total_active_time'], 500)
+    plt.title('Total Active Time [%]')
+    plt.ylabel('Perigee Altitude [km]')
+    plt.colorbar()
+    plt.subplot(222)
+    plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['max_blackout_duration'], 500)
+    plt.title('Max Blackout Time [hrs]')
+    plt.colorbar()
+    plt.subplot(223)
+    plt.contourf(apogee_altitudes, perigee_altitudes, 1e-3 * rover['operation_pwr'] / (rover['rec_efficiency'] * sorted_data_set['min_link_efficiency']), 500)
+    plt.title('Laser Power [kW]')
+    plt.ylabel('Perigee Altitude [km]')
+    plt.xlabel('Apogee Altitude [km]')
+    plt.colorbar()
+    plt.subplot(224)
+    plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['mean_link_efficiency'] * 100.0, 500)
+    plt.title('Mean Link Efficiency [%]')
+    plt.xlabel('Apogee Altitude [km]')
+    plt.ylabel('Perigee Altitude [km]')
+    plt.colorbar()
+    plt.scatter(best_orbit[0], best_orbit[1], marker='x')
+    suptitle = "{} {} results".format(study_type, rover_selection)
+    plt.suptitle(suptitle)
+    plt.savefig('{}_{}_results'.format(study_type, rover_selection))
+    plt.show()
 
 main()
