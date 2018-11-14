@@ -23,13 +23,13 @@ def main():
     # Get pathway to main Lunar_SPS directory
     current_folder = os.getcwd()
     issue_folder = os.path.dirname(current_folder)
-    main_directory = os.path.dirname(issue_folder)
+    main_directory = os.path.dirname(os.path.dirname(issue_folder))
 
     # Name of study
     study_name = 'Equatorial_IncrementedRes'
 
     # File path
-    stk_data_path = r'{}\STK Data\{}'.format(main_directory, study_name)
+    stk_data_path = os.path.join(main_directory, 'STK Data', study_name)
 
     # Get orbital data
     semi_maj_axis, eccentricity, orbit_data = vary_orbital_elements_incrementing_resolution(max_perigee, max_apogee)
@@ -56,7 +56,7 @@ def main():
     total_station_keeping = []
 
     # Import target illumination events
-    target_lighting_raw = '{}\DVP_{}_Target_Lighting.csv'.format(stk_data_path, study_name)
+    target_lighting_raw = os.path.join(stk_data_path, 'DVP_{}_Target_Lighting.csv'.format(study_name))
     target_lighting = parse_csv_to_array(target_lighting_raw, start)
     target_eclipse = invert_events_list(target_lighting, total_duration)
 
@@ -66,8 +66,8 @@ def main():
         print("Perigee altitude: {} km, Apogee altitude: {} km".format(orbit_data[i][0] - r_moon, orbit_data[i][1] - r_moon))
 
         # Import access and lighting for SPS
-        sps_lighting = parse_csv_to_array('{}/DVP_{}_{}perigee{}apogee_lighting.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1]), start)
-        sps_access = parse_csv_to_array('{}/DVP_{}_{}perigee{}apogee_access.csv'.format(stk_data_path, study_name, orbit_data[i][0], orbit_data[i][1]), start)
+        sps_lighting = parse_csv_to_array(os.path.join(stk_data_path, 'DVP_{}_{}perigee{}apogee_lighting.csv'.format(study_name, orbit_data[i][0], orbit_data[i][1])), start)
+        sps_access = parse_csv_to_array(os.path.join(stk_data_path, 'DVP_{}_{}perigee{}apogee_access.csv'.format(study_name, orbit_data[i][0], orbit_data[i][1])), start)
 
         # If no access periods exist, insert nan into each list - infeasible orbit design
         if not hasattr(sps_access[0], "__len__"):

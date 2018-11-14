@@ -197,7 +197,7 @@ def read_data_from_file(stk_data_path, study_name, data_name):
     # Read in saved active time data, if the data is already processed and saved into a txt file
     # Comment this section out if the data is being processed, and the results are not yet written to a txt file
     data = []
-    fh = open('{}/{}_{}.txt'.format(stk_data_path, data_name, study_name))
+    fh = open(os.path.join(stk_data_path, '{}_{}.txt'.format(data_name, study_name)))
     for i, line in enumerate(fh):
         temp = line.split("\n")
         data.append(float(temp[0]))
