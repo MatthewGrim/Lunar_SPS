@@ -44,7 +44,7 @@ def main():
     # Estimate battery size
     trans_power = 10e3
     trans_eff = 0.35
-    li_ion_energy_density = 270.0  # Watt hours per kilogram
+    li_ion_energy_density = 140.0  # Watt hours per kilogram
     fuel_cell_energy_density = 500.0
     battery_mass = [trans_power * i / (trans_eff * 3600.0 * li_ion_energy_density) for i in max_stored_power_time]
     fuel_cell_mass = [trans_power * i / (trans_eff * 3600.0 * fuel_cell_energy_density) for i in max_stored_power_time]
@@ -73,16 +73,15 @@ def main():
     im = ax[0, 0].contourf(apogee_altitudes, perigee_altitudes, total_stored_power_time / 3600.0, 500)
     ax[0, 0].set_ylabel('Perigee Altitude [km]')
     fig.colorbar(im, ax=ax[0, 0])
-    ax[0, 0].set_title('Total Stored Power Time [hrs]')
+    ax[0, 0].set_title('Total Beaming Time using Stored Power [hrs]')
 
-    im = ax[0, 1].contourf(apogee_altitudes, perigee_altitudes, max_stored_power_time / 3600.0, 500)
+    im = ax[0, 1].contourf(apogee_altitudes, perigee_altitudes, np.asarray(battery_mass) * li_ion_energy_density * 1e-3, 500)
     fig.colorbar(im, ax=ax[0, 1])
-    ax[0, 1].set_title('Max Stored Power Time [hrs]')
+    ax[0, 1].set_title('Required Energy Capacity [kWhrs]')
     
     im = ax[1, 0].contourf(apogee_altitudes, perigee_altitudes, fuel_cell_mass, 500)
     ax[1, 0].set_xlabel('Apogee Altitude [km]')
-    ax[1, 0].set_ylabel(
-        'Perigee Altitude [km]')
+    ax[1, 0].set_ylabel('Perigee Altitude [km]')
     fig.colorbar(im, ax=ax[1, 0])
     ax[1, 0].set_title('Fuel Cell Mass [kg]')
 
@@ -91,15 +90,16 @@ def main():
     ax[1, 1].set_title('LiPo Battery Mass [kg]')
     ax[1, 1].set_xlabel('Apogee Altitude [km]')
     fig.suptitle("Battery mass requirements for a {} kW laser".format(trans_power * 1e-3))
-
+    plt.show()
     plt.savefig('battery_mass_requirements')
 
     plt.figure()
-    plt.title('Charge time per orbit period')
+    plt.title('Charge time per orbit period [hrs]')
     plt.contourf(apogee_altitudes, perigee_altitudes, charge_time, 500)
     plt.xlabel('Apogee Altitude [km]')
     plt.ylabel('Perigee Altitude [km]')
     plt.colorbar()
+    plt.show()
     plt.savefig('available_charge_time')
 
 
