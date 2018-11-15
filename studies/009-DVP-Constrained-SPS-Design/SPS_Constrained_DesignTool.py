@@ -277,7 +277,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     # Print out performance results for optimal orbit
     print('-----------------------------------------------------------------------------------------------------------')
     print('Optimal orbit altitudes --> Perigee: {} km, Apogee: {} km'.format(round(best_perigee - r_moon, 2), round(best_apogee - r_moon, 2)))
-    print('Orbital period --> {} minutes'.format(round(orbit_period / 60.0, 2)))
+    print('Orbital period --> {} hours'.format(round(orbit_period / 3600.0, 2)))
     print('-----------------------------------------------------------------------------------------------------------')
     print('Minimum allowable transmitter power --> {} kW'.format(round(transmitter['power'] / 1000.0, 2)))
     print('Mean flux at receiver --> {} AM0'.format(round(surf_flux['mean'] / solar_irradiance, 2)))
@@ -313,6 +313,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
         print('No events when SPS could use stored power for transmission link')
     else:
         print('Max event duration during which SPS requires stored power --> {} hours'.format(round(sorted_data_set['max_stored_power_time'][best_orbit_idx] / 3600.0, 2)))
+        print('Required Energy Capacity for beaming during eclipse --> {} Whr'.format(round(sps_battery_capacity, 2)))
         print('Approximate battery mass required to eliminate max duration event --> {} kg'.format(round(sps_battery_mass, 2)))
         print('Approximate fuel cell mass required to eliminate max duration event --> {} kg'.format(round(sps_fuel_cell_mass, 2)))
         print('Total time blackout time which could be eliminated with battery --> {} %'.format(round(100.0 * sorted_data_set['total_stored_power_time'][best_orbit_idx] / study['duration'], 2)))

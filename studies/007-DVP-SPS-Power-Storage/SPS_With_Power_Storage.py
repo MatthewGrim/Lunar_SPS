@@ -16,7 +16,7 @@ from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import *
 def main():
 
     # Select which data set to access:
-    study_name = 'SouthPole_IncrementedRes_Inertial'
+    study_name = 'Equatorial_IncrementedRes'
     # study_name = 'Equatorial_IncrementedRes'
 
     # Set bounds on parametric scan
@@ -36,13 +36,13 @@ def main():
     main_directory = os.path.dirname(os.path.dirname(current_folder))
 
     # Set file path for data
-    stk_data_path = r'{}\STK Data\{}'.format(main_directory, study_name)
+    stk_data_path = os.path.join(main_directory, 'STK Data', study_name)
 
     max_stored_power_time = sort_incremented_resolution_data(orbit_data, read_data_from_file(stk_data_path, study_name, 'MaxStoredPowerEvent'))
     total_stored_power_time = sort_incremented_resolution_data(orbit_data, read_data_from_file(stk_data_path, study_name, 'TotalStoredPowerEvent'))
 
     # Estimate battery size
-    trans_power = 100e3
+    trans_power = 10e3
     trans_eff = 0.35
     li_ion_energy_density = 270.0  # Watt hours per kilogram
     fuel_cell_energy_density = 500.0
@@ -59,27 +59,48 @@ def main():
         if orbit_data[i][1] > max(unique_apogees):
             unique_apogees.append(orbit_data[i][1])
 
+    PERI, APO = np.meshgrid(np.asarray(unique_perigees), np.asarray(unique_apogees), indexing='ij')
+    SMA = (PERI + APO) * 1e3 / 2
+    mu_moon = 6.674e-11 * 7.347673e22
+    # Charge time of the battery per orbit period
+    charge_time = np.pi * np.sqrt(SMA ** 3 / mu_moon) / 3600.0
+
     # Reduce perigee and apogee to altitudes instead of radii
     perigee_altitudes = [i - r_moon for i in unique_perigees]
     apogee_altitudes = [i - r_moon for i in unique_apogees]
 
-    plt.subplot(131)
-    plt.contourf(apogee_altitudes, perigee_altitudes, total_stored_power_time / 3600.0, 500)
+    fig, ax = plt.subplots(2, 2, sharex='col', sharey='row', figsize=(12, 8))
+    im = ax[0, 0].contourf(apogee_altitudes, perigee_altitudes, total_stored_power_time / 3600.0, 500)
+    ax[0, 0].set_ylabel('Perigee Altitude [km]')
+    fig.colorbar(im, ax=ax[0, 0])
+    ax[0, 0].set_title('Total Stored Power Time [hrs]')
+
+    im = ax[0, 1].contourf(apogee_altitudes, perigee_altitudes, max_stored_power_time / 3600.0, 500)
+    fig.colorbar(im, ax=ax[0, 1])
+    ax[0, 1].set_title('Max Stored Power Time [hrs]')
+    
+    im = ax[1, 0].contourf(apogee_altitudes, perigee_altitudes, fuel_cell_mass, 500)
+    ax[1, 0].set_xlabel('Apogee Altitude [km]')
+    ax[1, 0].set_ylabel(
+        'Perigee Altitude [km]')
+    fig.colorbar(im, ax=ax[1, 0])
+    ax[1, 0].set_title('Fuel Cell Mass [kg]')
+
+    im = ax[1, 1].contourf(apogee_altitudes, perigee_altitudes, battery_mass, 500)
+    fig.colorbar(im, ax=ax[1, 1])
+    ax[1, 1].set_title('LiPo Battery Mass [kg]')
+    ax[1, 1].set_xlabel('Apogee Altitude [km]')
+    fig.suptitle("Battery mass requirements for a {} kW laser".format(trans_power * 1e-3))
+
+    plt.savefig('battery_mass_requirements')
+
+    plt.figure()
+    plt.title('Charge time per orbit period')
+    plt.contourf(apogee_altitudes, perigee_altitudes, charge_time, 500)
     plt.xlabel('Apogee Altitude [km]')
     plt.ylabel('Perigee Altitude [km]')
     plt.colorbar()
-    plt.title('Total Stored Power Time [hrs]')
-    plt.subplot(132)
-    plt.contourf(apogee_altitudes, perigee_altitudes, battery_mass, 500)
-    plt.xlabel('Apogee Altitude [km]')
-    plt.colorbar()
-    plt.title('LiPo Battery Mass Reqd for Longest Event [kg]')
-    plt.subplot(133)
-    plt.contourf(apogee_altitudes, perigee_altitudes, fuel_cell_mass, 500)
-    plt.xlabel('Apogee Altitude [km]')
-    plt.colorbar()
-    plt.title('Fuel Cell Mass Reqd for Longest Event [kg]')
-    plt.show()
+    plt.savefig('available_charge_time')
 
 
 main()
