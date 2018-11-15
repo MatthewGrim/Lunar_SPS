@@ -258,9 +258,9 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     ####################################################################################################################
     sps_battery_capacity = transmitter['power'] * sorted_data_set['max_stored_power_time'][best_orbit_idx] / 3600.0 * transmitter['efficiency']
     # Lithium polymer battery
-    lipo_specific_power = 950.0
+    lipo_specific_power = 140.0
     # Fuel cell generator
-    fuel_cell_specific_pwr = 1500.0
+    fuel_cell_specific_pwr = 500.0
     sps_battery_mass = sps_battery_capacity / lipo_specific_power
     sps_fuel_cell_mass = sps_battery_capacity / fuel_cell_specific_pwr
     ####################################################################################################################
@@ -313,9 +313,10 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
         print('No events when SPS could use stored power for transmission link')
     else:
         print('Max event duration during which SPS requires stored power --> {} hours'.format(round(sorted_data_set['max_stored_power_time'][best_orbit_idx] / 3600.0, 2)))
-        print('Required Energy Capacity for beaming during eclipse --> {} Whr'.format(round(sps_battery_capacity, 2)))
+        print('Required Energy Capacity for beaming during eclipse --> {} kWhr'.format(round(sps_battery_capacity * 1e-3, 2)))
         print('Approximate battery mass required to eliminate max duration event --> {} kg'.format(round(sps_battery_mass, 2)))
         print('Approximate fuel cell mass required to eliminate max duration event --> {} kg'.format(round(sps_fuel_cell_mass, 2)))
+        print('Approximate time to recharge battery/fuel cell --> {} hours'.format(round(orbit_period / 3600.0 / 2.0, 2)))
         print('Total time blackout time which could be eliminated with battery --> {} %'.format(round(100.0 * sorted_data_set['total_stored_power_time'][best_orbit_idx] / study['duration'], 2)))
 
     best_orbit = [best_apogee - r_moon, best_perigee - r_moon]
