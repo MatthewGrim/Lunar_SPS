@@ -22,7 +22,7 @@ def get_energy_balance():
     stk_data_path = os.getcwd()
 
     # Import target illumination events
-    target_lighting_raw = '{}\DVP_{}_Target_Lighting.csv'.format(stk_data_path, study_name)
+    target_lighting_raw = os.path.join(stk_data_path, 'DVP_{}_Target_Lighting.csv'.format(study_name))
     assert os.path.isdir(stk_data_path), stk_data_path
     target_lighting = parse_csv_to_array(target_lighting_raw, start)
     target_eclipse = invert_events_list(target_lighting, total_duration)
@@ -39,12 +39,12 @@ def get_energy_balance():
 
     fig, ax = plt.subplots(len(rover_names), sharex=True, figsize=(20, 7))
     for i, rover_name in enumerate(rover_names):
-        sps_lighting = parse_csv_to_array('{}/{}/{}_{}_Lighting_0.csv'.format(stk_data_path, perigees[i], perigees[i], apogees[i]), start)
-        sps_access = parse_csv_to_array('{}/{}/{}_{}_Access_0.csv'.format(stk_data_path, perigees[i], perigees[i], apogees[i]), start)
+        sps_lighting = parse_csv_to_array(os.path.join(stk_data_path, str(perigees[i]), '{}_{}_Lighting_0.csv'.format(perigees[i], apogees[i])), start)
+        sps_access = parse_csv_to_array(os.path.join(stk_data_path, str(perigees[i]), '{}_{}_Access_0.csv'.format(perigees[i], apogees[i])), start)
         sps_active = determine_SPS_active_time(sps_lighting, target_eclipse, sps_access)
         if two_satellites[i]:
-            sps_lighting_2 = parse_csv_to_array('{}/{}/{}_{}_Lighting_180.csv'.format(stk_data_path, perigees[i], perigees[i], apogees[i]), start)
-            sps_access_2 = parse_csv_to_array('{}/{}/{}_{}_Access_180.csv'.format(stk_data_path, perigees[i], perigees[i], apogees[i]), start)
+            sps_lighting_2 = parse_csv_to_array(os.path.join(stk_data_path, str(perigees[i]), '{}_{}_Lighting_180.csv'.format(perigees[i], apogees[i])), start)
+            sps_access_2 = parse_csv_to_array(os.path.join(stk_data_path, str(perigees[i]), '{}_{}_Access_180.csv'.format(perigees[i], apogees[i])), start)
             sps_active_2 = determine_SPS_active_time(sps_lighting_2, target_eclipse, sps_access_2)
             sps_active = combine_events(sps_active, sps_active_2)
             num_sats = 2
