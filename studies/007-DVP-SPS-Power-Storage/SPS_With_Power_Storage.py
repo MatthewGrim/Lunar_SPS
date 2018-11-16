@@ -62,45 +62,49 @@ def main():
     PERI, APO = np.meshgrid(np.asarray(unique_perigees), np.asarray(unique_apogees), indexing='ij')
     SMA = (PERI + APO) * 1e3 / 2
     mu_moon = 6.674e-11 * 7.347673e22
+    mask = PERI > APO
     # Charge time of the battery per orbit period
-    charge_time = np.pi * np.sqrt(SMA ** 3 / mu_moon) / 3600.0
+    orbit_period = 2 * np.pi * np.sqrt(SMA ** 3 / mu_moon) / 3600.0
+    charge_time = orbit_period / 2
+    number_of_cycles = 24 / orbit_period * 365 * 10
+    number_of_cycles[mask] = np.nan
 
     # Reduce perigee and apogee to altitudes instead of radii
     perigee_altitudes = [i - r_moon for i in unique_perigees]
     apogee_altitudes = [i - r_moon for i in unique_apogees]
 
-    fig, ax = plt.subplots(2, 2, sharex='col', sharey='row', figsize=(12, 8))
-    im = ax[0, 0].contourf(apogee_altitudes, perigee_altitudes, total_stored_power_time / 3600.0, 500)
+    fig, ax = plt.subplots(2, 2, sharex='col', sharey='row', figsize=(7, 7))
+    im = ax[0, 0].contourf(apogee_altitudes, perigee_altitudes, total_stored_power_time / (3600.0 * 24 * 365 * 2), 500)
     ax[0, 0].set_ylabel('Perigee Altitude [km]')
     fig.colorbar(im, ax=ax[0, 0])
-    ax[0, 0].set_title('Total Beaming Time using Stored Power [hrs]')
-
-    im = ax[0, 1].contourf(apogee_altitudes, perigee_altitudes, np.asarray(battery_mass) * li_ion_energy_density * 1e-3, 500)
-    fig.colorbar(im, ax=ax[0, 1])
-    ax[0, 1].set_title('Required Energy Capacity [kWhrs]')
+    ax[0, 0].set_title('Total Beaming Time [%]')
     
-    im = ax[1, 0].contourf(apogee_altitudes, perigee_altitudes, fuel_cell_mass, 500)
-    ax[1, 0].set_xlabel('Apogee Altitude [km]')
-    ax[1, 0].set_ylabel('Perigee Altitude [km]')
+    im = ax[1, 0].contourf(apogee_altitudes, perigee_altitudes, np.asarray(battery_mass) * li_ion_energy_density * 1e-3, 500)
     fig.colorbar(im, ax=ax[1, 0])
-    ax[1, 0].set_title('Fuel Cell Mass [kg]')
+    ax[1, 0].set_title('Energy Capacity [kWhrs]')
+    ax[1, 0].set_ylabel('Perigee Altitude [km]')
+    ax[1, 0].set_xlabel('Apogee Altitude [km]')
+    
+    im = ax[0, 1].contourf(apogee_altitudes, perigee_altitudes, number_of_cycles, 500)
+    fig.colorbar(im, ax=ax[0, 1])
+    ax[0, 1].set_title('$N_{cycles}$ [over 10 years]')
 
     im = ax[1, 1].contourf(apogee_altitudes, perigee_altitudes, battery_mass, 500)
     fig.colorbar(im, ax=ax[1, 1])
     ax[1, 1].set_title('LiPo Battery Mass [kg]')
     ax[1, 1].set_xlabel('Apogee Altitude [km]')
     fig.suptitle("Battery mass requirements for a {} kW laser".format(trans_power * 1e-3))
-    plt.show()
     plt.savefig('battery_mass_requirements')
-
+    plt.show()
+    
     plt.figure()
     plt.title('Charge time per orbit period [hrs]')
     plt.contourf(apogee_altitudes, perigee_altitudes, charge_time, 500)
     plt.xlabel('Apogee Altitude [km]')
     plt.ylabel('Perigee Altitude [km]')
     plt.colorbar()
-    plt.show()
     plt.savefig('available_charge_time')
-
+    plt.show()
+    
 
 main()
