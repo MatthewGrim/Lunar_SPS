@@ -19,6 +19,8 @@
 *.csv
 *.txt
 *.zip
+*.png
+*.bmp
 
 /**/.DS_Store
 /**/.idea/
