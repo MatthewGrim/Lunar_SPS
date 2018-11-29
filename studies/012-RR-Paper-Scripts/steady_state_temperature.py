@@ -16,11 +16,11 @@ def get_steady_state_temperature():
     sigma = 5.670367e-8
     phi = 1360.0
 
-    T = (phi * (1 - eta) / (epsilon * sigma)) ** 0.25
+    T = (phi * (1 - eta) / (2 * epsilon * sigma)) ** 0.25
     T_interp = interpolate.interp1d(eta, T)
-    eta_estimate = 0.35 * 0.45
+    eta_estimate = 0.35 * 0.30
     print(eta_estimate)
-    print(T_interp(eta_estimate))
+    print(T_interp(eta_estimate) - 273)
 
     plt.figure(figsize=(8, 8))
 
@@ -28,10 +28,11 @@ def get_steady_state_temperature():
     plt.axvline(eta_estimate * 100.0, linestyle="--")
 
     plt.ylabel("Steady State Temperature [K]")
-    plt.xlabel("Total SPS Efficiency [%]")
+    plt.xlabel("$\eta_{pv} \eta_{laser}$ [%]")
     plt.xlim([0.0, 100.0])
     plt.ylim([np.min(T), np.max(T)])
     plt.tight_layout()
+    plt.savefig("steady_state_temperature")
     plt.show()
 
 if __name__ == '__main__':
