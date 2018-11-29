@@ -20,7 +20,8 @@ def plot_constellation_active_times():
         "max_apogee": 5000.0
     }
 
-    fig, ax = plt.subplots(2, 3, sharex='col', sharey='row')
+
+    fig, ax = plt.subplots(2, 3, sharex='col', sharey='row', figsize=(15, 8))
     for i, study_name in enumerate(['NorthPole_IncrementedRes_Generic', 'Equatorial_IncrementedRes_Generic']):
         study = study_initialization(study_name, **kwargs)
         for num_sps in range(1, 4):
@@ -43,7 +44,9 @@ def plot_constellation_active_times():
             ax[i, num_sps - 1].set_xlabel("Apolune Radius")
         name = "Polar" if "NorthPole" in study_name else "Equatorial"
         ax[i, 0].set_ylabel("{}\n Perilune Radius".format(name))
+    plt.savefig('active_times')
     plt.show()
+    
 
 
 if __name__ == '__main__':
