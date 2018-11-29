@@ -16,8 +16,8 @@ from Lunar_SPS.pysrc.sps_design_tool.SPS_Constellation_DesignFunctions import ro
 def main():
     # --- INITIALIZATION ---
     # Select scenario/configuration
-    # study_name = 'NorthPole_IncrementedRes_Generic'
-    study_name = 'Equatorial_IncrementedRes_Generic'
+    study_name = 'NorthPole_IncrementedRes_Generic'
+    # study_name = 'Equatorial_IncrementedRes_Generic'
     study_type = study_name.split('_')[0]
 
     # Select transmitter
@@ -26,7 +26,7 @@ def main():
     # Select receiver
     # Fleet size must be integer, rover separation distance must be float (with decimal)
     # Fleet size comes first, then separation
-    rover_selection = 'excavator'
+    rover_selection = 'explorer'
 
     # Defines the number of satellites in the constellation being studied
     num_sps = 1
@@ -42,7 +42,7 @@ def main():
     # Minimum pointing error of SPS system in radians
     constraints['point_error'] = 1e-7
     # Minimum reduction in overall blackout time in percent
-    constraints['min_active_time'] = rover["hibernation_pwr"] / (rover["operation_pwr"])
+    constraints['min_active_time'] = 49.76 * rover["hibernation_pwr"] / (rover["operation_pwr"])
     # Minimum power requirement at target in Watts
     constraints['min_power'] = rover['operation_pwr']
     # Maximum time rover can survive without recharging in hours
@@ -80,11 +80,11 @@ def main():
     plt.subplot(222)
     plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['max_blackout_duration'], 500)
     plt.title('Max Blackout Time [hrs]')
-    plt.ylabel('Perigee Altitude [km]')
     plt.colorbar()
     plt.subplot(223)
     plt.contourf(apogee_altitudes, perigee_altitudes, 1e-3 * rover['operation_pwr'] / (rover['rec_efficiency'] * sorted_data_set['min_link_efficiency']), 500)
     plt.title('Laser Power [kW]')
+    plt.ylabel('Perigee Altitude [km]')
     plt.xlabel('Apogee Altitude [km]')
     plt.colorbar()
     plt.subplot(224)
