@@ -57,6 +57,12 @@ def study_initialization(study_name, **kwargs):
 
 
 def rover_metrics(rover_name):
+    def approximate_rec_radius(rover):
+        solar_intensity = 1367.0
+        receiver_solar_efficiency = 0.2
+        receiver_area = rover['operation_pwr'] / (solar_intensity * receiver_solar_efficiency)
+        return np.sqrt(receiver_area / np.pi)
+
     rover = {}
     if "amalia" in rover_name:
         # Team ITALIA AMALIA (intermediate)
@@ -64,29 +70,34 @@ def rover_metrics(rover_name):
         rover['rec_efficiency'] = 0.5
         rover['hibernation_pwr'] = 7.0
         rover['battery_capacity'] = 100.0
+        rover['rec_radius'] = approximate_rec_radius(rover)
     elif "sorato" in rover_name:
         # ispace Sorato (miniature)
         rover['operation_pwr'] = 21.5
         rover['rec_efficiency'] = 0.5
         rover['hibernation_pwr'] = 4.5
         rover['battery_capacity'] = 38.0
+        rover['rec_radius'] = approximate_rec_radius(rover)
+    elif "explorer" in rover_name:
+        rover['operation_pwr'] = 140.0
+        rover['rec_efficiency'] = 0.5
+        rover['hibernation_pwr'] = 40.0
+        rover['battery_capacity'] = 1390.0
+        rover['rec_radius'] = 0.475
     elif "excavator" in rover_name:
         rover['operation_pwr'] = 760.0
         rover['rec_efficiency'] = 0.5
-        rover['hibernation_pwr'] = 100.0
-        rover['battery_capacity'] = 6000.0
+        rover['hibernation_pwr'] = 48.0
+        rover['battery_capacity'] = 4400.0
+        rover['rec_radius'] = approximate_rec_radius(rover)
     elif "demonstrator" in rover_name:
         rover['operation_pwr'] = 5350.0
         rover['rec_efficiency'] = 0.5
-        rover['hibernation_pwr'] = 300.0
-        rover['battery_capacity'] = 40e3
+        rover['hibernation_pwr'] = 145.0
+        rover['battery_capacity'] = 34.4e3
+        rover['rec_radius'] = approximate_rec_radius(rover)
     else:
         print('Invalid rover name: {}. Valid names: amalia, sorato, curiosity'.format(rover_name))
-
-    solar_intensity = 1367.0
-    receiver_solar_efficiency = 0.2
-    receiver_area = rover['operation_pwr'] / (solar_intensity * receiver_solar_efficiency)
-    rover['rec_radius'] = np.sqrt(receiver_area / np.pi)
 
     return rover
 
