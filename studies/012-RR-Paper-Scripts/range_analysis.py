@@ -58,21 +58,27 @@ def power_delivered(range_data, laser_power, laser_radius, laser_wavelength, rec
 
 def process_data(rover):
     if rover == "sorato":
-        laser_power = 29.77e3
-        laser_radius = 0.317
-        wavelength = 1060e-9
-        receiver_area = 0.175
+        laser_power = 4.29e3
+        laser_radius = 1.0562
+        wavelength = 1070e-9
+        receiver_area = 0.07863935625457205
         data = import_range_data(os.path.join("2300", "2300_2300_range_data"))
-        power = power_delivered(data, laser_power, laser_radius, wavelength, receiver_area)
-    elif rover == "AMALIA":
+    elif rover == "AMALIA_1700":
         laser_power = 19.43e3
         laser_radius = 0.2392
         wavelength = 850e-9
         receiver_area = 0.366
         data = import_range_data(os.path.join("1700", "1700_1700_range_data"))
-        power = power_delivered(data, laser_power, laser_radius, wavelength, receiver_area)
+    elif rover == "AMALIA_1300":
+        laser_power = 2.98e3
+        laser_radius = 0.8844
+        wavelength = 1070e-9
+        receiver_area = 0.366
+        data = import_range_data(os.path.join("1300", "1300_1300_range_data"))
     else:
         raise ValueError("Rover name does not exist!")
+
+    power = power_delivered(data, laser_power, laser_radius, wavelength, receiver_area)
 
     power_density = power / receiver_area
     receiver_efficiency = 0.5
@@ -85,9 +91,10 @@ def process_data(rover):
     ax[1].set_ylabel("Received power [$W$]")
     ax[1].set_xlim([data[0, 0], 1])
     fig.suptitle("Power received plots for {}".format(rover))
+    plt.savefig("{}_power_delivered".format(rover))
     plt.show()
 
 
 if __name__ == '__main__':
-    rover_name = "AMALIA"
+    rover_name = "AMALIA_1300"
     process_data(rover_name)
