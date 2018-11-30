@@ -86,6 +86,7 @@ def get_intensity_profile(params):
 	fig, ax = plt.subplots(2, sharex=True, figsize=(12, 7))
 
 	color_i = np.linspace(0, 1, len(ranges))
+	sigma_max = 1e-6
 	for i, z in enumerate(ranges):
 		c = plt.cm.viridis(color_i[i])
 
@@ -95,23 +96,26 @@ def get_intensity_profile(params):
 		I_max = I_interp(0.0)
 
 		r_e2 = r_interp(I_max / np.exp(2))
-		ax[0].plot(r, I, label="{}$km$".format(z * 1e-3), color=c)
+		ax[0].plot(r, I, label="{}$km$".format(round(z * 1e-3, 4)), color=c)
 		if i == 0:
 			ax[0].axvline(target_radius, linestyle='-', color="k", label="Target Radius")
 			ax[0].axhline(phi_req, linestyle='--', color="grey", label="$\phi_{req}$")
 			ax[0].axvline(r_e2, linestyle='--', color=c, label="beam_radius")
-			ax[0].axvline(sigma * z, linestyle=':', color=c, label="pointing error")
+			ax[0].axvline(sigma * z, linestyle=':', color=c, label="pointing error: {}".format(round(sigma, 8)))
 		else:
 			ax[0].axvline(r_e2, linestyle='--', color=c)
 			ax[0].axvline(sigma * z, linestyle=':', color=c)
 
 		I_grad = np.diff(I) / np.diff(r)
 
-		ax[1].plot((r[0:-1] + r[1:]) / 2, I_grad, label="{}$km$".format(z * 1e-3), color=c)
+		ax[1].plot((r[0:-1] + r[1:]) / 2, I_grad, label="{}$km$".format(round(z * 1e-3, 4)), color=c)
 		ax[1].axvline(r_e2, linestyle='--', color=c)
 		ax[1].axvline(sigma * z, linestyle=':', color=c)
 		if i == 0:
 			ax[1].axvline(target_radius, linestyle='-', color="k", label="Target Radius")
+
+		sigma_max = ((r_e2 - target_radius) / z)
+		print("Minimum pointing requirement at {}: {}".format(z, sigma_max))
 
 	ax[0].set_xlim([0, r_radius])
 	ax[0].set_ylabel("Normalised Intensity [$Wm^{-2}]$")
@@ -119,7 +123,7 @@ def get_intensity_profile(params):
 	ax[1].set_xlabel("Offset from beam centre [m]")
 	ax[0].legend()
 	ax[1].legend()
-	fig.suptitle("Parameter selection: {}\nTarget Radius: {}$m$".format(params, target_radius))
+	fig.suptitle("Parameter selection: {}\nTarget Radius: {}$m$\nMinimum pointing: {}".format(params, target_radius, round(sigma_max, 8)))
 
 	plt.savefig("{}_intensity_profile".format(params))
 	plt.show()
@@ -127,7 +131,7 @@ def get_intensity_profile(params):
 
 if __name__ == '__main__':
 	params = "Sorato_2300_submicro"
-	params = "AMALIA_1300_submicro"
+	# params = "AMALIA_1300_submicro"
 	get_intensity_profile(params)
 	get_transmitter_options(params)
 
