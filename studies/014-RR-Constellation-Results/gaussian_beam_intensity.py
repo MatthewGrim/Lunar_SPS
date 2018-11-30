@@ -23,26 +23,42 @@ def gaussian_beam_intensity(z, r, w_0, wavelength, P_in):
 
 	return I
 
-def get_flux_transmitter_radius_dependence(w_t, z, wavelength, P_las, P_rec, A_rec):
-	phi_rec = P_rec / A_rec
-	phi_beam = P_las / (np.pi * w_t ** 2 * (1 + (z * wavelength / (np.pi * w_t ** 2)) ** 2))
+def get_transmitter_options(params):
+	if params is "Sorato_2300_submicro":
+		z = 3644010.0
+		wavelength = 1070e-9
+		P_rec = 43.0
+		A_rec = 0.079
+		P_las = 4.29e3
+		w_t = np.linspace(0.05, 1.12, 100)
+	elif params is "AMALIA_1300_submicro":
+		z = 2531.95e3
+		wavelength = 1070e-9
+		P_rec = 200.0
+		A_rec = 0.365764447695684
+		P_las = 2.98e3
+		w_t = np.linspace(0.05, 1.12, 100)
+	else:
+		ValueError("Invalid parameter selection")
 
-	plt.figure()
-	plt.plot(w_t, phi_beam)
-	plt.axhline(phi_rec, linestyle='--')
+	phi_beam = P_las / (np.pi * w_t ** 2 * (1 + (z * wavelength / (np.pi * w_t ** 2)) ** 2))
+	phi_rec = P_rec / A_rec
+	
+	plt.figure(figsize=(12, 7))
+	
+	plt.plot(w_t, phi_beam, label="Beam flux")
+	plt.axhline(phi_rec, linestyle='--', label="Required flux")
+	plt.axvline(np.sqrt(z * wavelength / np.pi), linestyle='--', label="Transmitter radius")
+	
+	plt.xlabel("Transmitter radius $w_t$ [$m$]")
+	plt.ylabel("Flux at target $phi$ [$Wm^{-2}$]")
+	plt.title("Optimum beam radius for {}".format(params))
+	plt.legend()
+
+	plt.savefig("{}_optimum_beam".format(params))
 	plt.show()
 
-def get_transmitter_options():
-	z = 2531e3
-	wavelength = 859e-9
-	P_rec = 43.0
-	A_rec = 0.079
-	P_las = 3.44e3
-	w_t = np.linspace(0.05, 1.12, 100)
-	get_flux_transmitter_radius_dependence(w_t, z, wavelength, P_las, P_rec, A_rec)
-
-def get_intensity_profile():
-	params = "AMALIA_1300_submicro"
+def get_intensity_profile(params):
 	if params is "AMALIA_1300_submicro":
 		ranges = [2183.26e3, 2531.95e3]
 		r_radius = 2.5
@@ -80,12 +96,15 @@ def get_intensity_profile():
 
 		r_e2 = r_interp(I_max / np.exp(2))
 		ax[0].plot(r, I, label="{}$km$".format(z * 1e-3), color=c)
-		ax[0].axvline(r_e2, linestyle='--', color=c)
-		ax[0].axvline(sigma * z, linestyle=':', color=c)
 		if i == 0:
 			ax[0].axvline(target_radius, linestyle='-', color="k", label="Target Radius")
 			ax[0].axhline(phi_req, linestyle='--', color="grey", label="$\phi_{req}$")
-	
+			ax[0].axvline(r_e2, linestyle='--', color=c, label="beam_radius")
+			ax[0].axvline(sigma * z, linestyle=':', color=c, label="pointing error")
+		else:
+			ax[0].axvline(r_e2, linestyle='--', color=c)
+			ax[0].axvline(sigma * z, linestyle=':', color=c)
+
 		I_grad = np.diff(I) / np.diff(r)
 
 		ax[1].plot((r[0:-1] + r[1:]) / 2, I_grad, label="{}$km$".format(z * 1e-3), color=c)
@@ -102,11 +121,13 @@ def get_intensity_profile():
 	ax[1].legend()
 	fig.suptitle("Parameter selection: {}\nTarget Radius: {}$m$".format(params, target_radius))
 
-	plt.savefig(params)
+	plt.savefig("{}_intensity_profile".format(params))
 	plt.show()
 
 
 if __name__ == '__main__':
-	get_intensity_profile()
-	# get_transmitter_options()
+	params = "Sorato_2300_submicro"
+	params = "AMALIA_1300_submicro"
+	get_intensity_profile(params)
+	get_transmitter_options(params)
 
