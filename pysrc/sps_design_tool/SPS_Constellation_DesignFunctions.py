@@ -108,14 +108,14 @@ def trans_metrics(selection):
 
     if '100kW' in selection:
         # IPG YLS10000
-        transmitter['wavelength'] = 859e-9
+        transmitter['wavelength'] = 1070e-9
         transmitter['power'] = 100e3
         transmitter['mass'] = 3600.0
         transmitter['efficiency'] = 0.35
 
     elif selection == '15kW':
         # IPG YLS-CUT
-        transmitter['wavelength'] = 859e-9
+        transmitter['wavelength'] = 1070e-9
         transmitter['power'] = 15e3
         transmitter['mass'] = 440.0
         transmitter['efficiency'] = 0.35
@@ -123,7 +123,7 @@ def trans_metrics(selection):
     elif selection == '4kW':
         # Fujikura
         # Mass is estimated based on specific power of IPG lasers
-        transmitter['wavelength'] = 859e-9
+        transmitter['wavelength'] = 1070e-9
         transmitter['power'] = 4e3
         transmitter['mass'] = 150.0
         transmitter['efficiency'] = 0.26
@@ -203,9 +203,9 @@ def read_in_processed_data_reports(stk_data_path, study_name, num_sps):
     # data_set['total_station_keeping'] = np.loadtxt(os.path.join(stk_data_path, "TotalStationKeeping_{}SPS_{}.txt".format(num_sps, study_name)))
 
     # STORED POWER
-    # data_set['total_stored_power_time'] = np.loadtxt(os.path.join(stk_data_path, "TotalStoredPower_{}SPS_{}.txt".format(num_sps, study_name)))
-    # data_set['max_stored_power_time'] = np.loadtxt(os.path.join(stk_data_path, "MaxStoredPower_{}SPS_{}.txt".format(num_sps, study_name)))
-    # data_set['mean_stored_power_time'] = np.loadtxt(os.path.join(stk_data_path, "MeanStoredPower_{}SPS_{}.txt".format(num_sps, study_name)))
+    data_set['total_stored_power_time'] = np.loadtxt(os.path.join(stk_data_path, "TotalStoredPower_{}SPS_{}.txt".format(num_sps, study_name)))
+    data_set['max_stored_power_time'] = np.loadtxt(os.path.join(stk_data_path, "MaxStoredPower_{}SPS_{}.txt".format(num_sps, study_name)))
+    data_set['mean_stored_power_time'] = np.loadtxt(os.path.join(stk_data_path, "MeanStoredPower_{}SPS_{}.txt".format(num_sps, study_name)))
 
     data_set['mean_range'] = np.loadtxt(os.path.join(stk_data_path, "MeanRange_{}SPS_{}.txt".format(num_sps, study_name)))
     data_set['max_range'] = np.loadtxt(os.path.join(stk_data_path, "MeanMaxRange_{}SPS_{}.txt".format(num_sps, study_name)))

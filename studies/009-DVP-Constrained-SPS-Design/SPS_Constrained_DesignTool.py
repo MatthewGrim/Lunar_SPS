@@ -256,7 +256,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
 
     # ESTIMATE SPS BATTERY MASS
     ####################################################################################################################
-    sps_battery_capacity = transmitter['power'] * sorted_data_set['max_stored_power_time'][best_orbit_idx] / 3600.0 * transmitter['efficiency']
+    sps_battery_capacity = transmitter['power'] * sorted_data_set['max_stored_power_time'][best_orbit_idx] / (3600.0 * transmitter['efficiency'])
     # Lithium polymer battery
     lipo_specific_power = 140.0
     # Fuel cell generator
@@ -320,7 +320,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
         print('Approximate time to recharge battery/fuel cell --> {} hours'.format(round(orbit_period / 3600.0 / 2.0, 2)))
         print('Approximate number of cycles over ten year period --> {}'.format(round(number_of_cycles, 2)))
         print('Total time blackout time which could be eliminated with battery --> {} %'.format(round(100.0 * sorted_data_set['total_stored_power_time'][best_orbit_idx] / study['duration'], 2)))
-
+ 
     best_orbit = [best_apogee - r_moon, best_perigee - r_moon]
     return apogee_altitudes, perigee_altitudes, sorted_data_set, best_orbit
 

@@ -114,6 +114,13 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     solar_array_eff = 0.3
     steady_state_temp = (solar_irradiance * (1 - solar_array_eff * transmitter['efficiency']) / (2 * emissivity * 5.67e-8)) ** 0.25
 
+    # ESTIMATE SPS BATTERY MASS
+    sps_battery_capacity = transmitter['power'] * sorted_data_set['max_stored_power_time'][best_orbit_idx] / (3600.0 * transmitter['efficiency'])
+    # Lithium polymer battery
+    lipo_specific_power = 140.0
+    sps_battery_mass = sps_battery_capacity / lipo_specific_power
+    number_of_cycles = 24 / orbit_period * 3600.0 * 365 * 10
+
     # --- EVALUATE FLUX AND HEAT LOAD AT RECEIVER ---
     surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (sorted_data_set['mean_range'][best_orbit_idx] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2)
     target_flux = transmitter['power'] / (np.pi * surf_beam_radius ** 2)
@@ -134,7 +141,9 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     print('Total blackout time --> {} %'.format(round(100.0 * sorted_data_set['total_blackout_time'][best_orbit_idx] / study['duration'], 2)))
     print('Max active period duration --> {} hours'.format(round(sorted_data_set['max_active_time'][best_orbit_idx] / 3600.0, 2)))
     print('Max blackout period duration --> {} hours'.format(round(sorted_data_set['max_blackout_duration'][best_orbit_idx], 2)))
-    
+    print('Min range to target --> {} km'.format(round(sorted_data_set['min_range'][best_orbit_idx], 2)))
+    print('Max range to target --> {} km'.format(round(sorted_data_set['max_range'][best_orbit_idx], 2)))
+
     header = ' LASER TRANSMITTER '
     num_lines = (num_lines_in_header - len(header)) // 2
     print('-' * num_lines + header + '-' * num_lines)
