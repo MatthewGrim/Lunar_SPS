@@ -25,33 +25,17 @@ def gaussian_beam_intensity(z, r, w_0, wavelength, P_in):
 
 
 if __name__ == '__main__':
-	params = "Sorato_2300_submicro"
+	params = "AMALIA_1300_submicro"
 	if params is "AMALIA_1300_submicro":
-		ranges = [0.0, 1300e3]
+		ranges = [2183.26e3, 2531.95e3]
 		r_radius = 2.5
 		r = np.linspace(0.0, r_radius, 500)
 		wavelength = 1070e-9
 		w_0 = 0.79
 		P_in = 2.35e3
 		target_radius = 0.341
-	elif params is "AMALIA_1700_submicro":
-		ranges = [0.0, 1700e3]
-		r_radius = 2.5
-		r = np.linspace(0.0, r_radius, 500)
-		wavelength = 1070e-9
-		w_0 = 0.89
-		P_in = 2.8e3
-		target_radius = 0.341
-	elif params is "AMALIA_1700_micro":
-		ranges = [0.0, 1700e3]
-		r_radius = 5.0
-		r = np.linspace(0.0, r_radius, 500)
-		wavelength = 1070e-9
-		w_0 = 0.24
-		P_in = 19.4e3
-		target_radius = 0.341
 	elif params is "Sorato_2300_submicro":
-		ranges = [0.0, 2300e3]
+		ranges = [3065150.0, 3644010.0]
 		r_radius = 2.5
 		r = np.linspace(0.0, r_radius, 500)
 		wavelength = 1070e-9
@@ -60,6 +44,8 @@ if __name__ == '__main__':
 		target_radius = 0.158
 	else:
 		raise ValueError("Invalid parameter selection")
+	r_moon = 1737e3
+	sigma = 1e-7
 
 	fig, ax = plt.subplots(2, sharex=True, figsize=(12, 7))
 
@@ -75,11 +61,13 @@ if __name__ == '__main__':
 		r_e2 = r_interp(I_max / np.exp(2))
 		ax[0].plot(r, I, label="{}$km$".format(z * 1e-3), color=c)
 		ax[0].axvline(r_e2, linestyle='--', color=c)
+		ax[0].axvline(sigma * z, linestyle=':', color=c)
 	
 		I_grad = np.diff(I) / np.diff(r)
 
 		ax[1].plot((r[0:-1] + r[1:]) / 2, I_grad, label="{}$km$".format(z * 1e-3), color=c)
 		ax[1].axvline(r_e2, linestyle='--', color=c)
+		ax[1].axvline(sigma * z, linestyle=':', color=c)
 
 	ax[0].set_xlim([0, r_radius])
 	ax[0].set_ylabel("Normalised Intensity [$Wm^{-2}]$")
@@ -89,6 +77,7 @@ if __name__ == '__main__':
 	ax[1].legend()
 	fig.suptitle("Parameter selection: {}\nTarget Radius: {}$m$".format(params, target_radius))
 
+	plt.savefig(params)
 	plt.show()
 
 
