@@ -16,14 +16,14 @@ def evaluate_w_z(w_0, wavelength, z):
 
 	return w_z
 
-def gaussian_beam_intensity(z, r, w_0, wavelength, P_in):
-	w_z = evaluate_w_z(w_0, wavelength, z)
+def gaussian_beam_intensity(r, w_0, w_z, wavelength, P_in):
 	I_0 = 2 * P_in / (np.pi * w_0 ** 2)
 	I = I_0 * (w_0 / w_z) ** 2 * np.exp(-2 * r ** 2 / w_z ** 2)
 
 	return I
 
 def get_transmitter_options(params):
+	# Select parameters
 	if params is "Sorato_2300_submicro":
 		z = 3644010.0
 		wavelength = 1070e-9
@@ -59,6 +59,7 @@ def get_transmitter_options(params):
 	plt.show()
 
 def get_intensity_profile(params):
+	# Select parameters
 	if params is "AMALIA_1300_submicro":
 		ranges = [2183.26e3, 2531.95e3]
 		r_radius = 2.5
@@ -79,6 +80,9 @@ def get_intensity_profile(params):
 		target_radius = 0.158
 	else:
 		raise ValueError("Invalid parameter selection")
+	
+	# Calculate required surface flux and correct laser power for 1 / e2 factor
+	P_in /= 1 - np.exp(-2)
 	r_moon = 1737e3
 	sigma = 1e-7
 	phi_req = P_rec / (np.pi * target_radius ** 2)
@@ -86,11 +90,14 @@ def get_intensity_profile(params):
 	fig, ax = plt.subplots(2, sharex=True, figsize=(12, 7))
 
 	color_i = np.linspace(0, 1, len(ranges))
-	sigma_max = 1e-6
+	# sigma_max and phi_max are set to be large to see if they are improved by designs
+	sigma_min = 1e-6
+	phi_min = P_in
 	for i, z in enumerate(ranges):
 		c = plt.cm.viridis(color_i[i])
 
-		I = gaussian_beam_intensity(z, r, w_0, wavelength, P_in)
+		w_z = evaluate_w_z(w_0, wavelength, z)
+		I = gaussian_beam_intensity(r, w_0, w_z, wavelength, P_in)
 		r_interp = interpolate.interp1d(I, r)
 		I_interp = interpolate.interp1d(r, I)
 		I_max = I_interp(0.0)
@@ -114,8 +121,22 @@ def get_intensity_profile(params):
 		if i == 0:
 			ax[1].axvline(target_radius, linestyle='-', color="k", label="Target Radius")
 
-		sigma_max = ((r_e2 - target_radius) / z)
-		print("Minimum pointing requirement at {}: {}".format(z, sigma_max))
+		sigma_min = min((r_e2 - target_radius) / z, sigma_min)
+
+		target_error_radius = target_radius + sigma * z
+
+		P_error_radius = P_in * (1 - np.exp(-2 * target_error_radius ** 2 / w_z ** 2))
+		phi_error_radius = P_error_radius / (np.pi * target_error_radius ** 2)
+		phi_min = min(phi_min, phi_error_radius)
+
+
+	# State minimum pointing requirement
+	print("For {}".format(params))
+	print("Minimum pointing requirement: {}".format(sigma_min))
+	print("Potential pointing requirement increase: {}".format(sigma_min / sigma))
+	print("Minimum target flux: {}".format(phi_min))
+	print("Potential laser power decrease: {}".format(phi_min / phi_req))
+	P_min = P_in / phi_min * phi_req
 
 	ax[0].set_xlim([0, r_radius])
 	ax[0].set_ylabel("Normalised Intensity [$Wm^{-2}]$")
@@ -123,7 +144,7 @@ def get_intensity_profile(params):
 	ax[1].set_xlabel("Offset from beam centre [m]")
 	ax[0].legend()
 	ax[1].legend()
-	fig.suptitle("Parameter selection: {}\nTarget Radius: {}$m$\nMinimum pointing: {}".format(params, target_radius, round(sigma_max, 8)))
+	fig.suptitle("Parameter selection: {}\nTarget Radius: {}$m$\nMinimum pointing: {}Rad, Minimum laser power: {}kW".format(params, target_radius, round(sigma_min, 8), round(P_min * 1e-3, 4)))
 
 	plt.savefig("{}_intensity_profile".format(params))
 	plt.show()
@@ -131,7 +152,7 @@ def get_intensity_profile(params):
 
 if __name__ == '__main__':
 	params = "Sorato_2300_submicro"
-	# params = "AMALIA_1300_submicro"
+	params = "AMALIA_1300_submicro"
 	get_intensity_profile(params)
-	get_transmitter_options(params)
+	# get_transmitter_options(params)
 
