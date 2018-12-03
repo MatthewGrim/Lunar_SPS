@@ -167,7 +167,7 @@ def determine_number_of_sps_for_active_time(stk_data_path, study_name, study, co
     return num_sps
 
 
-def read_in_processed_data_reports(stk_data_path, study_name, num_sps):
+def read_in_processed_data_reports(stk_data_path, study_name, num_sps, use_storage):
     data_set = {}
     if use_storage:
         data_set['total_active_time'] = read_data_from_file(stk_data_path, study_name, "TotalActiveWithStorage_{}SPS".format(num_sps))

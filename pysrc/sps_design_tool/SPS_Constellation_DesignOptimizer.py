@@ -32,13 +32,17 @@ def calculate_link_eff(trans_radius, args, **kwargs):
     # Retrieve study name
     study_name = args[5]
     duration = args[6]
+    use_storage = args[7]
 
     # Set file path for data
     stk_data_path = os.path.join(main_directory, 'STK Data', study_name)
 
     # --- READ IN DATA FILES ---
     data_set = {}
-    data_set['total_active_time'] = read_data_from_file(stk_data_path, study_name, "TotalActive_{}SPS".format(num_sps))
+    if use_storage:
+        data_set['total_active_time'] = read_data_from_file(stk_data_path, study_name, "TotalActiveWithStorage_{}SPS".format(num_sps))
+    else:
+        data_set['total_active_time'] = read_data_from_file(stk_data_path, study_name, "TotalActive_{}SPS".format(num_sps))
     data_set['max_blackout_time'] = read_data_from_file(stk_data_path, study_name, "MaxBlackout_{}SPS".format(num_sps))
     data_set['mean_range'] = np.loadtxt(os.path.join(stk_data_path, "MeanRange_{}SPS_{}.txt".format(num_sps, study_name)))
     data_set['max_range'] = np.loadtxt(os.path.join(stk_data_path, "MeanMaxRange_{}SPS_{}.txt".format(num_sps, study_name)))
@@ -145,12 +149,12 @@ def calculate_link_eff(trans_radius, args, **kwargs):
     return 1.0 - data_set['mean_link_efficiency'][best_orbit_idx]
 
 
-def optimize_link_efficiency(num_sps, trans_selection, rover_selection, constraints, active_constraints, study_name, duration):
+def optimize_link_efficiency(num_sps, trans_selection, rover_selection, constraints, active_constraints, study_name, duration, use_storage):
 
     from scipy.optimize import minimize_scalar
 
     trans_radius_max = 1.12
-    args = [num_sps, trans_selection, rover_selection, constraints, active_constraints, study_name, duration]
+    args = [num_sps, trans_selection, rover_selection, constraints, active_constraints, study_name, duration, use_storage]
 
     iter = 0
     while True:
@@ -164,3 +168,4 @@ def optimize_link_efficiency(num_sps, trans_selection, rover_selection, constrai
         iter += 1
         if iter > 15:
             raise RuntimeError()
+

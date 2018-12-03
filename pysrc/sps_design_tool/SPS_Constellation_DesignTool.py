@@ -22,6 +22,7 @@ from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import *
 
 
 def generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints, num_sps,
+                          use_storage=False,
                           **kwargs):
     # --- INITIALIZATION ---
     study = study_initialization(study_name, **kwargs)
@@ -38,24 +39,11 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     # Based on current constraints, determine transmitter aperture size which provides highest possible link efficiency
     # within constrained design space
     optimum = optimize_link_efficiency(num_sps, transmitter_selection, rover_selection, constraints,
-                                       active_constraints, study_name, study['duration'])
+                                       active_constraints, study_name, study['duration'], use_storage)
     transmitter['radius'] = optimum.x
 
     # --- READ IN DATA FILES ---
     data_set = read_in_processed_data_reports(stk_data_path, study_name, num_sps)
-
-    # --- ESTIMATE MAGNITUDE OF ORBITAL PERTURBATIONS and STATION KEEPING ---
-    # Orbital perturbations on argument of perigee [0], eccentricity [1], and inclination [2]
-    perturbations = calculate_orbital_perturbations(study['semi-maj-axis'], study['eccentricity'], study['inclination'], study['arg_perigee'])
-    # Calculate skew in argument of perigee in degrees per year
-    data_set['arg_perigee_drift'] = [abs(i * (365.0 * 24.0 * 3600.0) * 180.0 / np.pi) for i in perturbations[0]]
-    data_set['eccentricity_dt'] = perturbations[1]
-    data_set['inclination_dt'] = perturbations[2]
-
-    # --- ESTIMATE DELTA V REQUIRED TO MAINTAIN ORBIT ---
-    mu_moon = 6.674e-11 * 7.347673e22
-    # delta v required to adjust argument of perigee to negate approximate drift rate
-    data_set['delta_v_to_maintain'] = [2 * i * np.sqrt(mu_moon / (j * (1 - i ** 2))) * np.sin((k / 2) * (np.pi / 180.0)) for i, j, k in zip(study['eccentricity'], study['semi-maj-axis'], data_set['arg_perigee_drift'])]
 
     # --- ENFORCE CONSTRAINTS ---
     # Remove infeasible designs which do not have any active events
@@ -69,7 +57,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     data_set['max_blackout_duration'] = [i / 3600.0 for i in data_set['max_blackout_duration']]
     data_set['min_active_duration'] = [i / 3600.0 for i in data_set['min_active_duration']]
     data_set['total_active_time'] = [100.0 * i / study['duration'] for i in data_set['total_active_time']]
-
+    
     # Remove data points for which blackout durations exceed the limit
     if active_constraints['max_blackout'] == 1:
         data_set = enforce_constraints(data_set, 'max_blackout_duration', constraints, 'max_blackout', 'max')
