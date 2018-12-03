@@ -43,7 +43,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     transmitter['radius'] = optimum.x
 
     # --- READ IN DATA FILES ---
-    data_set = read_in_processed_data_reports(stk_data_path, study_name, num_sps)
+    data_set = read_in_processed_data_reports(stk_data_path, study_name, num_sps, use_storage)
 
     # --- ENFORCE CONSTRAINTS ---
     # Remove infeasible designs which do not have any active events
