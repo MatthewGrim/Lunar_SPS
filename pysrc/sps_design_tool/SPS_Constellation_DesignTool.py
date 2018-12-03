@@ -105,16 +105,19 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     solar_array_eff = 0.3
     steady_state_temp = (solar_irradiance * (1 - solar_array_eff * transmitter['efficiency']) / (2 * emissivity * 5.67e-8)) ** 0.25
 
-    # ESTIMATE SPS BATTERY MASS
-    sps_battery_capacity = transmitter['power'] * sorted_data_set['max_stored_power_time'][best_orbit_idx] / (3600.0 * transmitter['efficiency'])
-    lipo_specific_power = 140.0
-    sps_battery_mass = sps_battery_capacity / lipo_specific_power
-    number_of_cycles = 24 / orbit_period * 3600.0 * 365 * 10
-
     # --- EVALUATE FLUX AND HEAT LOAD AT RECEIVER ---
     surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (sorted_data_set['mean_range'][best_orbit_idx] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2)
     target_flux = transmitter['power'] / (np.pi * surf_beam_radius ** 2)
     target_heat_load = target_flux * (1 - rover['rec_efficiency']) * np.pi * rover['rec_radius'] ** 2
+
+    # ESTIMATE SPS BATTERY MASS
+    # Get full transmitter power - including power beyond 1 / e2 drop off
+    transmitter['power'] /= 1 - np.exp(-2)
+    sps_battery_capacity = transmitter['power'] * sorted_data_set['max_stored_power_time'][best_orbit_idx] / (3600.0 * transmitter['efficiency'])
+    lipo_specific_power = 140.0
+    sps_battery_mass = sps_battery_capacity / lipo_specific_power
+    number_of_cycles = 24 / orbit_period * 3600.0 * 365 * 10
+    charge_time = orbit_period / 2
 
     # --- DISPLAY RESULTS ---
     # Print out performance results for optimal orbit
@@ -143,6 +146,15 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     print('Mean power delivered --> {} W'.format(round(sorted_data_set['mean_power_received'][best_orbit_idx], 2)))
     print('Steady state temperature --> {} Celsius'.format(round(steady_state_temp - 273.15, 2)))
     
+    header = ' BATTERY CHARACTERISTICS '
+    num_lines = (num_lines_in_header - len(header)) // 2
+    print('-' * num_lines + header + '-' * num_lines)
+    print('Battery capacity --> {} Whr'.format(round(sps_battery_capacity, 2)))
+    print('Battery mass --> {} kg'.format(round(sps_battery_mass, 2)))
+    print('Battery cycles --> {}'.format(round(number_of_cycles, 2)))
+    print('Battery charge time --> {} hr'.format(round(charge_time / 3600, 2)))
+    
+
     header = ' RECEIVER CHARACTERISTICS '
     num_lines = (num_lines_in_header - len(header)) // 2
     print('-' * num_lines + header + '-' * num_lines)
