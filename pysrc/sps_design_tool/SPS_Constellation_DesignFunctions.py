@@ -171,19 +171,23 @@ def read_in_processed_data_reports(stk_data_path, study_name, num_sps, use_stora
     data_set = {}
     if use_storage:
         data_set['total_active_time'] = read_data_from_file(stk_data_path, study_name, "TotalActiveWithStorage_{}SPS".format(num_sps))
-        data_set['total_blackout_time'] = read_data_from_file(stk_data_path, study_name, "TotalBlackoutWithStorage_{}SPS".format(num_sps))
         data_set['max_active_time'] = read_data_from_file(stk_data_path, study_name, "MaxActiveWithStorage_{}SPS".format(num_sps))
         data_set['mean_active_time'] = read_data_from_file(stk_data_path, study_name, "MeanActiveWithStorage_{}SPS".format(num_sps))
         data_set['min_active_duration'] = read_data_from_file(stk_data_path, study_name, 'MinActiveWithStorage_{}SPS'.format(num_sps))
+
+        data_set['total_blackout_time'] = read_data_from_file(stk_data_path, study_name, "TotalBlackoutWithStorage_{}SPS".format(num_sps))
+        data_set['max_blackout_duration'] = read_data_from_file(stk_data_path, study_name, "MaxBlackoutWithStorage_{}SPS".format(num_sps))
+        data_set['mean_blackout_time'] = read_data_from_file(stk_data_path, study_name, "MeanBlackoutWithStorage_{}SPS".format(num_sps))
     else:
         data_set['total_active_time'] = read_data_from_file(stk_data_path, study_name, "TotalActive_{}SPS".format(num_sps))
         data_set['total_blackout_time'] = read_data_from_file(stk_data_path, study_name, "TotalBlackout_{}SPS".format(num_sps))
         data_set['max_active_time'] = read_data_from_file(stk_data_path, study_name, "MaxActive_{}SPS".format(num_sps))
         data_set['mean_active_time'] = read_data_from_file(stk_data_path, study_name, "MeanActive_{}SPS".format(num_sps))
         data_set['min_active_duration'] = read_data_from_file(stk_data_path, study_name, 'MinActive_{}SPS'.format(num_sps))
-    
-    data_set['max_blackout_duration'] = read_data_from_file(stk_data_path, study_name, "MaxBlackout_{}SPS".format(num_sps))
-    data_set['mean_blackout_time'] = read_data_from_file(stk_data_path, study_name, "MeanBlackout_{}SPS".format(num_sps))
+
+        data_set['total_blackout_time'] = read_data_from_file(stk_data_path, study_name, "TotalBlackout_{}SPS".format(num_sps))
+        data_set['max_blackout_duration'] = read_data_from_file(stk_data_path, study_name, "MaxBlackout_{}SPS".format(num_sps))
+        data_set['mean_blackout_time'] = read_data_from_file(stk_data_path, study_name, "MeanBlackout_{}SPS".format(num_sps))
 
     data_set['mean_range'] = np.loadtxt(os.path.join(stk_data_path, "MeanRange_{}SPS_{}.txt".format(num_sps, study_name)))
     data_set['max_range'] = np.loadtxt(os.path.join(stk_data_path, "MeanMaxRange_{}SPS_{}.txt".format(num_sps, study_name)))

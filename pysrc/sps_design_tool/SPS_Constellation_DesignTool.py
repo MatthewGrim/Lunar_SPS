@@ -84,11 +84,14 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
 
     # --- SELECT SOLUTION WITH HIGHEST LINK EFFICIENCY ---
     # Find best orbit according to weighted objective function
+    
     best_orbit_idx = unravel_index(np.nanargmax(sorted_data_set['mean_link_efficiency']), sorted_data_set['mean_link_efficiency'].shape)
     best_perigee = unique_perigees[best_orbit_idx[0]]
     best_apogee = unique_apogees[best_orbit_idx[1]]
     eccentricity = (best_apogee - best_perigee)/(best_apogee + best_perigee)
     semi_maj_axis = best_perigee / (1 - eccentricity)
+    
+    mu_moon = 6.674e-11 * 7.347673e22
     orbit_period = 2 * np.pi * np.sqrt((semi_maj_axis * 1000.0) ** 3 / mu_moon)
 
     # --- OPTIMIZE TRANSMITTER POWER ---
@@ -104,7 +107,6 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
 
     # ESTIMATE SPS BATTERY MASS
     sps_battery_capacity = transmitter['power'] * sorted_data_set['max_stored_power_time'][best_orbit_idx] / (3600.0 * transmitter['efficiency'])
-    # Lithium polymer battery
     lipo_specific_power = 140.0
     sps_battery_mass = sps_battery_capacity / lipo_specific_power
     number_of_cycles = 24 / orbit_period * 3600.0 * 365 * 10
@@ -150,14 +152,6 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     print('Minimum flux at receiver --> {} AM0'.format(round(surf_flux['min'] / solar_irradiance, 2)))
     print('Mean heat load on receiver --> {} W'.format(round(target_heat_load, 2)))
     print('Total energy transferred --> {} MJ per year'.format(round(sorted_data_set['total_energy'][best_orbit_idx] / 2e6, 2)))
-    
-    header = ' ORBITAL STABILITY '
-    num_lines = (num_lines_in_header - len(header)) // 2
-    print('-' * num_lines + header + '-' * num_lines)
-    print('Estimated argument of perigee drift rate --> {} deg/yr'.format(round(sorted_data_set['arg_perigee_drift'][best_orbit_idx], 2)))
-    if best_apogee - best_perigee == 0.0:
-        print('NOTE: Circular orbit, correction of argument of perigee drift practically not necessary')
-    print('-' * num_lines_in_header)
     
     best_orbit = [best_apogee - r_moon, best_perigee - r_moon]
     return apogee_altitudes, perigee_altitudes, sorted_data_set, best_orbit

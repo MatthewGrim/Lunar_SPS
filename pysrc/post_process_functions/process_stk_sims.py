@@ -61,11 +61,18 @@ def process_stk_data(max_constellation_size, study_name, constellation_variable,
     data['mean_active_time_with_storage'] = []
     data['min_active_time_with_storage'] = []
     data['std_active_time_with_storage'] = []
+    
     data['total_blackout_time'] = []
     data['max_blackout_time'] = []
     data['mean_blackout_time'] = []
     data['min_blackout_time'] = []
     data['std_blackout_time'] = []
+    data['total_blackout_time_with_storage'] = []
+    data['max_blackout_time_with_storage'] = []
+    data['mean_blackout_time_with_storage'] = []
+    data['min_blackout_time_with_storage'] = []
+    data['std_blackout_time_with_storage'] = []
+    
     data['total_station_keeping'] = np.zeros((len(orbit_data) - 1))
     data['total_stored_power_time'] = np.zeros((len(orbit_data) - 1))
     data['max_stored_power_time'] = np.zeros((len(orbit_data) - 1))
@@ -157,6 +164,13 @@ def process_stk_data(max_constellation_size, study_name, constellation_variable,
         data['min_blackout_time'].append(np.min(target_blackout[2]))
         data['std_blackout_time'].append(np.std(target_blackout[2]))
 
+        target_blackout_with_storage = determine_blackout_data(sps_active_total_with_stored, target_eclipse, total_duration)
+        data['total_blackout_time_with_storage'].append(np.sum(target_blackout_with_storage[2]))
+        data['max_blackout_time_with_storage'].append(np.max(target_blackout_with_storage[2]))
+        data['mean_blackout_time_with_storage'].append(np.mean(target_blackout_with_storage[2]))
+        data['min_blackout_time_with_storage'].append(np.min(target_blackout_with_storage[2]))
+        data['std_blackout_time_with_storage'].append(np.std(target_blackout_with_storage[2]))
+
     # MEAN RANGE
     postfix_name = "{}SPS".format(max_constellation_size)
     write_data_to_file(stk_data_path, study_name, data['mean_range'], "MeanRange_{}".format(postfix_name))
@@ -191,4 +205,10 @@ def process_stk_data(max_constellation_size, study_name, constellation_variable,
     write_data_to_file(stk_data_path, study_name, data['mean_blackout_time'], "MeanBlackout_{}".format(postfix_name))
     write_data_to_file(stk_data_path, study_name, data['min_blackout_time'], "MinBlackout_{}".format(postfix_name))
     write_data_to_file(stk_data_path, study_name, data['std_blackout_time'], "StdBlackout_{}".format(postfix_name))
+
+    write_data_to_file(stk_data_path, study_name, data['total_blackout_time_with_storage'], "TotalBlackoutWithStorage_{}".format(postfix_name))
+    write_data_to_file(stk_data_path, study_name, data['max_blackout_time_with_storage'], "MaxBlackoutWithStorage_{}".format(postfix_name))
+    write_data_to_file(stk_data_path, study_name, data['mean_blackout_time_with_storage'], "MeanBlackoutWithStorage_{}".format(postfix_name))
+    write_data_to_file(stk_data_path, study_name, data['min_blackout_time_with_storage'], "MinBlackoutWithStorage_{}".format(postfix_name))
+    write_data_to_file(stk_data_path, study_name, data['std_blackout_time_with_storage'], "StdBlackoutWithStorage_{}".format(postfix_name))
 
