@@ -13,6 +13,7 @@ from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import read_data_f
 from Lunar_SPS.pysrc.post_process_functions.DVP_general_SPS_functions import convert_string_to_datetime
 from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import vary_orbital_elements_incrementing_resolution
 from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import sort_incremented_resolution_data
+from Lunar_SPS.pysrc.utils.physical_constants import PhysicalConstants
 
 
 def study_initialization(study_name, **kwargs):
@@ -58,7 +59,7 @@ def study_initialization(study_name, **kwargs):
 
 def rover_metrics(rover_name):
     def approximate_rec_radius(rover):
-        solar_intensity = 1367.0
+        solar_intensity = PhysicalConstants.solar_irradiance
         receiver_solar_efficiency = 0.2
         receiver_area = rover['operation_pwr'] / (solar_intensity * receiver_solar_efficiency)
         return np.sqrt(receiver_area / np.pi)
@@ -205,7 +206,7 @@ def read_in_processed_data_reports(stk_data_path, study_name, num_sps, use_stora
     return data_set
 
 
-def sort_data_lists(data_set, orbit_data, study_name, **kwargs):
+def sort_data_lists(data_set, transmitter, orbit_data, study_name, **kwargs):
     data_set_sorted = {}
 
     if 'IncrementedRes' in study_name:
@@ -214,11 +215,15 @@ def sort_data_lists(data_set, orbit_data, study_name, **kwargs):
         for j in data_set:
             data_set_sorted[j] = sort_incremented_resolution_data(orbit_data, data_set[j],
                                                                   resolution=resolutions, thresholds=thresholds)
+        transmitter['radius'] = sort_incremented_resolution_data(orbit_data, transmitter['radius'],
+                                                                  resolution=resolutions, thresholds=thresholds)
+    else:
+        raise RuntimeError('This code does not handle data sets without incremented resolutions')
 
     # Extract unique perigees and apogees tested for plotting
     unique_perigees = [orbit_data[1][0]]
     unique_apogees = [orbit_data[1][1]]
-    r_moon = 1737.0
+    r_moon = PhysicalConstants.r_moon
     for i in range(1, len(orbit_data)):
         if orbit_data[i][0] > max(unique_perigees):
             unique_perigees.append(orbit_data[i][0])
@@ -229,10 +234,10 @@ def sort_data_lists(data_set, orbit_data, study_name, **kwargs):
     perigee_altitudes = [i - r_moon for i in unique_perigees]
     apogee_altitudes = [i - r_moon for i in unique_apogees]
 
-    return data_set_sorted, perigee_altitudes, unique_perigees, apogee_altitudes, unique_apogees
+    return data_set_sorted, transmitter, perigee_altitudes, unique_perigees, apogee_altitudes, unique_apogees
 
 
-def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_set, transmitter, constraints, active_constraints, duration):
+def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_set, transmitter, constraints, active_constraints, duration, include_misalignment):
     # Initialize lists
     data_set['min_link_efficiency'] = []
     data_set['min_power_received'] = []
@@ -240,6 +245,15 @@ def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_s
     data_set['mean_power_received'] = []
     # Cycle through all access events
     for i in range(0, len(data_set['max_range'])):
+        # Calculate average misalignment loss
+        if include_misalignment:
+            theta_offset = np.asarray([np.arcsin(r_moon / (np.sqrt(2) * data_set['min_range'][i] * 1000.0)),
+                                        np.arcsin(r_moon / (np.sqrt(2) * data_set['max_range'][i] * 1000.0)),
+                                        np.arcsin(r_moon / (np.sqrt(2) * data_set['mean_range'][i] * 1000.0))])
+            misalignment_loss = np.cos(theta_offset)
+        else:
+            misalignment_loss = np.ones((3,))
+
         # If range is "np.nan", no access periods exist for that orbit, therefore treat orbit as infeasible design
         if data_set['max_range'][i] == np.nan:
             data_set['min_link_efficiency'].append(np.nan)
@@ -254,9 +268,9 @@ def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_s
                                rover['rec_radius'] + (constraints['point_error'] * data_set['mean_range'][i] * 1000.0)]
 
             # Actual beam radius as defined by Gaussian beam divergence. idx [0] = min, idx [1] = max, idx [2] = mean
-            surf_beam_radius = [transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['min_range'][i] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2),
-                                transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['max_range'][i] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2),
-                                transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * transmitter['radius'] ** 2)) ** 2)]
+            surf_beam_radius = [transmitter['radius'][i] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['min_range'][i] * 1000.0) / (np.pi * transmitter['radius'][i] ** 2)) ** 2),
+                                transmitter['radius'][i] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['max_range'][i] * 1000.0) / (np.pi * transmitter['radius'][i] ** 2)) ** 2),
+                                transmitter['radius'][i] * np.sqrt(1 + (transmitter['wavelength'] * (data_set['mean_range'][i] * 1000.0) / (np.pi * transmitter['radius'][i] ** 2)) ** 2)]
 
             # IF constraint is active, remove data points which violate pointing constraint
             # Checking pointing constraint at minimum mean and maximum ranges
@@ -270,8 +284,8 @@ def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_s
                     for j in data_set:
                         data_set[j][i] = np.nan
                 else:
-                    data_set['min_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[1]) ** 2)
-                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[2]) ** 2)
+                    data_set['min_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[1]) ** 2 * misalignment_loss[1])
+                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[2]) ** 2 * misalignment_loss[2])
                     data_set['min_power_received'].append(data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
                     data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
 
@@ -279,24 +293,73 @@ def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_s
             else:
                 # Calculate minimum link efficiency, as well as power delivered based on max surface beam size
                 if surf_beam_radius[1] <= rover['rec_radius']:
-                    data_set['min_link_efficiency'].append(1.0)
-                    data_set['min_power_received'].append(rover['rec_efficiency'] * transmitter['power'])
+                    data_set['min_link_efficiency'].append(misalignment_loss[1])
                 else:
-                    data_set['min_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[1]) ** 2)
-                    data_set['min_power_received'].append(data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
+                    data_set['min_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[1]) ** 2 * misalignment_loss[1])
+                data_set['min_power_received'].append(data_set['min_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
+                
                 # Calculate mean link efficiency, as well as power delivered based on mean surface beam size
                 if surf_beam_radius[2] <= rover['rec_radius']:
-                    data_set['mean_link_efficiency'].append(1.0)
-                    data_set['mean_power_received'].append(rover['rec_efficiency'] * transmitter['power'])
+                    data_set['mean_link_efficiency'].append(misalignment_loss[2])
                 else:
-                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[2]) ** 2)
-                    data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
+                    data_set['mean_link_efficiency'].append((rover['rec_radius'] / surf_beam_radius[2]) ** 2 * misalignment_loss[2])
+                data_set['mean_power_received'].append(data_set['mean_link_efficiency'][i] * rover['rec_efficiency'] * transmitter['power'])
 
     # Calculate total energy delivered to receiver based on mean power
     data_set['total_energy'] = []
     data_set['total_energy'] = [i * j * duration / 100.0 for i, j in zip(data_set['mean_power_received'], data_set['total_active_time'])]
     
     return data_set
+
+def optimize_transmitter_radius(data_set, constraints, transmitter, rover):
+    """
+    This function should determine the optimum transmitter size for every orbit, subject to pointing constraints.
+
+    The function is inherantly conservative, in that it assumes we are beaming at the maximum range. In some applications,
+    we may not need to do this, and can improve the link efficiency.
+    """
+    transmitter['radius'] = np.zeros((len(data_set['max_range'])))
+    for i, z_max in enumerate(data_set['max_range']):
+        # Optimum from gaussian optics at maximum range
+        trans_radius = np.sqrt(z_max * 1000.0 * transmitter['wavelength'] / np.pi)
+
+        # Reduce transmitter size to increase beam size to meet pointing errors
+        for range_loc in ['min_range', 'max_range', 'mean_range']:
+            surf_beam_radius = trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set[range_loc][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
+            w_pointing = rover['rec_radius'] + (constraints['point_error'] * data_set[range_loc][i] * 1000.0)
+            if surf_beam_radius < w_pointing:
+                new_radius = np.sqrt(w_pointing ** 2 - np.sqrt(w_b ** 4 - 4 * (data_set[range_loc][i] * 1000.0 * transmitter['wavelength'] / np.pi) ** 2) / 2)
+                assert new_radius < trans_radius
+                trans_radius = new_radius
+
+        transmitter['radius'][i] = trans_radius
+
+    return transmitter
+
+def get_transmitter_power_and_surf_flux(transmitter, rover, sorted_data_set, constraints, active_constraints):
+    max_surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * sorted_data_set['max_range'] * 1000.0 / (np.pi * transmitter['radius'] ** 2)) ** 2)
+    min_surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * sorted_data_set['min_range'] * 1000.0 / (np.pi * transmitter['radius'] ** 2)) ** 2)
+    mean_surf_beam_radius = transmitter['radius'] * np.sqrt(1 + (transmitter['wavelength'] * sorted_data_set['mean_range'] * 1000.0 / (np.pi * transmitter['radius'] ** 2)) ** 2)
+
+    if active_constraints['transmitter_pwr_optimization'] == 1:
+        min_allowable_transmitter_pwr = constraints['min_power'] / (sorted_data_set['min_link_efficiency'] * rover['rec_efficiency'])
+
+        # Adjust mean power delivered according to the minimum allowable transmitter power
+        sorted_data_set['min_power_received'] = sorted_data_set['min_power_received'] * (min_allowable_transmitter_pwr / transmitter['power'])
+        sorted_data_set['mean_power_received'] = sorted_data_set['mean_power_received'] * (min_allowable_transmitter_pwr / transmitter['power'])
+
+        # Assume transmitter operates at minimum allowable power
+        transmitter['power'] = min_allowable_transmitter_pwr
+    else:
+        pass
+
+    # Calculate flux variations
+    surf_flux = {}
+    surf_flux ['mean'] = transmitter['power'] / (np.pi * mean_surf_beam_radius ** 2)
+    surf_flux['min'] = transmitter['power'] / (np.pi * max_surf_beam_radius ** 2)
+    surf_flux['max'] = transmitter['power'] / (np.pi * min_surf_beam_radius ** 2)
+
+    return sorted_data_set, surf_flux, transmitter   
 
 
 def optimize_transmitter_power(transmitter, rover, sorted_data_set, best_orbit_idx, constraints, active_constraints):
