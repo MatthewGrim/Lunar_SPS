@@ -52,11 +52,16 @@ def process_stk_data(max_constellation_size, study_name, constellation_variable,
     # Initialize lists
     data = dict()
     data['total_active_time'] = []
-    data['total_blackout_time'] = []
     data['max_active_time'] = []
     data['mean_active_time'] = []
     data['min_active_time'] = []
     data['std_active_time'] = []
+    data['total_active_time_with_storage'] = []
+    data['max_active_time_with_storage'] = []
+    data['mean_active_time_with_storage'] = []
+    data['min_active_time_with_storage'] = []
+    data['std_active_time_with_storage'] = []
+    data['total_blackout_time'] = []
     data['max_blackout_time'] = []
     data['mean_blackout_time'] = []
     data['min_blackout_time'] = []
@@ -88,10 +93,13 @@ def process_stk_data(max_constellation_size, study_name, constellation_variable,
 
             # Get active time of individual satellite and combine events with total
             sps_active = determine_SPS_active_time(sps_lighting, target_eclipse, sps_access)
+            sps_active_with_stored = determine_SPS_active_time_with_stored_power(target_eclipse, sps_access)
             if j == 0:
                 sps_active_total = sps_active
+                sps_active_total_with_stored = sps_active_with_stored
             else:
                 sps_active_total = combine_events(sps_active_total, sps_active)
+                sps_active_total_with_stored = combine_events(sps_active_total_with_stored, sps_active_with_stored)
 
             # Get the mean, min and max range for the satellite
             total_time += np.sum(sps_active[2])
@@ -107,6 +115,7 @@ def process_stk_data(max_constellation_size, study_name, constellation_variable,
             # Stored power events
             sps_eclipse = invert_events_list(sps_lighting, total_duration)
             sps_use_stored_power = determine_SPS_storedpower_time(sps_eclipse, target_eclipse, sps_access)
+            
             # Check if stored power events exist, if not insert nan
             if np.sum(sps_use_stored_power) == 0.0:
                 pass
@@ -132,6 +141,13 @@ def process_stk_data(max_constellation_size, study_name, constellation_variable,
         data['mean_active_time'].append(np.mean(sps_active_total[2]))
         data['min_active_time'].append(np.min(sps_active_total[2]))
         data['std_active_time'].append(np.std(sps_active_total[2]))
+
+        # Determine stored and active time statistic
+        data['total_active_time_with_storage'].append(np.sum(sps_active_total_with_stored[2]))
+        data['max_active_time_with_storage'].append(np.max(sps_active_total_with_stored[2]))
+        data['mean_active_time_with_storage'].append(np.mean(sps_active_total_with_stored[2]))
+        data['min_active_time_with_storage'].append(np.min(sps_active_total_with_stored[2]))
+        data['std_active_time_with_storage'].append(np.std(sps_active_total_with_stored[2]))
 
         # Determine the target blackout statistics
         target_blackout = determine_blackout_data(sps_active_total, target_eclipse, total_duration)
@@ -161,6 +177,13 @@ def process_stk_data(max_constellation_size, study_name, constellation_variable,
     write_data_to_file(stk_data_path, study_name, data['mean_active_time'], "MeanActive_{}".format(postfix_name))
     write_data_to_file(stk_data_path, study_name, data['min_active_time'], "MinActive_{}".format(postfix_name))
     write_data_to_file(stk_data_path, study_name, data['std_active_time'], "StdActive_{}".format(postfix_name))
+
+    # ACTIVE TIME WITH STORAGE DATA
+    write_data_to_file(stk_data_path, study_name, data['total_active_time_with_storage'], "TotalActiveWithStorage_{}".format(postfix_name))
+    write_data_to_file(stk_data_path, study_name, data['max_active_time_with_storage'], "MaxActiveWithStorage_{}".format(postfix_name))
+    write_data_to_file(stk_data_path, study_name, data['mean_active_time_with_storage'], "MeanActiveWithStorage_{}".format(postfix_name))
+    write_data_to_file(stk_data_path, study_name, data['min_active_time_with_storage'], "MinActiveWithStorage_{}".format(postfix_name))
+    write_data_to_file(stk_data_path, study_name, data['std_active_time_with_storage'], "StdActiveWithStorage_{}".format(postfix_name))
 
     # BLACKOUT TIME DATA
     write_data_to_file(stk_data_path, study_name, data['total_blackout_time'], "TotalBlackout_{}".format(postfix_name))

@@ -591,6 +591,12 @@ def determine_SPS_active_time(sunlight_sps, eclipse_target, access_times):
 
     return sps_active
 
+def determine_SPS_active_time_with_stored_power(eclipse_target, access_times):
+    # The total active time of the satellite, including both stored power and illuminated use
+    sps_active = get_event_overlaps(access_times, eclipse_target)
+
+    return sps_active
+
 
 def determine_SPS_storedpower_time(sps_eclipse, eclipse_target, sps_access):
 
