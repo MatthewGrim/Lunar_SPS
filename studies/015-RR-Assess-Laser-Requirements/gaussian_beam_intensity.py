@@ -69,6 +69,18 @@ def get_intensity_profile(params):
 		P_in = 2.98e3
 		P_rec = 200.0
 		target_radius = 0.341
+		sigma = 1e-7
+		P_in /= 1 - np.exp(-2)
+	elif params is "AMALIA_1300_micro":
+		ranges = [2183.26e3, 2531.95e3]
+		r_radius = 7.5
+		r = np.linspace(0.0, r_radius, 500)
+		wavelength = 1070e-9
+		w_0 = 0.2966
+		P_in = 16.97e3
+		P_rec = 200.0
+		target_radius = 0.341
+		sigma = 1e-6
 	elif params is "Sorato_2300_submicro":
 		ranges = [3065150.0, 3644010.0]
 		r_radius = 2.5
@@ -78,20 +90,28 @@ def get_intensity_profile(params):
 		P_in = 4.29e3
 		P_rec = 43.0
 		target_radius = 0.158
+		sigma = 1e-7
+		P_in /= 1 - np.exp(-2)
 	else:
-		raise ValueError("Invalid parameter selection")
+		raise ValueError("Invalid parameter selection: {}".format(params))
 	
 	# Calculate required surface flux and correct laser power for 1 / e2 factor
-	P_in /= 1 - np.exp(-2)
 	r_moon = 1737e3
-	sigma = 1e-7
 	phi_req = P_rec / (np.pi * target_radius ** 2)
 
 	fig, ax = plt.subplots(2, sharex=True, figsize=(12, 7))
 
+	a = 1.0
+	b = 10 * P_in / np.pi * np.exp(-2)
+	c = w_0
+	w_t_min = np.sqrt((b - np.sqrt(b ** 2 - 4 * a * c)) / (2 * a))
+	w_b_min = w_t_min * np.sqrt(1 + w_0 ** 4 / w_t_min ** 4)
+	print("Transmitter aperture for shrinking: {}m".format(w_t_min))
+	print("Beam aperture for shrinking: {}m".format(w_b_min))
+
 	color_i = np.linspace(0, 1, len(ranges))
 	# sigma_max and phi_max are set to be large to see if they are improved by designs
-	sigma_min = 1e-6
+	sigma_min = 10 * sigma
 	phi_min = P_in
 	for i, z in enumerate(ranges):
 		c = plt.cm.viridis(color_i[i])
@@ -107,10 +127,10 @@ def get_intensity_profile(params):
 		if i == 0:
 			ax[0].axvline(target_radius, linestyle='-', color="k", label="Target Radius")
 			ax[0].axhline(phi_req, linestyle='--', color="grey", label="$\phi_{req}$")
-			ax[0].axvline(r_e2, linestyle='--', color=c, label="beam_radius")
+			# ax[0].axvline(r_e2, linestyle='--', color=c, label="beam_radius")
 			ax[0].axvline(sigma * z + target_radius, linestyle=':', color=c, label="pointing error requirement")
 		else:
-			ax[0].axvline(r_e2, linestyle='--', color=c)
+			# ax[0].axvline(r_e2, linestyle='--', color=c)
 			ax[0].axvline(sigma * z + target_radius, linestyle=':', color=c)
 
 		I_grad = np.diff(I) / np.diff(r)
@@ -151,8 +171,9 @@ def get_intensity_profile(params):
 
 
 if __name__ == '__main__':
-	params = "Sorato_2300_submicro"
-	# params = "AMALIA_1300_submicro"
+	# params = "Sorato_1300_submicro"
+	params = "AMALIA_1300_submicro"
+	# params = "AMALIA_1300_micro"
 	get_intensity_profile(params)
 	# get_transmitter_options(params)
 
