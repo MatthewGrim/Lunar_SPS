@@ -311,7 +311,7 @@ def calculate_link_efficiency_and_power_delivered_for_single_rover(rover, data_s
     
     return data_set
 
-def optimize_transmitter_radius(data_set, constraints, transmitter, rover):
+def optimize_transmitter_radius(data_set, constraints, active_constraints, transmitter, rover):
     """
     This function should determine the optimum transmitter size for every orbit, subject to pointing constraints.
 
@@ -324,13 +324,37 @@ def optimize_transmitter_radius(data_set, constraints, transmitter, rover):
         trans_radius = np.sqrt(z_max * 1000.0 * transmitter['wavelength'] / np.pi)
 
         # Reduce transmitter size to increase beam size to meet pointing errors
-        for range_loc in ['min_range', 'max_range', 'mean_range']:
-            surf_beam_radius = trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set[range_loc][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
-            w_pointing = rover['rec_radius'] + (constraints['point_error'] * data_set[range_loc][i] * 1000.0)
-            if surf_beam_radius < w_pointing:
-                new_radius = np.sqrt(w_pointing ** 2 - np.sqrt(w_b ** 4 - 4 * (data_set[range_loc][i] * 1000.0 * transmitter['wavelength'] / np.pi) ** 2) / 2)
-                assert new_radius < trans_radius
-                trans_radius = new_radius
+        if active_constraints['point_error']:
+            max_iter = 30000
+            iterations = 0
+            while True:
+                break_loop = True
+                # Loop through range values to test pointing requirement
+                for range_loc in ['min_range', 'max_range', 'mean_range']:
+                    surf_beam_radius = trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set[range_loc][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
+                    w_pointing = rover['rec_radius'] + (constraints['point_error'] * data_set[range_loc][i] * 1000.0)
+                    if surf_beam_radius < w_pointing:
+                        trans_radius *= 0.9999
+                        break_loop = False
+                    else:
+                        pass
+
+                # Break loop if beam is bigger than the pointing error
+                if break_loop:
+                    break
+                
+                # If max iterations is exceeded raise a runtime error
+                iterations += 1
+                if iterations > max_iter:
+                    print(max_iter)
+                    print(iterations)
+                    raise RuntimeError('Failed to find solution! Current radius: {}'.format(trans_radius))
+
+            # Last check that beam pointing is satisfied
+            for range_loc in ['min_range', 'max_range', 'mean_range']:
+                surf_beam_radius = trans_radius * np.sqrt(1 + (transmitter['wavelength'] * (data_set[range_loc][i] * 1000.0) / (np.pi * trans_radius ** 2)) ** 2)
+                w_pointing = rover['rec_radius'] + (constraints['point_error'] * data_set[range_loc][i] * 1000.0)
+                assert surf_beam_radius > w_pointing
 
         transmitter['radius'][i] = trans_radius
 

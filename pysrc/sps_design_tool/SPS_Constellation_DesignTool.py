@@ -48,7 +48,7 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
 
     # --- OPTIMIZE TRANSMITTER APERTURE SIZE ---
     # Get optimum transmitter size for orbit
-    transmitter = optimize_transmitter_radius(data_set, constraints, transmitter, rover)
+    transmitter = optimize_transmitter_radius(data_set, constraints, active_constraints, transmitter, rover)
 
     # --- ENFORCE CONSTRAINTS ---
     # Remove infeasible designs which do not have any active events
