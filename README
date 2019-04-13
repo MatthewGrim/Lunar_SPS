@@ -36,3 +36,11 @@ This project is a study of lunar orbits for satellites used to power receivers w
 012-RR-Paper-Scripts: Contains scripts to regenerate the results from a paper presented at the 69th IAC.
 
 013-RR-circular_orbit-model: Contains a script to test a theoretical model for the necessary rover design for a SPS concept.
+
+014-RR-AER-Assessment: Tests to assess the validity of assumptions made in orbit propagation and access to the target.
+
+015-RR-Assess-Laser-Requirements: Tests of the gaussian beam that was ignored in previous assessments of the beam.
+
+016-Larger-Targets: Scripts that use the design tool to assess larger receivers.
+
+017-RR-Paper-Scripts: Scipts to construct plots for second paper.

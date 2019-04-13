@@ -12,22 +12,42 @@ from Lunar_SPS.pysrc.utils.unit_conversions import UnitConversions
 from Lunar_SPS.pysrc.utils.physical_constants import PhysicalConstants
 
 
-def altitudes_for_pointing(eta_link, solar_efficiency=0.2, laser_efficiency=0.5, P_hib_ratio=0.0,
-	                       pointing_requirement=1e-7, laser_requirement=4e3):
-	a = np.linspace(8e5, 2e6, 100)
+def altitudes_for_pointing(pointing_accuracy, solar_efficiency=0.1, laser_efficiency=0.5, P_hib_ratio=0.1,
+	                       panel_heating=12.31, eta_link_requirement=0.01, laser_requirement=7.5e3, DoD=0.3,
+	                       a=None):
+	"""
+	pointing_accuracy: Assumed pointing accuracy of beam
+	solar_efficiency: day time efficiency of rover receiver cells
+	laser_efficiency: night time efficiency of rover receiver cells
+	P_hib_radio: assumed ratio of hibernation and charging power
+	panel_heating: approxomimate heating required per m2
+	eta_link_requirement: minimum acceptable link efficiency
+	laser_requirement: maximum acceptable laser requirement
+	DoD: depth of discharge for battery systems
+	"""
+	if a is None:
+		a = np.linspace(8e5, 2e6, 500)
 	r_moon = 1737.0e3
 	r = a + r_moon
 
-	P_rec = np.linspace(20.0, 300.0, 200)
+	P_op = np.linspace(20.0, 200.0, 1000)
 	
-	# Ger receiver size and hibernation power
-	A, P_REC = np.meshgrid(a, P_rec, indexing='ij')
+	# Get receiver size and hibernation power
+	if isinstance(a, np.ndarray):
+		A, P_OP = np.meshgrid(a, P_op, indexing='ij')
+	else:
+		A = a
+		P_OP = P_op
+
 	R = A + r_moon
 	Z = np.sqrt(r_moon ** 2 + R ** 2 - np.sqrt(2) * r_moon * R)
 	Z_MAX = np.sqrt(R ** 2 - r_moon ** 2)
 	Z = Z_MAX
-	W_R = P_REC / (solar_efficiency * PhysicalConstants.solar_irradiance)
-	P_REC_HIB = P_rec * P_hib_ratio
+	W_R = np.sqrt(P_OP / (np.pi * solar_efficiency * PhysicalConstants.solar_irradiance))
+	A_R = np.pi * W_R ** 2
+	# Multiplying by 2 to add a buffer
+	P_HIB = A_R * panel_heating * 2
+	P_CHARGE = P_HIB / P_hib_ratio
 
 	# Get approximate percentage active time
 	percentage_active_best_case = np.arccos(np.sqrt(2) * r_moon / R) / np.pi
@@ -38,60 +58,94 @@ def altitudes_for_pointing(eta_link, solar_efficiency=0.2, laser_efficiency=0.5,
 	omega_orbit = v_orbit / R
 	T_ORBIT = 2 * np.pi / omega_orbit
 	T_hibernation = P_hib_ratio * 0.5 * T_ORBIT
-	E_CAPACITY = T_hibernation * P_REC_HIB * UnitConversions.J_to_Whr
+	E_CAPACITY_ROVER = T_hibernation * P_HIB * UnitConversions.J_to_Whr / DoD
 
 	# Get required pointing
-	eta_root = np.sqrt(eta_link)
-	SIGMA_POINTING = W_R * (1 - eta_root) / (Z * eta_root) * UnitConversions.radian_to_microradian
+	W_P = Z * pointing_accuracy + W_R
+	ETA_LINK = W_R ** 2 / W_P ** 2
 
 	# Get laser power
-	P_LAS = P_REC / (laser_efficiency * eta_link) * UnitConversions.W_to_kW
+	P_LAS = P_CHARGE / (laser_efficiency * ETA_LINK) * UnitConversions.W_to_kW
 	P_LAS /= (1 - np.exp(-2))
 
 	# Apply constraints - laser exists, pointing is manageable, power is low, active time is achievable at altitude
 	active_time_mask = percentage_active_best_case < P_hib_ratio
 	wavelength = 1070e-9
-	W_B = np.sqrt(eta_link * W_R ** 2)
+	W_B = np.sqrt(ETA_LINK * W_R ** 2)
 	transmitter_mask = W_B ** 4 > 4 * (Z * wavelength / np.pi) ** 2
-	pointing_mask = SIGMA_POINTING < pointing_requirement * UnitConversions.radian_to_microradian
+	efficiency_mask = ETA_LINK < eta_link_requirement
 	power_mask = P_LAS > laser_requirement * UnitConversions.W_to_kW
-	for res_array in [W_R, SIGMA_POINTING, P_LAS, E_CAPACITY]:
-		res_array[pointing_mask] = 0.0
+	charge_power_mask = P_CHARGE > 2 * P_OP
+	for res_array in [W_R, A_R, P_HIB, ETA_LINK, P_LAS, E_CAPACITY_ROVER, P_CHARGE]:
+		res_array[efficiency_mask] = 0.0
 		res_array[power_mask] = 0.0
 		res_array[transmitter_mask] = 0.0
 		res_array[active_time_mask] = 0.0
+		res_array[charge_power_mask] = 0.0
 
-	fig, ax = plt.subplots(4, figsize=(12, 7), sharex=True)
+	fig, ax = plt.subplots(3, 2, figsize=(14, 7), sharex=True)
+	if isinstance(a, np.ndarray):
+		num_contours = 100
+		A *= UnitConversions.m_to_km
+		im = ax[0, 0].contourf(A, P_OP, A_R, num_contours)
+		ax[0, 0].set_title("Receiver area [$m^2$]")
+		ax[0, 0].set_ylabel("$P_{op}$ [W]")
+		fig.colorbar(im, ax=ax[0, 0])
 
-	num_contours = 100
-	A *= UnitConversions.m_to_km
-	im = ax[0].contourf(A, P_REC, W_R, num_contours)
-	ax[0].set_title("Receiver radius [$m$]")
-	ax[0].set_ylabel("Power required [W]")
-	
-	fig.colorbar(im, ax=ax[0])
-	im = ax[1].contourf(A, P_REC, SIGMA_POINTING, num_contours)
-	ax[1].set_title("Pointing accuracy [$\mu Rad$]")
-	ax[1].set_ylabel("Power required [W]")
-	fig.colorbar(im, ax=ax[1])	
+		im = ax[1, 0].contourf(A, P_OP, P_HIB, num_contours)
+		ax[1, 0].set_title("Hibernation power [W]")
+		ax[1, 0].set_ylabel("$P_{op}$[W]")
+		fig.colorbar(im, ax=ax[1, 0])
+		
+		im = ax[2, 0].contourf(A, P_OP, ETA_LINK * 100, num_contours)
+		ax[2, 0].set_title("Link Efficiency")
+		ax[2, 0].set_ylabel("$P_{op}$ [W]")
+		ax[2, 0].set_xlabel("Altitude [km]")
+		fig.colorbar(im, ax=ax[2, 0])	
 
-	im = ax[2].contourf(A, P_REC, P_LAS, num_contours)
-	ax[2].set_title("Laser Power [kW]")
-	ax[2].set_ylabel("Power required [W]")
-	fig.colorbar(im, ax=ax[2])
+		im = ax[0, 1].contourf(A, P_OP, P_LAS, num_contours)
+		ax[0, 1].set_title("Laser Power [kW]")
+		ax[0, 1].set_ylabel("$P_{op}$ [W]")
+		fig.colorbar(im, ax=ax[0, 1])
 
-	im = ax[3].contourf(A, P_REC, E_CAPACITY, num_contours)
-	ax[3].set_title("Rover Battery Capacity [Whr]")
-	ax[3].set_ylabel("Power required [W]")
-	ax[3].set_xlabel("Altitude [km]")
-	fig.colorbar(im, ax=ax[3])
+		im = ax[1, 1].contourf(A, P_OP, E_CAPACITY_ROVER, num_contours)
+		ax[1, 1].set_title("Rover Battery Capacity [Whr]")
+		ax[1, 1].set_ylabel("$P_{op}$ [W]")
+		fig.colorbar(im, ax=ax[1, 1])
+
+		im = ax[2, 1].contourf(A, P_OP, P_CHARGE, num_contours)
+		ax[2, 1].set_title("Charge Power")
+		ax[2, 1].set_ylabel("Power required [W]")
+		ax[2, 1].set_xlabel("Altitude [km]")
+		fig.colorbar(im, ax=ax[2, 1])
+	else:
+		im = ax[0, 0].plot(P_OP, A_R)
+		ax[0, 0].set_title("Receiver area [$m^2$]")
+
+		im = ax[1, 0].plot(P_OP, P_HIB)
+		ax[1, 0].set_title("Hibernation power [W]")
+		
+		im = ax[2, 0].plot(P_OP, ETA_LINK * 100)
+		ax[2, 0].set_title("Link Efficiency [%]")
+		ax[2, 0].set_xlabel("Operating power [W]")
+
+		im = ax[0, 1].plot(P_OP, P_LAS)
+		ax[0, 1].set_title("Laser Power [kW]")
+
+		im = ax[1, 1].plot(P_OP, E_CAPACITY_ROVER)
+		ax[1, 1].set_title("Rover Battery Capacity [Whr]")
+
+		im = ax[2, 1].plot(P_OP, P_CHARGE)
+		ax[2, 1].set_title("Charge Power [W]")
+		ax[2, 1].set_xlabel("Operating power [W]")
 
 	plt.show()
 
 
 if __name__ == '__main__':
-	eta_link = 0.08
+	pointing_accuracy = 5e-7
+	a=None
 
-	altitudes_for_pointing(eta_link)
+	altitudes_for_pointing(pointing_accuracy, a=a)
 
 	
