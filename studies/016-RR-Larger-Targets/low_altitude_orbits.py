@@ -33,7 +33,7 @@ def get_battery_options(P_hib, P_op, phi_req):
 	percentage_active_best_case = np.arccos(np.sqrt(2) * r_moon / r) / np.pi
 	percentage_active_worst_case = (np.arccos(np.sqrt(2) * r_moon / r) - np.arcsin(r_moon / r)) / np.pi
 	plt.figure()
-	plt.plot(a * 1e-3, (percentage_active_best_case + percentage_active_worst_case))
+	plt.plot(a * 1e-3, 0.5 * (percentage_active_best_case + percentage_active_worst_case))
 	plt.axvline(1300, linestyle='--')
 	plt.title("% Active")
 	plt.show()
