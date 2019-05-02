@@ -23,6 +23,21 @@ def get_battery_options(P_hib, P_op, phi_req):
 	theta = 2 * (np.pi / 2 - np.arccos(r_moon / r))
 	charge_ratio = theta / np.pi
 
+	theta_eclipse = (2 * np.arcsin(r_moon / r))
+	T_eclipse = theta_eclipse / (2 * np.pi) * T_orbit
+	plt.figure()
+	plt.plot(a * 1e-3, T_eclipse / 3600)
+	plt.title("Eclipse time")
+	plt.show()
+
+	percentage_active_best_case = np.arccos(np.sqrt(2) * r_moon / r) / np.pi
+	percentage_active_worst_case = (np.arccos(np.sqrt(2) * r_moon / r) - np.arcsin(r_moon / r)) / np.pi
+	plt.figure()
+	plt.plot(a * 1e-3, (percentage_active_best_case + percentage_active_worst_case))
+	plt.axvline(1300, linestyle='--')
+	plt.title("% Active")
+	plt.show()
+
 	plt.figure()
 	plt.plot(a * 1e-3, T_orbit / 3600)
 	plt.title("Orbit Period [hrs]")
