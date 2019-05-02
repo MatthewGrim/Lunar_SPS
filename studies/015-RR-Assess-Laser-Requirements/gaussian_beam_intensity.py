@@ -81,6 +81,16 @@ def get_intensity_profile(params):
 		P_rec = 200.0
 		target_radius = 0.341
 		sigma = 1e-6
+	elif params is "Rover_V_1300_micro_low_eff":
+		ranges = [2183.26e3, 2531.95e3]
+		r_radius = 7.5
+		r = np.linspace(0.0, r_radius, 500)
+		wavelength = 1070e-9
+		w_0 = 0.2985
+		P_in = 7.79e3
+		P_rec = 240.0
+		target_radius = np.sqrt(1.83 / np.pi)
+		sigma = 8e-7
 	elif params is "Sorato_2300_submicro":
 		ranges = [3065150.0, 3644010.0]
 		r_radius = 2.5
@@ -97,7 +107,8 @@ def get_intensity_profile(params):
 	
 	# Calculate required surface flux and correct laser power for 1 / e2 factor
 	r_moon = 1737e3
-	phi_req = P_rec / (np.pi * target_radius ** 2)
+	phi_req = P_rec / (0.5 * np.pi * target_radius ** 2)
+	print("Required target flux: {}W".format(phi_req))
 
 	fig, ax = plt.subplots(2, sharex=True, figsize=(12, 7))
 
@@ -164,7 +175,7 @@ def get_intensity_profile(params):
 	ax[1].set_xlabel("Offset from beam centre [m]")
 	ax[0].legend()
 	ax[1].legend()
-	fig.suptitle("Parameter selection: {}\nTarget Radius: {}$m$\nMinimum pointing: {}Rad, Minimum laser power: {}kW".format(params, target_radius, round(sigma_min, 8), round(P_min * 1e-3, 4)))
+	fig.suptitle("Parameter selection: {}\nTarget Radius: {}$m$\nMinimum pointing: {}Rad, Minimum laser power: {}kW".format(params, round(target_radius, 2), round(sigma_min, 8), round(P_min * 1e-3, 4)))
 
 	plt.savefig("{}_intensity_profile".format(params))
 	plt.show()
@@ -172,8 +183,9 @@ def get_intensity_profile(params):
 
 if __name__ == '__main__':
 	# params = "Sorato_1300_submicro"
-	params = "AMALIA_1300_submicro"
+	# params = "AMALIA_1300_submicro"
 	# params = "AMALIA_1300_micro"
+	params = "Rover_V_1300_micro_low_eff"
 	get_intensity_profile(params)
 	# get_transmitter_options(params)
 
