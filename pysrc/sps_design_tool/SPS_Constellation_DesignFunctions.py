@@ -58,27 +58,52 @@ def study_initialization(study_name, **kwargs):
 
 
 def rover_metrics(rover_name):
-    def approximate_rec_radius(rover):
+    def approximate_rec_radius(rover, receiver_solar_efficiency=0.2):
         solar_intensity = PhysicalConstants.solar_irradiance
-        receiver_solar_efficiency = 0.2
-        receiver_area = rover['operation_pwr'] / (solar_intensity * receiver_solar_efficiency)
+        receiver_area = rover['daytime_power'] / (solar_intensity * receiver_solar_efficiency)
         return np.sqrt(receiver_area / np.pi)
 
     rover = {}
     if "amalia" in rover_name:
         # Team ITALIA AMALIA (intermediate)
         rover['operation_pwr'] = 100.0
+        rover['daytime_power'] = 100.0
         rover['rec_efficiency'] = 0.5
         rover['hibernation_pwr'] = 7.0
         rover['battery_capacity'] = 100.0
-        rover['rec_radius'] = approximate_rec_radius(rover)
+        rover['rec_radius'] = approximate_rec_radius(rover,  receiver_solar_efficiency=0.2)
     elif "sorato" in rover_name:
         # ispace Sorato (miniature)
         rover['operation_pwr'] = 21.5
+        rover['daytime_power'] = 21.5
         rover['rec_efficiency'] = 0.5
         rover['hibernation_pwr'] = 4.5
         rover['battery_capacity'] = 38.0
         rover['rec_radius'] = approximate_rec_radius(rover)
+    elif "rover_concept_five" in rover_name:
+        # Designed for 1 microradian
+        rover['operation_pwr'] = 240.0
+        rover['daytime_power'] = 150.0
+        rover['rec_efficiency'] = 0.5
+        rover['hibernation_pwr'] = 48.0
+        rover['battery_capacity'] = 300.0
+        rover['rec_radius'] = approximate_rec_radius(rover, receiver_solar_efficiency=0.06)
+    elif "rover_concept_six" in rover_name:
+        # Designed for 1 microradian
+        rover['operation_pwr'] = 280.0
+        rover['daytime_power'] = 150.0
+        rover['rec_efficiency'] = 0.5
+        rover['hibernation_pwr'] = 28.0
+        rover['battery_capacity'] = 300.0
+        rover['rec_radius'] = approximate_rec_radius(rover, receiver_solar_efficiency=0.1)
+    elif "rover_concept_seven" in rover_name:
+        # Designed for 1 microradian
+        rover['operation_pwr'] = 200.0
+        rover['daytime_power'] = 150.0
+        rover['rec_efficiency'] = 0.5
+        rover['hibernation_pwr'] = 20.0
+        rover['battery_capacity'] = 300.0
+        rover['rec_radius'] = approximate_rec_radius(rover, receiver_solar_efficiency=0.1)
     else:
         print('Invalid rover name: {}. Valid names: amalia, sorato, curiosity'.format(rover_name))
 
@@ -216,7 +241,7 @@ def sort_data_lists(data_set, transmitter, orbit_data, study_name, **kwargs):
             data_set_sorted[j] = sort_incremented_resolution_data(orbit_data, data_set[j],
                                                                   resolution=resolutions, thresholds=thresholds)
         transmitter['radius'] = sort_incremented_resolution_data(orbit_data, transmitter['radius'],
-                                                                  resolution=resolutions, thresholds=thresholds)
+                                                                 resolution=resolutions, thresholds=thresholds)
     else:
         raise RuntimeError('This code does not handle data sets without incremented resolutions')
 
@@ -325,6 +350,7 @@ def optimize_transmitter_radius(data_set, constraints, active_constraints, trans
 
         # Reduce transmitter size to increase beam size to meet pointing errors
         if active_constraints['point_error']:
+            trans_radius = 1.12
             max_iter = 30000
             iterations = 0
             while True:

@@ -85,6 +85,17 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     else:
         pass
 
+    # Remove data points below a certain altitude if specified
+    r_moon = PhysicalConstants.r_moon
+    if active_constraints['min_altitude'] == 1:
+        for idx, orbit in enumerate(study['orbits']):
+            altitude = orbit - r_moon
+            if altitude[0] == 1300.0 and altitude[1] == 1300.0:
+                print(altitude[0] < constraints['min_altitude'])
+            if altitude[0] < constraints['min_altitude']:
+                for j in data_set:
+                    data_set[j][idx] = np.nan
+
     # --- PARSING/REORGANIZING DATA ---
     # Reorganize the data lists into 2D arrays
     sorted_data_set, transmitter, perigee_altitudes, unique_perigees, apogee_altitudes, unique_apogees = sort_data_lists(data_set, transmitter, study['orbits'], study_name, **kwargs)
@@ -128,7 +139,6 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
 
     # --- DISPLAY RESULTS ---
     # Print out performance results for optimal orbit
-    r_moon = PhysicalConstants.r_moon
     num_lines_in_header = 80
 
     header = ' SATELLITE ORBIT '
@@ -175,5 +185,5 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     print('Total energy transferred --> {} MJ per year'.format(round(sorted_data_set['total_energy'][best_orbit_idx] / 2e6, 2)))
     
     best_orbit = [best_apogee - r_moon, best_perigee - r_moon]
-    return apogee_altitudes, perigee_altitudes, sorted_data_set, best_orbit
+    return apogee_altitudes, perigee_altitudes, sorted_data_set, best_orbit, transmitter
 
