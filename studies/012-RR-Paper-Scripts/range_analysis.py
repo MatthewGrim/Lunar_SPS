@@ -75,6 +75,18 @@ def process_data(rover):
         wavelength = 1070e-9
         receiver_area = 0.366
         data = import_range_data(os.path.join("1300", "1300_1300_range_data"))
+    elif rover == "AMALIA_1300_low_eff":
+        laser_power = 7.79e3 * (1 - np.exp(-2))
+        laser_radius = 0.2985
+        wavelength = 1070e-9
+        receiver_area = 1.83
+        data = import_range_data(os.path.join("1300", "1300_1300_range_data"))
+    elif rover == "AMALIA_800":
+        laser_power = 9.61e3 * (1 - 1 / np.exp(2))
+        laser_radius = 0.2888
+        wavelength = 1070e-9
+        receiver_area = 0.366
+        data = import_range_data(os.path.join("800", "800_800_range_data"))
     else:
         raise ValueError("Rover name does not exist!")
 
@@ -96,5 +108,5 @@ def process_data(rover):
 
 
 if __name__ == '__main__':
-    rover_name = "AMALIA_1300"
+    rover_name = "AMALIA_1300_low_eff"
     process_data(rover_name)
