@@ -11,6 +11,8 @@ from matplotlib import pyplot as plt
 
 from Lunar_SPS.pysrc.sps_design_tool.SPS_Constellation_DesignTool import generate_design_space
 from Lunar_SPS.pysrc.sps_design_tool.SPS_Constellation_DesignFunctions import rover_metrics
+from Lunar_SPS.pysrc.utils.physical_constants import PhysicalConstants
+from Lunar_SPS.pysrc.utils.unit_conversions import UnitConversions
 
 
 def main():
@@ -26,7 +28,7 @@ def main():
     # Select receiver
     # Fleet size must be integer, rover separation distance must be float (with decimal)
     # Fleet size comes first, then separation
-    rover_selection = 'lander'
+    rover_selection = 'rover_concept_five'
 
     # Defines the number of satellites in the constellation being studied
     num_sps = 1
@@ -40,7 +42,7 @@ def main():
     rover = rover_metrics(rover_selection)
 
     # Minimum pointing error of SPS system in radians
-    constraints['point_error'] = 1e-7
+    constraints['point_error'] = 8e-7
     # Minimum reduction in overall blackout time in percent
     constraints['min_active_time'] = 49.76 * rover["hibernation_pwr"] / (rover["operation_pwr"])
     # Minimum power requirement at target in Watts
@@ -49,6 +51,7 @@ def main():
     constraints['max_blackout'] = rover['battery_capacity'] / rover['hibernation_pwr']
     # Minimum allowable delta v margin related to station keeping in km/s
     constraints['min_delta_v_margin'] = 0.0
+    constraints['min_altitude'] = 1250.0
 
     # Specify which constraints are active
     # 1 = active, anything else = inactive
@@ -57,6 +60,7 @@ def main():
     active_constraints['min_power'] = 1
     active_constraints['max_blackout'] = 1
     active_constraints['min_delta_v_margin'] = 0
+    active_constraints['min_altitude'] = 0
 
     active_constraints['transmitter_pwr_optimization'] = 1
     ####################################################################################################################
@@ -68,10 +72,12 @@ def main():
         "max_perigee": 5000.0,
         "max_apogee": 5000.0
     }
-    apogee_altitudes, perigee_altitudes, sorted_data_set, best_orbit = generate_design_space(study_name, rover_selection, transmitter_selection, constraints, active_constraints, num_sps, **kwargs)
-
+    apogee_altitudes, perigee_altitudes, sorted_data_set, best_orbit, transmitter = generate_design_space(study_name, rover_selection, transmitter_selection, 
+                                                                                             constraints, active_constraints, num_sps, 
+                                                                                             use_storage=True, 
+                                                                                             **kwargs)
     # Plot constrained design variables
-    plt.figure(1, figsize=(15, 8))
+    plt.figure(1, figsize=(12, 7))
     plt.subplot(221)
     plt.contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['total_active_time'], 500)
     plt.title('Total Active Time [%]')
@@ -82,7 +88,7 @@ def main():
     plt.title('Max Blackout Time [hrs]')
     plt.colorbar()
     plt.subplot(223)
-    plt.contourf(apogee_altitudes, perigee_altitudes, 1e-3 * rover['operation_pwr'] / (rover['rec_efficiency'] * sorted_data_set['min_link_efficiency']), 500)
+    plt.contourf(apogee_altitudes, perigee_altitudes, transmitter['power'] * UnitConversions.W_to_kW, 500)
     plt.title('Laser Power [kW]')
     plt.ylabel('Perigee Altitude [km]')
     plt.xlabel('Apogee Altitude [km]')
@@ -100,3 +106,4 @@ def main():
     plt.show()
 
 main()
+
