@@ -57,7 +57,7 @@ def get_range_elevation_plot():
 	ax[0].axhline(10.0, color='k', linestyle='-')
 	ax[0].set_xlim([-50, 50])
 	ax[0].set_ylim([-10, 100])
-	ax[0].set_ylabel('Elevation [$^\circ$]')
+	ax[0].set_ylabel('Elevation [$^\circ$]', fontsize=font_size)
 	ax[0].grid(linestyle='--')
 	ax[0].legend()
 
@@ -83,8 +83,8 @@ def get_range_elevation_plot():
 	ax[1].axhline(2200.0, color='k', linestyle='-')
 	ax[1].set_xlim([-50, 50])
 	ax[1].set_ylim([1200, 2600])
-	ax[1].set_ylabel('Range [$km$]')
-	ax[1].set_xlabel('Time [$min$]')
+	ax[1].set_ylabel('Range [$km$]', fontsize=font_size)
+	ax[1].set_xlabel('Time [$min$]', fontsize=font_size)
 	ax[1].grid(linestyle='--')
 	# ax[1].legend()
 
@@ -111,12 +111,12 @@ def get_rover_temperature():
 
 		lns1 = ax[i].plot(heater[:, 0], heater[:, 1], label='heater', c='b')
 		lns2 = ax[i].plot(laser[:, 0], laser[:, 1], label='laser', c='g')
-		ax[i].set_ylabel('Power [$W$]')
+		ax[i].set_ylabel('Power [$W$]', fontsize=font_size)
 		ax[i].set_ylim([0.0, max_power[i]])
 
 		ax2 = ax[i].twinx()
 		lns3 = ax2.plot(panel[:, 0], panel[:, 1], label='panel', c='r')
-		ax2.set_ylabel('Temperature [$^\circ C$]')
+		ax2.set_ylabel('Temperature [$^\circ C$]', fontsize=font_size)
 		ax2.set_ylim([-200, 150])
 		
 		ax[i].set_xlim([9.5, 10.0])
@@ -127,7 +127,7 @@ def get_rover_temperature():
 			labs = [l.get_label() for l in lns]
 			ax[i].legend(lns, labs, loc=0)
 
-	ax[1].set_xlabel("Time [$Earth\ days$]")
+	ax[1].set_xlabel("Time [$Earth\ days$]", fontsize=font_size)
 	fig.tight_layout()
 	plt.savefig('rover_temp')
 	plt.show()
@@ -167,8 +167,8 @@ def get_laser_temperature():
 
 	ax.grid(linestyle='--')
 	ax.set_xlim([x_min  * seconds_to_hrs, x_max  * seconds_to_hrs])
-	ax.set_xlabel('Time [$hrs$]')
-	ax.set_ylabel('Temperature [$^\circ C$]')
+	ax.set_xlabel('Time [$hrs$]', fontsize=font_size)
+	ax.set_ylabel('Temperature [$^\circ C$]', fontsize=font_size)
 	ax.legend()
 
 	fig.tight_layout()
@@ -177,8 +177,9 @@ def get_laser_temperature():
 
 
 if __name__ == '__main__':
-    figsize = (14, 7)
-    get_range_elevation_plot()
-    # get_rover_temperature()
-    # get_laser_temperature()
+	font_size = 14
+	figsize = (14, 7)
+	get_range_elevation_plot()
+	get_rover_temperature()
+	get_laser_temperature()
 

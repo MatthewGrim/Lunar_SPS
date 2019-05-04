@@ -57,9 +57,9 @@ def plot_constellation_active_times():
             im.set_clim(0.0, 100.0)
             fig.colorbar(im, ax=ax[num_sps - 1])
             ax[num_sps - 1].set_title('Number of Satellites: {}'.format(num_sps ))
-            ax[num_sps - 1].set_xlabel("Apolune altitude [$km$]")
+            ax[num_sps - 1].set_xlabel("Apolune altitude [$km$]", fontsize=font_size)
         name = "Polar" if "NorthPole" in study_name else "Equatorial"
-        ax[0].set_ylabel("Perilune altitude [$km$]".format(name))
+        ax[0].set_ylabel("Perilune altitude [$km$]".format(name), fontsize=font_size)
     fig.tight_layout()
     plt.savefig('active_times')
     plt.show()
@@ -67,5 +67,6 @@ def plot_constellation_active_times():
 
 
 if __name__ == '__main__':
+    font_size = 14
     plot_constellation_active_times()
 
