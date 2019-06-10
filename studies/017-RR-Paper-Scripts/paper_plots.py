@@ -15,6 +15,7 @@ from scipy.interpolate import CubicSpline, interp1d
 def get_range_elevation_plot():
 	elevation_dir = 'elevation'
 	range_dir = 'range'
+	azimuth_dir = 'azimuth'
 
 	access_0 = np.loadtxt(os.path.join(elevation_dir, '0_degree_access.csv'), delimiter=',')
 	access_15 = np.loadtxt(os.path.join(elevation_dir, '15_degree_access.csv'), delimiter=',')
@@ -29,7 +30,7 @@ def get_range_elevation_plot():
 	_, unique_indices = np.unique(access_0[:, 0], return_index=True)
 	access_0 = access_0[unique_indices, :]
 
-	fig, ax = plt.subplots(2, figsize=figsize, sharex=True)
+	fig, ax = plt.subplots(2, figsize=(12, 7), sharex=True)
 	colors = ['b', 'r', 'g']
 	labels = ['Lat $0^\circ$', 'Lat $15^\circ$', 'Lat $30^\circ$']
 	for i, array in enumerate([access_15, access_30]):
@@ -81,12 +82,39 @@ def get_range_elevation_plot():
 		ax[1].plot(array_neg[:, 0], array_neg[:, 1], linestyle='--', color=colors[i])
 		ax[1].plot(array_pos[:, 0], array_pos[:, 1], linestyle='--', color=colors[i])
 	ax[1].axhline(2200.0, color='k', linestyle='-')
+	ax[1].axvline(-24.52 / 2, color='grey', linestyle='--')
+	ax[1].axvline(24.52 / 2, color='grey', linestyle='--')
 	ax[1].set_xlim([-50, 50])
 	ax[1].set_ylim([1200, 2600])
 	ax[1].set_ylabel('Range [$km$]', fontsize=font_size)
 	ax[1].set_xlabel('Time [$min$]', fontsize=font_size)
 	ax[1].grid(linestyle='--')
-	# ax[1].legend()
+
+	# azimuth_0 = np.loadtxt(os.path.join(azimuth_dir, '0degree_access_azimuth.csv'), delimiter=',')
+	# azimuth_15 = np.loadtxt(os.path.join(azimuth_dir, '15degree_access_azimuth.csv'), delimiter=',')
+	# azimuth_30 = np.loadtxt(os.path.join(azimuth_dir, '30degree_access_azimuth.csv'), delimiter=',')
+
+	# no_azimuth_0 = np.loadtxt(os.path.join(azimuth_dir, '0degree_no_access_azimuth.csv'), delimiter=',')
+	# no_azimuth_15 = np.loadtxt(os.path.join(azimuth_dir, '15degree_no_access_azimuth.csv'), delimiter=',')
+	# no_azimuth_30 = np.loadtxt(os.path.join(azimuth_dir, '30degree_no_access_azimuth.csv'), delimiter=',')
+	# for i, array in enumerate([azimuth_15, azimuth_30]):
+	# 	interp_points = np.linspace(array[0, 0], array[-1, 0], 25)
+	# 	interpolator = CubicSpline(array[:, 0], array[:, 1])
+	# 	interp_y = interpolator(interp_points)
+		
+	# 	ax[2].plot(array[:, 0], array[:, 1], color=colors[i+1], label=labels[i+1])
+	# ax[2].plot(azimuth_0[:, 0], azimuth_0[:, 1], color=colors[0], label=labels[0])
+			
+	# for i, array in enumerate([no_azimuth_0, no_azimuth_15, no_azimuth_30]):
+	# 	array_neg = array[array[:, 0] < 0, :]
+	# 	array_pos = array[array[:, 0] > 0, :]
+	# 	ax[2].plot(array_neg[:, 0], array_neg[:, 1], linestyle='--', color=colors[i])
+	# 	ax[2].plot(array_pos[:, 0], array_pos[:, 1], linestyle='--', color=colors[i])
+	# ax[2].set_xlim([-50, 50])
+	# ax[2].set_ylim([60, 290])
+	# ax[2].set_ylabel('Azimuth [$^\circ $]', fontsize=font_size)
+	# ax[2].set_xlabel('Time [$min$]', fontsize=font_size)
+	# ax[2].grid(linestyle='--')
 
 	fig.tight_layout()
 	plt.savefig('link_range_elevation')
@@ -99,23 +127,21 @@ def get_rover_temperature():
 	fig, ax = plt.subplots(2, figsize=figsize, sharex=True)
 
 	colors = ['b', 'r', 'g']
-	max_power = [60.0, 160.0]
-	for i, case in enumerate(['_cold', '_hot']):
+	max_power = [250.0, 700.0]
+	for i, case in enumerate(['_cold_total', '_hot_total']):
 		heater = np.loadtxt(os.path.join(rover_dir, 'heater{}.csv'.format(case)), delimiter=',')
 		laser = np.loadtxt(os.path.join(rover_dir, 'laser{}.csv'.format(case)), delimiter=',')
-		panel = np.loadtxt(os.path.join(rover_dir, 'panel{}ii.csv'.format(case)), delimiter=',')
+		panel = np.loadtxt(os.path.join(rover_dir, 'panel{}.csv'.format(case)), delimiter=',')
 
-		panel[:, 1] *= 350.0 / max_power[i]
-		panel[:, 1] -= 200
 		panel = panel[panel[:, 0].argsort()]
 
-		lns1 = ax[i].plot(heater[:, 0], heater[:, 1], label='heater', c='b')
-		lns2 = ax[i].plot(laser[:, 0], laser[:, 1], label='laser', c='g')
+		lns1 = ax[i].plot(heater[:, 0], heater[:, 1], label='heater power', c='b')
+		lns2 = ax[i].plot(laser[:, 0], laser[:, 1], label='laser power', c='g')
 		ax[i].set_ylabel('Power [$W$]', fontsize=font_size)
 		ax[i].set_ylim([0.0, max_power[i]])
 
 		ax2 = ax[i].twinx()
-		lns3 = ax2.plot(panel[:, 0], panel[:, 1], label='panel', c='r')
+		lns3 = ax2.plot(panel[:, 0], panel[:, 1], label='panel temperature', c='r')
 		ax2.set_ylabel('Temperature [$^\circ C$]', fontsize=font_size)
 		ax2.set_ylim([-200, 150])
 		
@@ -179,7 +205,7 @@ def get_laser_temperature():
 if __name__ == '__main__':
 	font_size = 14
 	figsize = (14, 7)
-	get_range_elevation_plot()
+	# get_range_elevation_plot()
 	get_rover_temperature()
-	get_laser_temperature()
+	# get_laser_temperature()
 
