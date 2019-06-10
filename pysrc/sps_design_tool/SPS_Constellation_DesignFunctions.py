@@ -113,14 +113,18 @@ def rover_metrics(rover_name):
 def trans_metrics(selection):
 
     transmitter = {}
-
-    if '100kW' in selection:
+    if 'L-BEAM' in selection:
+        # Fictional laser
+        transmitter['wavelength'] = 1070e-9
+        transmitter['power'] = 100e3
+        transmitter['mass'] = 3600.0
+        transmitter['efficiency'] = 0.5
+    elif '100kW' in selection:
         # IPG YLS10000
         transmitter['wavelength'] = 1070e-9
         transmitter['power'] = 100e3
         transmitter['mass'] = 3600.0
         transmitter['efficiency'] = 0.35
-
     elif selection == '15kW':
         # IPG YLS-CUT
         transmitter['wavelength'] = 1070e-9

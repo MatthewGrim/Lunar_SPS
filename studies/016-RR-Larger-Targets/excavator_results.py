@@ -23,7 +23,7 @@ def main():
     study_type = study_name.split('_')[0]
 
     # Select transmitter
-    transmitter_selection = '100kW'
+    transmitter_selection = 'L-BEAM'
 
     # Select receiver
     # Fleet size must be integer, rover separation distance must be float (with decimal)

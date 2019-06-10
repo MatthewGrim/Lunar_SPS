@@ -129,9 +129,12 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     target_heat_load = target_flux * (1 - rover['rec_efficiency']) * np.pi * rover['rec_radius'] ** 2
 
     # ESTIMATE SPS BATTERY MASS
+    depth_of_discharge = 0.25
     # Get full transmitter power - including power beyond 1 / e2 drop off
     transmitter['power'] /= 1 - np.exp(-2)
-    sps_battery_capacity = transmitter['power'][best_orbit_idx] * sorted_data_set['max_stored_power_time'][best_orbit_idx] / (3600.0 * transmitter['efficiency'])
+    # Take minimum stored power time as the minimum of the necessary active time and maximum eclipse time of the satellite
+    max_stored_power_time = min(sorted_data_set['max_stored_power_time'][best_orbit_idx], sorted_data_set['total_active_time'][best_orbit_idx] * orbit_period / 100.0)
+    sps_battery_capacity = transmitter['power'][best_orbit_idx] * max_stored_power_time / (3600.0 * transmitter['efficiency'] * depth_of_discharge)
     lipo_specific_power = 140.0
     sps_battery_mass = sps_battery_capacity / lipo_specific_power
     number_of_cycles = 24 / orbit_period * 3600.0 * 365 * 10
@@ -157,6 +160,8 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     header = ' LASER TRANSMITTER '
     num_lines = (num_lines_in_header - len(header)) // 2
     print('-' * num_lines + header + '-' * num_lines)
+    print('Transmitter efficiency --> {} %'.format(transmitter['efficiency'] * 100.0))
+    print('Minimum allowable satellite power --> {} kW'.format(round(transmitter['power'][best_orbit_idx] / 1000.0 / transmitter['efficiency'], 2)))
     print('Minimum allowable transmitter power --> {} kW'.format(round(transmitter['power'][best_orbit_idx] / 1000.0, 2)))
     print('Transmitter aperture radius: {} cm'.format(round(transmitter['radius'][best_orbit_idx] * 100.0, 2)))
     print('Min link efficiency --> {} %'.format(round(sorted_data_set['min_link_efficiency'][best_orbit_idx] * 100.0, 5)))
@@ -168,11 +173,11 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     header = ' BATTERY CHARACTERISTICS '
     num_lines = (num_lines_in_header - len(header)) // 2
     print('-' * num_lines + header + '-' * num_lines)
+    print('Maximum stored power time --> {} hours'.format(max_stored_power_time / 3600))
     print('Battery capacity --> {} Whr'.format(round(sps_battery_capacity, 2)))
     print('Battery mass --> {} kg'.format(round(sps_battery_mass, 2)))
     print('Battery cycles --> {}'.format(round(number_of_cycles, 2)))
     print('Battery charge time --> {} hr'.format(round(charge_time / 3600, 2)))
-    
 
     header = ' RECEIVER CHARACTERISTICS '
     num_lines = (num_lines_in_header - len(header)) // 2
