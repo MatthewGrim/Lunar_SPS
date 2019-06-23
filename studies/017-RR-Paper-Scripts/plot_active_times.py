@@ -55,7 +55,7 @@ def plot_constellation_active_times():
 
             im = ax[num_sps - 1].contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['total_active_time'], 500)
             im.set_clim(0.0, 100.0)
-            fig.colorbar(im, ax=ax[num_sps - 1])
+            fig.colorbar(im, ax=ax[num_sps - 1], ticks=np.linspace(0, 100, 11))
             ax[num_sps - 1].set_title('Number of Satellites: {}'.format(num_sps ))
             ax[num_sps - 1].set_xlabel("Apolune altitude [$km$]", fontsize=font_size)
         name = "Polar" if "NorthPole" in study_name else "Equatorial"
