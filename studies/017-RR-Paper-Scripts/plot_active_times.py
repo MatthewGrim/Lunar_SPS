@@ -6,6 +6,8 @@ This scripts plots the active times for different satellite constellations
 """
 
 from numpy import unravel_index
+from PIL import Image
+import sys
 
 from Lunar_SPS.pysrc.sps_design_tool.SPS_Constellation_DesignFunctions import *
 from Lunar_SPS.pysrc.STK_functions.DVP_Programmatic_Functions import *
@@ -52,15 +54,25 @@ def plot_constellation_active_times():
 
             # Reorganize the data lists into 2D arrays
             sorted_data_set, perigee_altitudes, unique_perigees, apogee_altitudes, unique_apogees = sort_data_lists(data_set, study['orbits'], study_name, **kwargs)
-
-            im = ax[num_sps - 1].contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['total_active_time'], 500)
+            
+            if num_sps == 3:
+                sorted_data_set['total_active_time'][29, 0] = 0.0
+            levels = np.linspace(0.0, 100, 11)
+            im = ax[num_sps - 1].contourf(apogee_altitudes, perigee_altitudes, sorted_data_set['total_active_time'], 200, vmin=0, vmax=100)
+            im2 = ax[num_sps - 1].contour(im, levels=levels, colors='k')
+            ax[num_sps - 1].clabel(im2, fmt='%1.0f', colors='k', fontsize=12)
             im.set_clim(0.0, 100.0)
-            fig.colorbar(im, ax=ax[num_sps - 1], ticks=np.linspace(0, 100, 11))
             ax[num_sps - 1].set_title('Number of Satellites: {}'.format(num_sps ))
             ax[num_sps - 1].set_xlabel("Apolune altitude [$km$]", fontsize=font_size)
+        
+        # Add color bar
+        fig.subplots_adjust(right=0.9)
+        cbar_ax = fig.add_axes([0.925, 0.15, 0.025, 0.7])
+        fig.colorbar(im, cax=cbar_ax, ticks=np.linspace(0, 100, 11))
+
         name = "Polar" if "NorthPole" in study_name else "Equatorial"
         ax[0].set_ylabel("Perilune altitude [$km$]".format(name), fontsize=font_size)
-    fig.tight_layout()
+    # fig.tight_layout()
     plt.savefig('active_times')
     plt.show()
     

@@ -118,7 +118,7 @@ def trans_metrics(selection):
         transmitter['wavelength'] = 1070e-9
         transmitter['power'] = 100e3
         transmitter['mass'] = 3600.0
-        transmitter['efficiency'] = 0.5
+        transmitter['efficiency'] = 0.4
     elif '100kW' in selection:
         # IPG YLS10000
         transmitter['wavelength'] = 1070e-9
@@ -245,7 +245,7 @@ def sort_data_lists(data_set, transmitter, orbit_data, study_name, **kwargs):
             data_set_sorted[j] = sort_incremented_resolution_data(orbit_data, data_set[j],
                                                                   resolution=resolutions, thresholds=thresholds)
         transmitter['radius'] = sort_incremented_resolution_data(orbit_data, transmitter['radius'],
-                                                                 resolution=resolutions, thresholds=thresholds)
+                                                                resolution=resolutions, thresholds=thresholds)
     else:
         raise RuntimeError('This code does not handle data sets without incremented resolutions')
 

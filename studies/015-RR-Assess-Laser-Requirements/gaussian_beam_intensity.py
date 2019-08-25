@@ -108,6 +108,7 @@ def get_intensity_profile(params):
 	# Calculate required surface flux and correct laser power for 1 / e2 factor
 	r_moon = 1737e3
 	phi_req = P_rec / (0.5 * np.pi * target_radius ** 2)
+	print("Target radius: {}".format(target_radius))
 	print("Required target flux: {}W".format(phi_req))
 
 	fig, ax = plt.subplots(2, sharex=True, figsize=(12, 7))

@@ -228,7 +228,7 @@ def get_range_elevation_plot():
 	ax[1].set_ylim([1200, 2600])
 	ax[1].set_ylabel('Range [$km$]', fontsize=font_size)
 
-	ax[2].set_ylabel('$\eta_{geom}$ [%]', fontsize=font_size)
+	ax[2].set_ylabel('$\eta_{align}$ [%]', fontsize=font_size)
 	ax[2].set_ylim([0, 110])
 	ax[3].set_ylabel('$\eta_{trans}$ [%]', fontsize=font_size)
 	ax[3].set_xlabel('Time  [min]', fontsize=font_size)
@@ -241,54 +241,57 @@ def get_range_elevation_plot():
 def get_rover_temperature():
 	rover_dir = 'rover_temp'
 
-	fig, ax = plt.subplots(3, figsize=figsize, sharex=True)
+	fig, ax = plt.subplots(2, figsize=figsize, sharex=True)
 
 	colors = ['b', 'r', 'g']
 	max_power = [250.0, 700.0]
+	titles = ['Average incident flux', 'Maximum incident flux']
 	for i, case in enumerate(['_cold_total', '_hot_total']):
 		heater = np.loadtxt(os.path.join(rover_dir, 'heater{}.csv'.format(case)), delimiter=',')
 		laser = np.loadtxt(os.path.join(rover_dir, 'laser{}.csv'.format(case)), delimiter=',')
 		panel = np.loadtxt(os.path.join(rover_dir, 'panel{}.csv'.format(case)), delimiter=',')
 
 		panel = panel[panel[:, 0].argsort()]
+		days_to_hours = 24.0
 
-		lns1 = ax[i].plot(heater[:, 0], heater[:, 1], label='heater power', c='b')
-		lns2 = ax[i].plot(laser[:, 0], laser[:, 1], label='laser power', c='g')
+		lns1 = ax[i].plot(heater[:, 0] * days_to_hours, heater[:, 1], label='heater power', c='b')
+		lns2 = ax[i].plot(laser[:, 0] * days_to_hours, laser[:, 1], label='laser power', c='g')
 		ax[i].set_ylabel('Power [$W$]', fontsize=font_size)
 		ax[i].set_ylim([0.0, max_power[i]])
 
 		ax2 = ax[i].twinx()
-		lns3 = ax2.plot(panel[:, 0], panel[:, 1], label='panel temperature', c='r')
+		lns3 = ax2.plot(panel[:, 0] * days_to_hours, panel[:, 1], label='panel temperature', c='r')
 		ax2.set_ylabel('Temperature [$^\circ C$]', fontsize=font_size)
 		ax2.set_ylim([-200, 150])
 		
-		ax[i].set_xlim([9.5, 10.0])
+		ax[i].set_xlim([9.5 * days_to_hours, 10.0 * days_to_hours])
 		ax[i].grid(linestyle='--')
+		ax[i].set_title(titles[i])
 
 		if i == 0:
 			lns = lns1+lns2+lns3
 			labs = [l.get_label() for l in lns]
 			ax[i].legend(lns, labs, loc=0)
 
-	heater = np.loadtxt(os.path.join(rover_dir, 'heater_cold_total.csv'.format(case)), delimiter=',')
-	laser = np.loadtxt(os.path.join(rover_dir, 'laser_cold_total.csv'.format(case)), delimiter=',')
-	heater[heater[:, 1] > 10, 1] = np.max(heater[:, 1])
-	hib_power = 42
-	heater[heater[:, 1] < np.max(heater[:, 1]), 1] = hib_power - np.max(heater[:, 1])
-	heater[heater[:, 1] == np.max(heater[:, 1]), 1] = hib_power
-	laser[laser[:, 1] > 1, 1] = 240.0
-	ax[2].plot(heater[:, 0], heater[:, 1])
-	ax[2].plot(laser[:, 0], laser[:, 1])
-	laser_interp = interp1d(laser[:, 0], laser[:, 1])
-	times = np.linspace(9.707, 9.881, 200)
-	laser_integral = np.trapz(laser_interp(times), dx=times[1]-times[0])
-	heater_interp = interp1d(heater[:, 0], heater[:, 1])
-	heater_integral = np.trapz(heater_interp(times), dx=times[1]-times[0])
-	print('Energy received: {}'.format(laser_integral * 3600 * 24))
-	print('Energy consumed: {}'.format(heater_integral * 3600 * 24))
-	print('Energy balance after lunar night: {}'.format((laser_integral - heater_integral) * 3600 * 24 * 14 / (times[-1] - times[0]) + 500 * 3600))
+	# heater = np.loadtxt(os.path.join(rover_dir, 'heater_cold_total.csv'.format(case)), delimiter=',')
+	# laser = np.loadtxt(os.path.join(rover_dir, 'laser_cold_total.csv'.format(case)), delimiter=',')
+	# heater[heater[:, 1] > 10, 1] = np.max(heater[:, 1])
+	# hib_power = 33.5
+	# heater[heater[:, 1] < np.max(heater[:, 1]), 1] = hib_power - np.max(heater[:, 1])
+	# heater[heater[:, 1] == np.max(heater[:, 1]), 1] = hib_power
+	# laser[laser[:, 1] > 1, 1] = 240.0
+	# ax[2].plot(heater[:, 0], heater[:, 1])
+	# ax[2].plot(laser[:, 0], laser[:, 1])
+	# laser_interp = interp1d(laser[:, 0], laser[:, 1])
+	# times = np.linspace(9.707, 9.881, 200)
+	# laser_integral = np.trapz(laser_interp(times), dx=times[1]-times[0])
+	# heater_interp = interp1d(heater[:, 0], heater[:, 1])
+	# heater_integral = np.trapz(heater_interp(times), dx=times[1]-times[0])
+	# print('Energy received: {}'.format(laser_integral * 3600 * 24))
+	# print('Energy consumed: {}'.format(heater_integral * 3600 * 24))
+	# print('Energy balance after lunar night: {}'.format((laser_integral - heater_integral) * 3600 * 24 * 14 / (times[-1] - times[0]) + 500 * 3600))
 
-	ax[1].set_xlabel("Time [$Earth\ days$]", fontsize=font_size)
+	ax[1].set_xlabel("Time [$hrs$]", fontsize=font_size)
 	fig.tight_layout()
 	plt.savefig('rover_temp')
 	plt.show()
@@ -340,7 +343,7 @@ def get_laser_temperature():
 if __name__ == '__main__':
 	font_size = 14
 	figsize = (14, 7)
-	# get_range_elevation_plot()
+	get_range_elevation_plot()
 	# get_rover_temperature()
-	get_laser_temperature()
+	#get_laser_temperature()
 

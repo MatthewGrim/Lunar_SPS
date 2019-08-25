@@ -152,7 +152,8 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     print('Orbital period --> {} minutes'.format(round(orbit_period / 60.0, 2)))
     print('Total active time (blackout reduction) --> {} %'.format(round(sorted_data_set['total_active_time'][best_orbit_idx], 2)))
     print('Total blackout time --> {} %'.format(round(100.0 * sorted_data_set['total_blackout_time'][best_orbit_idx] / study['duration'], 2)))
-    print('Max active period duration --> {} hours'.format(round(sorted_data_set['max_active_time'][best_orbit_idx] / 3600.0, 2)))
+    print('Max satellite availability duration --> {} hours'.format(round(sorted_data_set['max_active_time'][best_orbit_idx] / 3600.0, 2)))
+    print('Average active period duration --> {} minutes'.format(round(sorted_data_set['total_active_time'][best_orbit_idx] * orbit_period / 100.0 / 60, 2)))
     print('Max blackout period duration --> {} hours'.format(round(sorted_data_set['max_blackout_duration'][best_orbit_idx], 2)))
     print('Min range to target --> {} km'.format(round(sorted_data_set['min_range'][best_orbit_idx], 2)))
     print('Max range to target --> {} km'.format(round(sorted_data_set['max_range'][best_orbit_idx], 2)))
@@ -173,8 +174,8 @@ def generate_design_space(study_name, rover_selection, transmitter_selection, co
     header = ' BATTERY CHARACTERISTICS '
     num_lines = (num_lines_in_header - len(header)) // 2
     print('-' * num_lines + header + '-' * num_lines)
-    print('Maximum stored power time --> {} hours'.format(max_stored_power_time / 3600))
-    print('Battery capacity --> {} Whr'.format(round(sps_battery_capacity, 2)))
+    print('Maximum stored power time --> {} hours'.format(round(max_stored_power_time / 3600, 2)))
+    print('Battery capacity --> {} kWhr'.format(round(sps_battery_capacity / 1000.0, 2)))
     print('Battery mass --> {} kg'.format(round(sps_battery_mass, 2)))
     print('Battery cycles --> {}'.format(round(number_of_cycles, 2)))
     print('Battery charge time --> {} hr'.format(round(charge_time / 3600, 2)))
