@@ -9,6 +9,8 @@ cubic spline interpolation.
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import cm
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.interpolate import CubicSpline, interp1d
 
 
@@ -340,10 +342,48 @@ def get_laser_temperature():
 	plt.show()
 
 
+def get_selenographic_map():
+	data_path = os.path.join("selenographic_map", "vis2")
+	graph_data = np.loadtxt(data_path)
+
+	lat_points = np.zeros((180))
+	long_points = np.zeros((90))
+	access_points = np.zeros((180, 90))
+	for i in range(graph_data.shape[0]):
+		lat_idx = i // 90
+		long_idx = i % 90
+		lat_points[lat_idx] = graph_data[i, 0]
+		long_points[long_idx] = graph_data[i, 1]
+		access_points[lat_idx, long_idx] = graph_data[i, 2]
+
+	# Correct data for lunar night rather than single lunation average - this is ol for equatorial data
+	access_points *= 2
+	print("Maximum access: {}".format(np.max(access_points)))
+
+	lat_points[0] = -180
+	lat_points[-1] = 180
+	long_points[0] = -90
+	long_points[-1] = 90
+	fig, ax = plt.subplots(1, figsize=(14, 6))
+	im = ax.contourf(lat_points, long_points, access_points.transpose(), 200, cmap=cm.magma)
+	divider = make_axes_locatable(ax)
+	cax = divider.append_axes("right", size="5%", pad=0.05)
+	plt.colorbar(im, cax=cax, ticks=np.linspace(0, 25, 6))
+
+	ax.set_ylabel("Selenographic Latitude [$^\circ$]", fontsize=font_size)
+	ax.set_xlabel("Selenographic Longitude [$^\circ$]", fontsize=font_size)
+	ax.set_xticks(np.linspace(-180, 180, 7))
+	ax.set_yticks(np.linspace(-90, 90, 7))
+	fig.tight_layout()
+	plt.savefig('selenographic_map')
+	plt.show()
+
+
 if __name__ == '__main__':
 	font_size = 14
 	figsize = (14, 7)
-	get_range_elevation_plot()
+	# get_range_elevation_plot()
 	# get_rover_temperature()
 	#get_laser_temperature()
+	get_selenographic_map()
 
