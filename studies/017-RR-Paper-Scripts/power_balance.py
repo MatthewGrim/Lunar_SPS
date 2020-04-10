@@ -31,8 +31,8 @@ def get_energy_balance():
     Whr_to_J = 3600.0
     rover_names = ["Sorato", "AMALIA"]
     rover_battery_capacity = [38.0 * Whr_to_J, 500.0 * Whr_to_J]
-    rover_operation_power = [17.0, 240.0]
-    rover_hibernation_power = [4.5, 48.0]
+    rover_operation_power = [17.0, 206.5]
+    rover_hibernation_power = [4.5, 33.5]
     perigees = [2300, 1300]
     apogees = [2300, 1300]
     two_satellites = [True, False]

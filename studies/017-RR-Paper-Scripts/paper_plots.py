@@ -275,23 +275,22 @@ def get_rover_temperature():
 			labs = [l.get_label() for l in lns]
 			ax[i].legend(lns, labs, loc=0)
 
-	# heater = np.loadtxt(os.path.join(rover_dir, 'heater_cold_total.csv'.format(case)), delimiter=',')
-	# laser = np.loadtxt(os.path.join(rover_dir, 'laser_cold_total.csv'.format(case)), delimiter=',')
-	# heater[heater[:, 1] > 10, 1] = np.max(heater[:, 1])
-	# hib_power = 33.5
-	# heater[heater[:, 1] < np.max(heater[:, 1]), 1] = hib_power - np.max(heater[:, 1])
-	# heater[heater[:, 1] == np.max(heater[:, 1]), 1] = hib_power
-	# laser[laser[:, 1] > 1, 1] = 240.0
-	# ax[2].plot(heater[:, 0], heater[:, 1])
-	# ax[2].plot(laser[:, 0], laser[:, 1])
-	# laser_interp = interp1d(laser[:, 0], laser[:, 1])
-	# times = np.linspace(9.707, 9.881, 200)
-	# laser_integral = np.trapz(laser_interp(times), dx=times[1]-times[0])
-	# heater_interp = interp1d(heater[:, 0], heater[:, 1])
-	# heater_integral = np.trapz(heater_interp(times), dx=times[1]-times[0])
-	# print('Energy received: {}'.format(laser_integral * 3600 * 24))
-	# print('Energy consumed: {}'.format(heater_integral * 3600 * 24))
-	# print('Energy balance after lunar night: {}'.format((laser_integral - heater_integral) * 3600 * 24 * 14 / (times[-1] - times[0]) + 500 * 3600))
+	heater = np.loadtxt(os.path.join(rover_dir, 'heater_cold_total.csv'.format(case)), delimiter=',')
+	hib_power = 32.25
+	charge_power = 240.0
+	heater_power = 26.7
+	heater_start = heater[1, 0]
+	heater_on = heater[4, 0]
+	heater_end = heater[5, 0]
+	print(heater_start, heater_on, heater_end)
+	heater_fraction = (heater_end - heater_on) / (heater_end - heater_start)
+	print('Heater on fraction: {}'.format(heater_fraction))
+	net_power = charge_power * 0.098 - heater_fraction * hib_power - (1 - heater_fraction) * (hib_power - heater_power)
+	print('Net power: {} W'.format(net_power))
+	T_period = 250.28 / 60.0
+	net_energy_per_orbit = net_power * T_period
+	print('Net energy: {} Whr'.format(net_energy_per_orbit))
+	print('Power left for internal components: {} W'.format(hib_power - heater_power))
 
 	ax[1].set_xlabel("Time [$hrs$]", fontsize=font_size)
 	fig.tight_layout()
@@ -342,6 +341,16 @@ def get_laser_temperature():
 	plt.show()
 
 
+def get_battery_capacity():
+	laser_power = 7.79
+	laser_efficiency = 0.4
+	beam_time = 24.52 / 60
+	depth_of_discharge = 0.25
+	battery_degradation = 0.8	# Over 10 years
+	bol_battery_capacity = laser_power / laser_efficiency * beam_time / depth_of_discharge / battery_degradation
+	print('Beginning of Life capacity: {} kWhr'.format(bol_battery_capacity))
+
+
 def get_selenographic_map():
 	data_path = os.path.join("selenographic_map", "vis2")
 	graph_data = np.loadtxt(data_path)
@@ -383,7 +392,8 @@ if __name__ == '__main__':
 	font_size = 14
 	figsize = (14, 7)
 	# get_range_elevation_plot()
-	# get_rover_temperature()
+	get_rover_temperature()
 	#get_laser_temperature()
-	get_selenographic_map()
+	# get_selenographic_map()
+	get_battery_capacity()
 
