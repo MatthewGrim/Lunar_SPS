@@ -114,11 +114,10 @@ def get_laser_power(plot_result=False):
 
 
 if __name__ == '__main__':
+    # Generate periodic domain and variable struct
     num_pts = 1001
     theta = np.linspace(0.0, 2 * np.pi, num_pts)
     ta_struct = ThermalAnalysisConstants()
-
-    # Get interpolators for heat sources
     p_sol = get_solar_heat(plot_result=False)
     p_lun = get_lunar_heat(plot_result=False)
     p_las = get_laser_power()
@@ -134,6 +133,7 @@ if __name__ == '__main__':
     assert min_power_theta > 0.0
     assert max_power_theta < 2 * np.pi
 
+    # Set up full simulation time and additional structures
     n_periods = 3
     period = 250.0 * 60.0
     t_end = n_periods * period
@@ -150,10 +150,8 @@ if __name__ == '__main__':
     start_idx = 0
     num_iter = 0
     start_idx_glob_prev = 0
+    break_points = list()
     while t_sim < t_end:
-        if num_iter > 10:
-            break
-
         start_idx_glob_prev += start_idx
 
         def integration_model(y, time, laser_coupled=False, heater_on=False):
@@ -180,53 +178,52 @@ if __name__ == '__main__':
             if (heater_on and T_rad <= 243.0):
                 p_heater = 2500.0
             elif (heater_on and T_rad > 243.0):
-                print("turning heater off")
                 p_heater = 0.0
             elif (not heater_on and T_rad > 233.0):
                 p_heater = 0.0
             elif (not heater_on and T_rad <= 233.0):
-                print("turning heater on")
                 p_heater = 2500.0
             else:
                 print(T_rad, heater_on)
 
             p_rad = ta_struct.front_emissivity * ta_struct.stefan_boltzmann * T_rad ** 4 * ta_struct.panel_area
             p_tot_rad = p_sol + p_lun + p_heater + p_las2rad - p_rad
-
+            
             dTRad_dt = p_tot_rad / ta_struct.radiator_heat_capacity
-
-            # if T_rad < 222.9:
-            #     raise RuntimeError("Should not be possible")
 
             return [dTlas_dt, dTRad_dt]
         if start_idx_glob_prev == 0:
-            T = integrate.odeint(integration_model, [T_las, T_rad], t[start_idx_glob_prev + 1:], args=(laser_coupled, heater_on), hmax=1000.0)
+            T = integrate.odeint(integration_model, [T_las, T_rad], t[start_idx_glob_prev + 1:], args=(laser_coupled, heater_on), hmin=1.0e-6, hmax=1000.0)
         else:
-            T = integrate.odeint(integration_model, [T_las, T_rad], t[start_idx_glob_prev + 1:], args=(laser_coupled, heater_on), hmax=1000.0)
+            T = integrate.odeint(integration_model, [T_las, T_rad], t[start_idx_glob_prev + 1:], args=(laser_coupled, heater_on), hmin=1.0e-6, hmax=1000.0)
         T_las = T[:, 0]
         T_rad = T[:, 1]
-        plt.figure()
-        plt.plot(t[start_idx_glob_prev + 1:], T_las)
-        plt.plot(t[start_idx_glob_prev + 1:], T_rad)
-        plt.show()
-
 
         # Test if simulation has finished
-        zero_indices = np.where(T_las == 0.0)[0]
-        if len(zero_indices) == 0:
+        dT_las = np.abs(np.diff(T_las))
+        dT_rad = np.abs(np.diff(T_rad))
+        las_zero_indices = np.where(dT_las > 25.0)[0]
+        rad_zero_indices = np.where(dT_rad > 25.0)[0]
+        if len(rad_zero_indices) == 0:
             T_las_final[start_idx_glob_prev+1:] = T_las
             T_rad_final[start_idx_glob_prev+1:] = T_rad
-            print(T_las_final.shape, T_rad_final.shape)
             break
+
+        # Plot intermediate integrations, removing large number from results outside of integration
+        start_idx = min(las_zero_indices[0], rad_zero_indices[0])
+        T_las[start_idx+1:] = 0.0
+        T_rad[start_idx+1:] = 0.0
         
         # Find new start index and store results from integration
-        start_idx = zero_indices[0] - 1
-        t_sim= t[start_idx]
+        t_sim = t[start_idx_glob_prev + start_idx + 1]
         T_las_final[start_idx_glob_prev:start_idx_glob_prev + start_idx+1] = T_las[:start_idx+1]
         T_rad_final[start_idx_glob_prev:start_idx_glob_prev + start_idx+1] = T_rad[:start_idx+1]
 
+        # Determine switch that has been triggered
         T_las = T[start_idx, 0]
         T_rad = T[start_idx, 1]
+        assert 400.0 > T_las >= 232.99, T_las
+        assert 400.0 > T_rad >= 232.99, T_rad
         T_averaged = 0.5 * (T_rad + T_las)
         if np.isclose(T_rad, 233.0, atol=0.25):
             print("Heater on", T_las, T_rad, T_averaged, t_sim)
@@ -234,32 +231,34 @@ if __name__ == '__main__':
         elif np.isclose(T_rad, 243.0, atol=0.25):
             print("Heater off", T_las, T_rad, T_averaged, t_sim)
             heater_on = False
-        elif np.isclose(T_averaged, 0.0, atol=0.25):
-            if T_averaged > 0.0:
+        elif np.isclose(T_averaged, 273.0, atol=0.25):
+            if T_averaged > 273.0:
                 print("Laser de-coupled", T_las, T_rad, T_averaged, t_sim)
                 laser_coupled=False
             else:
                 print("Laser Coupled", T_las, T_rad, T_averaged, t_sim)
                 laser_coupled=True
         else:
-            print("No switch was triggered...")
-            break
+            # This is triggered by discontinuities in the solar and lunar irradiance
+            pass
 
-        print(T_las_final.shape, T_rad_final.shape)
+        # store break points
+        break_points.append(t_sim)
 
+    print(len(break_points))
+
+    t /= 60.0
     fig, ax = plt.subplots()
-    ax.plot(t / 60.0, T_las_final, c='b')
-    ax.plot(t / 60.0, T_rad_final, c='r')
-    ax.plot(t / 60.0, 0.5 * (T_rad_final + T_las_final), linestyle='--', c='grey')
+    ax.plot(t, T_las_final, c='b')
+    ax.plot(t, T_rad_final, c='r')
+    ax.plot(t, 0.5 * (T_rad_final + T_las_final), linestyle='--', c='grey')
+    for t_bp in break_points:
+        ax.axvline(t_bp / 60.0, linestyle=':', c='grey', linewidth=0.5)
     ax.grid()
+    ax.set_xlim([0.0, t[-1]])
     ax2 = ax.twinx()
-    ax2.plot(t / 60.0, p_las_interp((t / angle_to_time) % (2 * np.pi)))
-    ax2.plot(t / 60.0, p_lun_interp((t / angle_to_time) % (2 * np.pi)))
-    ax2.plot(t / 60.0, p_sol_interp((t / angle_to_time) % (2 * np.pi)))
+    ax2.plot(t, p_las_interp((t * 60.0 / angle_to_time) % (2 * np.pi)))
+    ax2.plot(t, p_lun_interp((t * 60.0 / angle_to_time) % (2 * np.pi)))
+    ax2.plot(t, p_sol_interp((t * 60.0 / angle_to_time) % (2 * np.pi)))
     plt.show()
 
-    fig, ax = plt.subplots(2)
-    ax[0].plot(theta, p_sol)
-    ax[0].plot(theta, p_lun)
-    ax[1].plot(theta, p_las)
-    plt.show()
