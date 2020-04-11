@@ -187,8 +187,7 @@ if __name__ == '__main__':
             else:
                 print(T_rad, heater_on)
 
-            p_rad = ta_struct.front_emissivity * ta_struct.stefan_boltzmann * T_rad ** 4 * 2 * ta_struct.panel_area
-            print(T_rad, p_rad)
+            p_rad = (ta_struct.front_emissivity + ta_struct.back_emissivity) * ta_struct.stefan_boltzmann * T_rad ** 4 * ta_struct.panel_area
             p_tot_rad = p_sol + p_lun + p_heater + p_las2rad - p_rad
             
             dTRad_dt = p_tot_rad / ta_struct.radiator_heat_capacity
