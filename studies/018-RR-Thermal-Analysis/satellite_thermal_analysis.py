@@ -21,7 +21,7 @@ class ThermalAnalysisConstants(object):
     stefan_boltzmann = 5.670374e-8
     solar_irradiance = 1370.0
     r_moon = 1731.0
-    aluminium_heat_capacity = 881.0
+    aluminium_heat_capacity = 920.0
 
     def __init__(self, panel_area=10.0, 
                  front_emissivity=0.78, front_absorptivity=0.05, 
@@ -30,7 +30,7 @@ class ThermalAnalysisConstants(object):
                  orbit_altitude=1300.0,
                  p_las=19.725e3, laser_efficiency=0.4, power_fraction=0.1,
                  targ_theta=3*np.pi/2,
-                 laser_mass=25.0, radiator_mass=100.0):
+                 laser_mass=25.0, radiator_mass=100.0, number_of_radiators=2):
         """
         Initialise design based constants
         """
@@ -40,7 +40,7 @@ class ThermalAnalysisConstants(object):
         self.front_absorptivity = front_absorptivity    # Solar absorptivity of Moon facing side
         self.back_emissivity = back_emissivity          # Infrared emissivity of panel back
         self.back_absorptivity = back_absorptivity      # Solar absorptivity of panel back
-        self.panel_inclination = panel_inclination                  # Tilt of panel from the lunar equatorial plane
+        self.panel_inclination = panel_inclination      # Tilt of panel from the lunar equatorial plane
 
         self.p_las = p_las
         self.laser_efficiency = laser_efficiency
@@ -52,6 +52,7 @@ class ThermalAnalysisConstants(object):
 
         self.laser_heat_capacity = laser_mass * ThermalAnalysisConstants.aluminium_heat_capacity
         self.radiator_heat_capacity = radiator_mass * ThermalAnalysisConstants.aluminium_heat_capacity
+        self.number_of_radiators = number_of_radiators
 
 
 def get_solar_heat(plot_result=False):
@@ -166,27 +167,28 @@ if __name__ == '__main__':
                 p_las = 0.0
 
             if (0.5 * (T_las + T_rad) > 273.0):
-                p_las2rad = (T_las - T_rad) * 2 * 60.0
+                p_las2rad = (T_las - T_rad) * 60.0
             else:
                 p_las2rad = 0.0
             
-            p_tot = p_las - p_las2rad
+            p_tot = p_las - ta_struct.number_of_radiators * p_las2rad
             dTlas_dt = p_tot / ta_struct.laser_heat_capacity
             
             p_sol = p_sol_interp(local_theta)
             p_lun = p_lun_interp(local_theta)
-            if (heater_on and T_rad <= 243.0):
+            if (heater_on and T_rad <= 233.0):
                 p_heater = 2500.0
-            elif (heater_on and T_rad > 243.0):
+            elif (heater_on and T_rad > 233.0):
                 p_heater = 0.0
-            elif (not heater_on and T_rad > 233.0):
+            elif (not heater_on and T_rad > 223.0):
                 p_heater = 0.0
-            elif (not heater_on and T_rad <= 233.0):
+            elif (not heater_on and T_rad <= 223.0):
                 p_heater = 2500.0
             else:
                 print(T_rad, heater_on)
 
-            p_rad = ta_struct.front_emissivity * ta_struct.stefan_boltzmann * T_rad ** 4 * ta_struct.panel_area
+            p_rad = ta_struct.front_emissivity * ta_struct.stefan_boltzmann * T_rad ** 4 * 2 * ta_struct.panel_area
+            print(T_rad, p_rad)
             p_tot_rad = p_sol + p_lun + p_heater + p_las2rad - p_rad
             
             dTRad_dt = p_tot_rad / ta_struct.radiator_heat_capacity
@@ -222,16 +224,16 @@ if __name__ == '__main__':
         # Determine switch that has been triggered
         T_las = T[start_idx, 0]
         T_rad = T[start_idx, 1]
-        assert 400.0 > T_las >= 232.99, T_las
-        assert 400.0 > T_rad >= 232.99, T_rad
+        assert 400.0 > T_las >= 222.99, T_las
+        assert 400.0 > T_rad >= 222.99, T_rad
         T_averaged = 0.5 * (T_rad + T_las)
-        if np.isclose(T_rad, 233.0, atol=0.25):
+        if np.isclose(T_rad, 223.0, atol=0.25):
             print("Heater on", T_las, T_rad, T_averaged, t_sim)
             heater_on = True
-        elif np.isclose(T_rad, 243.0, atol=0.25):
+        elif np.isclose(T_rad, 233.0, atol=0.25):
             print("Heater off", T_las, T_rad, T_averaged, t_sim)
             heater_on = False
-        elif np.isclose(T_averaged, 273.0, atol=0.25):
+        elif np.isclose(T_averaged, 273.0, atol=0.5):
             if T_averaged > 273.0:
                 print("Laser de-coupled", T_las, T_rad, T_averaged, t_sim)
                 laser_coupled=False
@@ -249,9 +251,9 @@ if __name__ == '__main__':
 
     t /= 60.0
     fig, ax = plt.subplots()
-    ax.plot(t, T_las_final, c='b')
-    ax.plot(t, T_rad_final, c='r')
-    ax.plot(t, 0.5 * (T_rad_final + T_las_final), linestyle='--', c='grey')
+    ax.plot(t, T_las_final - 273.0, c='b')
+    ax.plot(t, T_rad_final - 273.0, c='r')
+    ax.plot(t, 0.5 * (T_rad_final + T_las_final) - 273.0, linestyle='--', c='grey')
     for t_bp in break_points:
         ax.axvline(t_bp / 60.0, linestyle=':', c='grey', linewidth=0.5)
     ax.grid()
