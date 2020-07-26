@@ -14,6 +14,31 @@ from scipy.interpolate import interp1d
 from scipy import integrate
 
 
+def rKN(x, fx, n, hs, **kwargs):
+    k1 = []
+    k2 = []
+    k3 = []
+    k4 = []
+    xk = []
+    for i in range(n):
+        k1.append(fx[i](x, **kwargs)*hs)
+    for i in range(n):
+        xk.append(x[i] + k1[i]*0.5)
+    for i in range(n):
+        k2.append(fx[i](xk, **kwargs)*hs)
+    for i in range(n):
+        xk[i] = x[i] + k2[i]*0.5
+    for i in range(n):
+        k3.append(fx[i](xk, **kwargs)*hs)
+    for i in range(n):
+        xk[i] = x[i] + k3[i]
+    for i in range(n):
+        k4.append(fx[i](xk, **kwargs)*hs)
+    for i in range(n):
+        x[i] = x[i] + (k1[i] + 2*(k2[i] + k3[i]) + k4[i])/6
+    return x
+
+
 class ThermalAnalysisConstants(object):
     """
     Structure to store the constants used in thermal analysis
@@ -116,7 +141,7 @@ def get_laser_power(plot_result=False):
 
 if __name__ == '__main__':
     # Generate periodic domain and variable struct
-    num_pts = 1001
+    num_pts = 10001
     theta = np.linspace(0.0, 2 * np.pi, num_pts)
     ta_struct = ThermalAnalysisConstants()
     p_sol = get_solar_heat(plot_result=False)
@@ -134,132 +159,128 @@ if __name__ == '__main__':
     assert min_power_theta > 0.0
     assert max_power_theta < 2 * np.pi
 
+    def laser_model(y, **kwargs):
+        time = kwargs.get("time")
+        
+        T_las = y[0]
+        T_rad = y[1]
+        local_theta = (time / angle_to_time) % (2 * np.pi)
+
+        # Calculate laser change in temperature
+        if (local_theta > min_power_theta and local_theta < max_power_theta):
+            p_las = ta_struct.p_las * (1.0 - ta_struct.laser_efficiency)
+        else:
+            p_las = 0.0
+
+        if (0.5 * (T_las + T_rad) > 273.3):
+            p_las2rad = (T_las - T_rad) * 60.0
+        else:
+            p_las2rad = 0.0
+        
+        p_tot = p_las - ta_struct.number_of_radiators * p_las2rad
+        dTlas_dt = p_tot / ta_struct.laser_heat_capacity
+
+        return dTlas_dt
+
+    def radiator_model(y, **kwargs):
+        time = kwargs.get("time")
+        heater_on = kwargs.get("heater_on")
+        
+        T_las = y[0]
+        T_rad = y[1]
+        local_theta = (time / angle_to_time) % (2 * np.pi)
+
+        if (0.5 * (T_las + T_rad) > 273.3):
+            p_las2rad = (T_las - T_rad) * 60.0
+        else:
+            p_las2rad = 0.0
+        
+        p_sol = p_sol_interp(local_theta)
+        p_lun = p_lun_interp(local_theta)
+        if (heater_on):
+            p_heater = 2500.0
+        else:
+            p_heater = 0.0
+
+        p_rad = (ta_struct.front_emissivity + ta_struct.back_emissivity) * ta_struct.stefan_boltzmann * T_rad ** 4 * ta_struct.panel_area
+        p_tot_rad = p_sol + p_lun + p_heater + p_las2rad - p_rad
+        
+        dTRad_dt = p_tot_rad / ta_struct.radiator_heat_capacity
+
+        return dTRad_dt
+
     # Set up full simulation time and additional structures
     n_periods = 3
     period = 250.0 * 60.0
     t_end = n_periods * period
     t_sim = 0.0
-    t = np.linspace(0.0, t_end, num_pts)
+    t = np.linspace(0.0, t_end, n_periods * num_pts)
+    dt = t[1] - t[0]
     angle_to_time = period / (2 * np.pi)
+    
     phi_tilt = ta_struct.panel_inclination
-    T_las_final = np.zeros(t.shape)
-    T_rad_final = np.zeros(t.shape)
-    heater_on = False
-    laser_coupled=False
-    T_las= 273.0
-    T_rad = 238.0
-    start_idx = 0
-    num_iter = 0
-    start_idx_glob_prev = 0
-    break_points = list()
-    while t_sim < t_end:
-        start_idx_glob_prev += start_idx
+    T_l= 273.3
+    T_r = 238.0
+    T_las = np.zeros(t.shape)
+    T_rad = np.zeros(t.shape)
+    p_heater = np.zeros(t.shape)
+    T_las[0] = T_l
+    T_rad[0] = T_r
+    kwargs = {
+        "time" : 0.0,
+        "heater_on" : False
+    }
 
-        def integration_model(y, time, laser_coupled=False, heater_on=False):
-            T_las = y[0]
-            T_rad = y[1]
-            local_theta = (time / angle_to_time) % (2 * np.pi)
-
-            # Calculate laser change in temperature
-            if (local_theta > min_power_theta and local_theta < max_power_theta):
-                p_las = ta_struct.p_las * (1.0 - ta_struct.laser_efficiency)
-            else:
-                p_las = 0.0
-
-            if (0.5 * (T_las + T_rad) > 273.0):
-                p_las2rad = (T_las - T_rad) * 60.0
-            else:
-                p_las2rad = 0.0
-            
-            p_tot = p_las - ta_struct.number_of_radiators * p_las2rad
-            dTlas_dt = p_tot / ta_struct.laser_heat_capacity
-            
-            p_sol = p_sol_interp(local_theta)
-            p_lun = p_lun_interp(local_theta)
-            if (heater_on and T_rad <= 233.0):
-                p_heater = 2500.0
-            elif (heater_on and T_rad > 233.0):
-                p_heater = 0.0
-            elif (not heater_on and T_rad > 223.0):
-                p_heater = 0.0
-            elif (not heater_on and T_rad <= 223.0):
-                p_heater = 2500.0
-            else:
-                print(T_rad, heater_on)
-
-            p_rad = (ta_struct.front_emissivity + ta_struct.back_emissivity) * ta_struct.stefan_boltzmann * T_rad ** 4 * ta_struct.panel_area
-            p_tot_rad = p_sol + p_lun + p_heater + p_las2rad - p_rad
-            
-            dTRad_dt = p_tot_rad / ta_struct.radiator_heat_capacity
-
-            return [dTlas_dt, dTRad_dt]
-        if start_idx_glob_prev == 0:
-            T = integrate.odeint(integration_model, [T_las, T_rad], t[start_idx_glob_prev + 1:], args=(laser_coupled, heater_on), hmin=1.0e-6, hmax=1000.0)
-        else:
-            T = integrate.odeint(integration_model, [T_las, T_rad], t[start_idx_glob_prev + 1:], args=(laser_coupled, heater_on), hmin=1.0e-6, hmax=1000.0)
-        T_las = T[:, 0]
-        T_rad = T[:, 1]
-
-        # Test if simulation has finished
-        dT_las = np.abs(np.diff(T_las))
-        dT_rad = np.abs(np.diff(T_rad))
-        las_zero_indices = np.where(dT_las > 25.0)[0]
-        rad_zero_indices = np.where(dT_rad > 25.0)[0]
-        if len(rad_zero_indices) == 0:
-            T_las_final[start_idx_glob_prev+1:] = T_las
-            T_rad_final[start_idx_glob_prev+1:] = T_rad
-            break
-
-        # Plot intermediate integrations, removing large number from results outside of integration
-        start_idx = min(las_zero_indices[0], rad_zero_indices[0])
-        T_las[start_idx+1:] = 0.0
-        T_rad[start_idx+1:] = 0.0
+    for t_idx, t_curr in enumerate(t):
+        if t_idx == 0:
+            continue
         
-        # Find new start index and store results from integration
-        t_sim = t[start_idx_glob_prev + start_idx + 1]
-        T_las_final[start_idx_glob_prev:start_idx_glob_prev + start_idx+1] = T_las[:start_idx+1]
-        T_rad_final[start_idx_glob_prev:start_idx_glob_prev + start_idx+1] = T_rad[:start_idx+1]
-
+        kwargs["time"] = t_curr
+        T = rKN([T_l, T_r], [laser_model, radiator_model], 2, dt, **kwargs)
+        
+        T_l = T[0]
+        T_r = T[1]
+        T_las[t_idx] = T_l
+        T_rad[t_idx] = T_r
+        
         # Determine switch that has been triggered
-        T_las = T[start_idx, 0]
-        T_rad = T[start_idx, 1]
-        assert 400.0 > T_las >= 222.99, T_las
-        assert 400.0 > T_rad >= 222.99, T_rad
-        T_averaged = 0.5 * (T_rad + T_las)
-        if np.isclose(T_rad, 223.0, atol=0.25):
-            print("Heater on", T_las, T_rad, T_averaged, t_sim)
-            heater_on = True
-        elif np.isclose(T_rad, 233.0, atol=0.25):
-            print("Heater off", T_las, T_rad, T_averaged, t_sim)
-            heater_on = False
-        elif np.isclose(T_averaged, 273.0, atol=0.5):
-            if T_averaged > 273.0:
-                print("Laser de-coupled", T_las, T_rad, T_averaged, t_sim)
-                laser_coupled=False
-            else:
-                print("Laser Coupled", T_las, T_rad, T_averaged, t_sim)
-                laser_coupled=True
-        else:
-            # This is triggered by discontinuities in the solar and lunar irradiance
-            pass
+        # assert 400.0 > T_l >= 222.99, T_l
+        # assert 400.0 > T_r >= 222.99, T_r
+        T_averaged = 0.5 * (T_r + T_l)
+        if T_r < 223.0:
+            print("Heater on", T_l, T_r, T_averaged, t_sim)
+            kwargs["heater_on"] = True
+        if T_r > 233.0:
+            print("Heater off", T_l, T_r, T_averaged, t_sim)
+            kwargs["heater_on"] = False
 
-        # store break points
-        break_points.append(t_sim)
+        if kwargs["heater_on"]:
+            p_heater[t_idx] = 2500.0
 
-    print(len(break_points))
 
-    t /= 60.0
-    fig, ax = plt.subplots()
-    ax.plot(t, T_las_final - 273.0, c='b')
-    ax.plot(t, T_rad_final - 273.0, c='r')
-    ax.plot(t, 0.5 * (T_rad_final + T_las_final) - 273.0, linestyle='--', c='grey')
-    for t_bp in break_points:
-        ax.axvline(t_bp / 60.0, linestyle=':', c='grey', linewidth=0.5)
-    ax.grid()
-    ax.set_xlim([0.0, t[-1]])
+    t /= 3600.0
+    fig, ax = plt.subplots(figsize=(14, 7))
+    lns1 = ax.plot(t, T_las - 273.3, c='r', label='$T_{laser}$')
+    lns2 = ax.plot(t, T_rad - 273.3, c='b', label='$T_{radiator}$')
+    lns3 = ax.plot(t, 0.5 * (T_rad + T_las) - 273.3, linestyle='--', c='k', label='$T_{average}$')
+    ax.grid(linestyle='--')
+    ax.legend()
+    ax.set_xlim([6.5, 10.8])
+    ax.set_ylabel('$T\ [^\circ C]$', fontsize=14)
+    ax.set_xlabel('$Time\ [hrs]$', fontsize=14)
+
     ax2 = ax.twinx()
-    ax2.plot(t, p_las_interp((t * 60.0 / angle_to_time) % (2 * np.pi)))
-    ax2.plot(t, p_lun_interp((t * 60.0 / angle_to_time) % (2 * np.pi)))
-    ax2.plot(t, p_sol_interp((t * 60.0 / angle_to_time) % (2 * np.pi)))
+    lns4 = ax2.plot(t, p_las_interp((t * 3600.0 / angle_to_time) % (2 * np.pi)), label='$P_{laser}$', c='g')
+    lns5 = ax2.plot(t, p_lun_interp((t * 3600.0 / angle_to_time) % (2 * np.pi)), label='$P_{lunar}$', c='grey')
+    lns6 = ax2.plot(t, p_sol_interp((t * 3600.0 / angle_to_time) % (2 * np.pi)), label='$P_{solar}$', c='orange')
+    lns7 = ax2.plot(t, p_heater, label='$P_{heater}$', c='c')
+    
+    ax2.set_ylabel('$P\ [W]$', fontsize=14)
+
+    lns = lns1+lns2+lns3+lns4+lns5+lns6+lns7
+    labs = [l.get_label() for l in lns]
+    ax.legend(lns, labs, prop={'size': 14})
+    
+    fig.tight_layout()
     plt.show()
 
